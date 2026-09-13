@@ -320,9 +320,12 @@ tr:hover td{background:var(--overlay-2);}
 .state-svg-holder .map-raster-wrap img{border-radius:8px;}
 .city-dot{fill:var(--gold-bright);stroke:var(--gold-ink);stroke-width:1;}
 .city-dot.approx{fill:var(--bg-2);stroke:var(--text-faint);stroke-dasharray:1.6 1.2;}
-.city-label{font-family:var(--font-mono);font-size:11px;fill:var(--text);pointer-events:none;text-anchor:middle;paint-order:stroke;stroke:var(--bg-1);stroke-width:3px;}
-.city-label.p{fill:var(--gold-bright);}
-.city-leader{stroke:var(--text-faint);stroke-width:.8;opacity:.55;}
+.city-card-bg{fill:var(--bg-1);fill-opacity:.97;stroke:var(--border-2);stroke-width:1;}
+.city-card-divider{stroke:var(--border-2);stroke-width:1;}
+.city-label{font-family:var(--font-mono);font-size:11px;fill:var(--text);pointer-events:none;text-anchor:middle;dominant-baseline:middle;}
+.city-label.p{fill:var(--gold-bright);font-weight:600;}
+.city-leader{stroke:var(--text-faint);stroke-width:1;opacity:.6;}
+.city-leader-head{fill:var(--text-faint);opacity:.6;}
 .city-note{text-align:center;color:var(--text-faint);font-size:11px;margin-top:10px;}
 
 .list-toggle{display:flex;gap:8px;margin-bottom:14px;}
@@ -643,6 +646,19 @@ function ufAtProjXY(mc,x,y){
   if(px<0||py<0||px>=mc.W||py>=mc.H) return null;
   var idx=mc.owner[py*mc.W+px];
   return idx===255?null:mc.ufList[idx];
+}
+// mesma conta do raster (ponto mais próximo entre os centros dos estados,
+// mascarado pelo contorno do país) mas calculada direto em coordenadas
+// projetadas, sem passar pela grade de baixa resolução — usada para garantir
+// que uma cidade nunca seja desenhada fora da mancha do seu próprio estado.
+function nearestUf(mc,x,y){
+  if(!pointInPolyXY(x,y,mc.outlineXY)) return null;
+  var best=0,bestD=Infinity;
+  for(var k=0;k<mc.centroidsXY.length;k++){
+    var dx=x-mc.centroidsXY[k][0], dy=y-mc.centroidsXY[k][1], d=dx*dx+dy*dy;
+    if(d<bestD){bestD=d;best=k;}
+  }
+  return mc.ufList[best];
 }
 function ufBBoxPx(mc,uf){
   var idx=mc.ufList.indexOf(uf); if(idx<0) return null;
@@ -1715,7 +1731,51 @@ function renderStateZoom(agg,dia,uf){
   if(!_zoomRasterCache[uf]) _zoomRasterCache[uf]=rasterZoomHiRes(mc,uf,x0,y0,w,h);
   var dataUrl=_zoomRasterCache[uf];
 
-  function toPx(lat,lon){ var xy=project(lat,lon); return [(xy[0]-mc.minX)/(mc.maxX-mc.minX)*mc.W-x0,(xy[1]-mc.minY)/(mc.maxY-mc.minY)*mc.H-y0]; }
+  function mapToPx(xy){ return [(xy[0]-mc.minX)/(mc.maxX-mc.minX)*mc.W-x0,(xy[1]-mc.minY)/(mc.maxY-mc.minY)*mc.H-y0]; }
+  var ufIdx=mc.ufList.indexOf(uf);
+  var ufCentroidXY=mc.centroidsXY[ufIdx];
+  // a cidade tem que aparecer sempre dentro da mancha (cor) do próprio estado
+  // no mapa. como a partição é por "ponto mais próximo" a partir de um único
+  // centro por estado, uma cidade real perto de uma divisa (ex.: Uberlândia/
+  // Araguari, mais perto do centro de DF do que do de MG) pode cair no
+  // território do estado vizinho — nesse caso empurramos o ponto na direção
+  // PERPENDICULAR à fronteira (a bissetriz entre os dois centros), pelo menor
+  // deslocamento possível, em vez de arrastar tudo para o centro do estado —
+  // isso mantém a posição relativa entre cidades vizinhas da divisa (não
+  // amontoa cidades diferentes num único ponto).
+  // devolve também a tangente à fronteira (perpendicular ao empurrão) — usada
+  // depois para espalhar, ao longo da própria divisa, cidades diferentes que
+  // caiam praticamente no mesmo ponto (em vez de empilhar bolinhas idênticas).
+  function pontoDentroDoEstado(mapXY){
+    if(!ufCentroidXY) return {xy:mapXY,ajustado:false};
+    var dono=nearestUf(mc,mapXY[0],mapXY[1]);
+    if(dono===uf) return {xy:mapXY,ajustado:false};
+    var siteRival=dono?mc.centroidsXY[mc.ufList.indexOf(dono)]:null;
+    if(siteRival){
+      var dx=ufCentroidXY[0]-siteRival[0], dy=ufCentroidXY[1]-siteRival[1];
+      var dlen=Math.sqrt(dx*dx+dy*dy)||1;
+      var ux=dx/dlen, uy=dy/dlen;
+      var mx=(ufCentroidXY[0]+siteRival[0])/2, my=(ufCentroidXY[1]+siteRival[1])/2;
+      var comp=(mapXY[0]-mx)*ux+(mapXY[1]-my)*uy;
+      var perpX=mapXY[0]-comp*ux, perpY=mapXY[1]-comp*uy;
+      var eps=dlen*0.02;
+      var candX=perpX+ux*eps, candY=perpY+uy*eps;
+      if(nearestUf(mc,candX,candY)===uf) return {xy:[candX,candY],ajustado:true,tanX:-uy,tanY:ux};
+    }
+    // recurso raro (ponto de tríplice fronteira etc.): caminha em linha reta
+    // até o centro do estado, que sempre resulta num ponto válido.
+    var passos=40;
+    for(var s=1;s<=passos;s++){
+      var t=Math.min(1,s/passos+0.03);
+      var tx=mapXY[0]+(ufCentroidXY[0]-mapXY[0])*t;
+      var ty=mapXY[1]+(ufCentroidXY[1]-mapXY[1])*t;
+      if(nearestUf(mc,tx,ty)===uf){
+        var vx=ufCentroidXY[0]-mapXY[0], vy=ufCentroidXY[1]-mapXY[1], vl=Math.sqrt(vx*vx+vy*vy)||1;
+        return {xy:[tx,ty],ajustado:true,tanX:-vy/vl,tanY:vx/vl};
+      }
+    }
+    return {xy:ufCentroidXY,ajustado:true,tanX:1,tanY:0};
+  }
 
   var cidadesNoEstado=(dia.precos||[]).filter(function(p){return p.estado===uf;});
   var vistas={}, marcadores=[];
@@ -1724,10 +1784,12 @@ function renderStateZoom(agg,dia,uf){
     if(vistas[key]) return; vistas[key]=true;
     var cc=cityCoord(p.cidade,uf);
     if(!cc) return;
-    var xy=toPx(cc.coord[0],cc.coord[1]);
+    var ajuste=pontoDentroDoEstado(project(cc.coord[0],cc.coord[1]));
+    var xy=mapToPx(ajuste.xy);
     var precosCidade=cidadesNoEstado.filter(function(x){return normalize(x.cidade)===key;}).map(function(x){return x.preco;});
     var avgC=precosCidade.reduce(function(a,b){return a+b;},0)/precosCidade.length;
-    marcadores.push({x:xy[0],y:xy[1],nome:p.cidade,avg:avgC,n:precosCidade.length,approx:cc.approx});
+    marcadores.push({x:xy[0],y:xy[1],nome:p.cidade,avg:avgC,n:precosCidade.length,approx:cc.approx,
+      ajustado:ajuste.ajustado,tanX:ajuste.tanX,tanY:ajuste.tanY});
   });
 
   // fonte/raio em unidades do viewBox — compensam o zoom para renderizar em
@@ -1736,37 +1798,91 @@ function renderStateZoom(agg,dia,uf){
   var dotR=Math.max(2.6,4.4*scaleUnit);
   var fontMain=Math.max(4.5,12.5*scaleUnit);
   var fontSub=Math.max(4.5,12*scaleUnit);
-  var strokeHalo=Math.max(1.2,2.6*scaleUnit);
-  // evita nomes cortados perto das bordas: perto da esquerda/direita muda o
-  // alinhamento do texto e desloca; perto do topo/base, prende (clamp) a
-  // posição vertical do rótulo dentro do viewBox.
-  // quando cidades próximas deixariam os rótulos um em cima do outro, empurra
+
+  // quando mais de uma cidade (real, perto da divisa) foi empurrada pro mesmo
+  // cantinho do estado, espalha os pontos ao longo da própria fronteira —
+  // preservando a ordem relativa entre elas — em vez de deixar bolinhas
+  // praticamente sobrepostas.
+  (function espalharAjustados(){
+    function pxToMap(px,py){ return [(px+x0)/mc.W*(mc.maxX-mc.minX)+mc.minX,(py+y0)/mc.H*(mc.maxY-mc.minY)+mc.minY]; }
+    var sxPx=mc.W/(mc.maxX-mc.minX), syPx=mc.H/(mc.maxY-mc.minY);
+    var ajustados=marcadores.filter(function(m){return m.ajustado;});
+    var limiar=dotR*4;
+    // agrupa por proximidade de forma transitiva (BFS): A perto de B e B perto
+    // de C entram no mesmo grupo mesmo que A e C não estejam perto entre si —
+    // é o caso comum de 3+ cidades encostadas no mesmo cantinho do estado.
+    var grupos=[], visitado=[];
+    ajustados.forEach(function(inicio){
+      if(visitado.indexOf(inicio)!==-1) return;
+      var grupo=[inicio], fila=[inicio]; visitado.push(inicio);
+      while(fila.length){
+        var atual=fila.shift();
+        ajustados.forEach(function(other){
+          if(visitado.indexOf(other)!==-1) return;
+          var dx=other.x-atual.x, dy=other.y-atual.y;
+          if(Math.sqrt(dx*dx+dy*dy)<limiar){ grupo.push(other); fila.push(other); visitado.push(other); }
+        });
+      }
+      grupos.push(grupo);
+    });
+    grupos.forEach(function(grupo){
+      if(grupo.length<2) return;
+      // média das tangentes do grupo (cada cidade pode ter sido empurrada
+      // contra um vizinho diferente perto de um canto) para achar uma direção
+      // de espalhamento razoável pro grupo inteiro.
+      var tux=0,tuy=0;
+      grupo.forEach(function(m){ tux+=m.tanX*sxPx; tuy+=m.tanY*syPx; });
+      var tl=Math.sqrt(tux*tux+tuy*tuy)||1; tux/=tl; tuy/=tl;
+      var cxm=grupo.reduce(function(s,m){return s+m.x;},0)/grupo.length;
+      var cym=grupo.reduce(function(s,m){return s+m.y;},0)/grupo.length;
+      grupo.map(function(m){return {m:m,proj:(m.x-cxm)*tux+(m.y-cym)*tuy};})
+        .sort(function(a,b){return a.proj-b.proj;})
+        .forEach(function(item,idx){
+          var alvo=(idx-(grupo.length-1)/2)*dotR*2.4;
+          // se o cantinho for pequeno demais, tenta espalhar um pouco menos
+          // até achar uma posição que ainda continue dentro do estado.
+          [1,0.7,0.45,0.25].some(function(fator){
+            var offset=alvo*fator;
+            var nx=cxm+tux*offset, ny=cym+tuy*offset;
+            var novoMapa=pxToMap(nx,ny);
+            if(nearestUf(mc,novoMapa[0],novoMapa[1])===uf){ item.m.x=nx; item.m.y=ny; return true; }
+            return false;
+          });
+        });
+    });
+  })();
+
+  // cada cidade vira um quadro (cartão): nome em cima, uma linha fina
+  // separando, preço embaixo — bem mais legível que texto solto sobre o mapa.
+  var padX=fontMain*0.55, padY=fontMain*0.32, gapMid=fontMain*0.2;
+  var rowH1=fontMain*1.15, rowH2=fontSub*1.15;
+  var gapDot=dotR*0.6+fontMain*0.35;
+  var minCardW=fontMain*3.6;
+  marcadores.forEach(function(mk){
+    var nameW=Math.max((mk.nome||"").length*fontMain*0.62,minCardW-padX*2);
+    mk.precoStr=fmtMoney(mk.avg);
+    var priceW=mk.precoStr.length*fontSub*0.62;
+    mk.cardW=Math.max(nameW,priceW)+padX*2;
+    mk.cardH=padY*2+rowH1+gapMid+rowH2;
+    var leftIdeal=mk.x-mk.cardW/2;
+    mk.cardLeft=Math.min(Math.max(leftIdeal,2),Math.max(2,w-2-mk.cardW));
+    var topAcima=mk.y-dotR-gapDot-mk.cardH;
+    mk.cardTop=topAcima>=2?topAcima:(mk.y+dotR+gapDot);
+    mk.deslocado=Math.abs(mk.cardLeft-leftIdeal)>0.6||topAcima<2;
+  });
+  // quando cidades próximas deixariam os quadros um em cima do outro, empurra
   // os mais ao sul pra baixo em vários passes até ninguém mais se sobrepor —
   // alternativa simples e previsível a um algoritmo de layout completo.
-  marcadores.forEach(function(mk){
-    var anchor="middle", lx=mk.x;
-    if(mk.x<w*0.16){ anchor="start"; lx=Math.max(2,mk.x-dotR); }
-    else if(mk.x>w*0.84){ anchor="end"; lx=Math.min(w-2,mk.x+dotR); }
-    mk.anchor=anchor; mk.lx=lx;
-    mk.textLen=Math.max((mk.nome||"").length,5)*fontMain*0.56;
-    mk.nameY=Math.max(fontMain*0.95,mk.y-dotR-fontMain*0.5);
-    mk.priceY=Math.min(h-2,mk.y+dotR+fontSub*1.1);
-    mk.deslocado=false;
-  });
-  function boxOf(mk){
-    var left=mk.anchor==="start"?mk.lx:(mk.anchor==="end"?mk.lx-mk.textLen:mk.lx-mk.textLen/2);
-    return {left:left,right:left+mk.textLen,top:mk.nameY-fontMain*0.9,bottom:mk.priceY+fontSub*0.35};
-  }
   function colide(a,b){
-    return !(a.right<b.left-3||a.left>b.right+3||a.bottom<b.top-3||a.top>b.bottom+3);
+    return !(a.cardLeft+a.cardW<b.cardLeft-3||a.cardLeft>b.cardLeft+b.cardW+3||a.cardTop+a.cardH<b.cardTop-3||a.cardTop>b.cardTop+b.cardH+3);
   }
   var ordenados=marcadores.slice().sort(function(a,b){return a.y-b.y;});
   for(var pass=0;pass<18;pass++){
     var moveu=false;
     for(var i=0;i<ordenados.length;i++){
       for(var j=0;j<i;j++){
-        if(colide(boxOf(ordenados[i]),boxOf(ordenados[j]))){
-          ordenados[i].nameY+=fontMain*0.5; ordenados[i].priceY+=fontMain*0.5;
+        if(colide(ordenados[i],ordenados[j])){
+          ordenados[i].cardTop+=fontMain*0.55;
           ordenados[i].deslocado=true; moveu=true;
         }
       }
@@ -1774,16 +1890,29 @@ function renderStateZoom(agg,dia,uf){
     if(!moveu) break;
   }
   marcadores.forEach(function(mk){
-    mk.nameY=Math.min(h-fontSub*1.4,mk.nameY);
-    mk.priceY=Math.min(h-2,Math.max(mk.priceY,mk.nameY+fontMain*0.9));
+    mk.cardTop=Math.min(h-2-mk.cardH,mk.cardTop);
   });
+  function pontoMaisPertoDoQuadro(mk,px,py){
+    return [Math.max(mk.cardLeft,Math.min(px,mk.cardLeft+mk.cardW)),Math.max(mk.cardTop,Math.min(py,mk.cardTop+mk.cardH))];
+  }
+  var arrowSize=Math.max(3.5,6*scaleUnit);
   var svgOverlay='<svg viewBox="0 0 '+w+" "+h+'" xmlns="http://www.w3.org/2000/svg">'+
+    '<defs><marker id="cityArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="'+arrowSize.toFixed(2)+'" markerHeight="'+arrowSize.toFixed(2)+'" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" class="city-leader-head"></path></marker></defs>'+
     marcadores.map(function(mk){
-      var leader=mk.deslocado?('<line class="city-leader" x1="'+mk.x.toFixed(2)+'" y1="'+(mk.y-dotR).toFixed(2)+'" x2="'+mk.lx.toFixed(2)+'" y2="'+(mk.nameY+fontMain*0.15).toFixed(2)+'"></line>'):"";
+      var alvo=pontoMaisPertoDoQuadro(mk,mk.x,mk.y);
+      var dx=alvo[0]-mk.x, dy=alvo[1]-mk.y, dist=Math.sqrt(dx*dx+dy*dy)||1;
+      var startX=mk.x+dx/dist*dotR, startY=mk.y+dy/dist*dotR;
+      var leader=mk.deslocado?('<line class="city-leader" x1="'+startX.toFixed(2)+'" y1="'+startY.toFixed(2)+'" x2="'+alvo[0].toFixed(2)+'" y2="'+alvo[1].toFixed(2)+'" marker-end="url(#cityArrow)"></line>'):"";
+      var dividerY=mk.cardTop+padY+rowH1+gapMid/2;
+      var nameY=mk.cardTop+padY+rowH1/2;
+      var priceY=mk.cardTop+padY+rowH1+gapMid+rowH2/2;
+      var cx=mk.cardLeft+mk.cardW/2;
       return '<circle class="city-dot'+(mk.approx?" approx":"")+'" cx="'+mk.x.toFixed(2)+'" cy="'+mk.y.toFixed(2)+'" r="'+dotR.toFixed(2)+'" style="stroke-width:'+(dotR*0.3).toFixed(2)+'"></circle>'+
         leader+
-        '<text class="city-label" x="'+mk.lx.toFixed(2)+'" y="'+mk.nameY.toFixed(2)+'" text-anchor="'+mk.anchor+'" style="font-size:'+fontMain.toFixed(2)+'px;stroke-width:'+strokeHalo.toFixed(2)+'px">'+esc(mk.nome)+'</text>'+
-        '<text class="city-label p" x="'+mk.lx.toFixed(2)+'" y="'+mk.priceY.toFixed(2)+'" text-anchor="'+mk.anchor+'" style="font-size:'+fontSub.toFixed(2)+'px;stroke-width:'+strokeHalo.toFixed(2)+'px">'+fmtMoney(mk.avg)+'</text>';
+        '<rect class="city-card-bg" x="'+mk.cardLeft.toFixed(2)+'" y="'+mk.cardTop.toFixed(2)+'" width="'+mk.cardW.toFixed(2)+'" height="'+mk.cardH.toFixed(2)+'" rx="'+Math.max(2,3*scaleUnit).toFixed(2)+'"></rect>'+
+        '<line class="city-card-divider" x1="'+mk.cardLeft.toFixed(2)+'" y1="'+dividerY.toFixed(2)+'" x2="'+(mk.cardLeft+mk.cardW).toFixed(2)+'" y2="'+dividerY.toFixed(2)+'"></line>'+
+        '<text class="city-label" x="'+cx.toFixed(2)+'" y="'+nameY.toFixed(2)+'" style="font-size:'+fontMain.toFixed(2)+'px">'+esc(mk.nome)+'</text>'+
+        '<text class="city-label p" x="'+cx.toFixed(2)+'" y="'+priceY.toFixed(2)+'" style="font-size:'+fontSub.toFixed(2)+'px">'+mk.precoStr+'</text>';
     }).join("")+
   "</svg>";
 
