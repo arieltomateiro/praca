@@ -2415,18 +2415,20 @@ document.addEventListener("click",function(e){
     }
 
     var guRows=node.querySelector("#gu-rows");
-    var tick=setInterval(function(){
+    // enquanto o modal estiver aberto, rebusca do servidor periodicamente —
+    // não só atualiza o relógio local — pra "online agora" refletir o
+    // instante real mesmo se alguém entrar/sair enquanto você está olhando.
+    var tick=setInterval(atualizarStatusUsuarios,15000);
+    function atualizarStatusUsuarios(){
       if(!document.body.contains(node)){ clearInterval(tick); return; }
-      if(guRows) guRows.innerHTML=renderUserRows(state.usuarios);
-      wireRowButtons();
-    },20000);
-    Store.listUsuariosFresh().then(function(list){
-      state.usuarios=list;
-      if(document.body.contains(node)){
+      Store.listUsuariosFresh().then(function(list){
+        if(!document.body.contains(node)) return;
+        state.usuarios=list;
         if(guRows) guRows.innerHTML=renderUserRows(state.usuarios);
         wireRowButtons();
-      }
-    }).catch(function(){});
+      }).catch(function(){});
+    }
+    atualizarStatusUsuarios();
   }
 });
 
