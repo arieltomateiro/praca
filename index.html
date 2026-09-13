@@ -1,3 +1,4 @@
+<script>(function(){try{var t=localStorage.getItem("ariel_tema");if(t==="light"){document.documentElement.setAttribute("data-theme","light");}}catch(e){}})();</script>
 <title>Ariel Tomateiro</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -44,7 +45,39 @@
   --radius-l:16px;
   --safe-b:env(safe-area-inset-bottom,0px);
   --safe-t:env(safe-area-inset-top,0px);
+  --overlay-1:rgba(255,255,255,.02);
+  --overlay-2:rgba(255,255,255,.015);
+  --map-outline:rgba(255,255,255,.4);
+  --selection-text:#fff;
   color-scheme: dark;
+}
+:root[data-theme="light"]{
+  --bg:#faf7f1;
+  --bg-1:#f2ede1;
+  --bg-2:#e8e0cf;
+  --bg-3:#dcd2ba;
+  --border:rgba(35,28,15,.12);
+  --border-2:rgba(35,28,15,.20);
+  --text:#221b10;
+  --text-dim:#5c5140;
+  --text-faint:#867a63;
+  --gold:#96702a;
+  --gold-bright:#7a5720;
+  --gold-dim:#cda662;
+  --gold-ink:#241c0d;
+  --green:#1f8a4c;
+  --green-bg:rgba(31,138,76,.14);
+  --amber:#8a6a10;
+  --amber-bg:rgba(138,106,16,.14);
+  --orange:#b1591a;
+  --orange-bg:rgba(177,89,26,.14);
+  --red:#c23325;
+  --red-bg:rgba(194,51,37,.12);
+  --overlay-1:rgba(35,28,15,.035);
+  --overlay-2:rgba(35,28,15,.028);
+  --map-outline:rgba(35,28,15,.4);
+  --selection-text:#241c0d;
+  color-scheme: light;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 svg{fill:none;stroke:currentColor;stroke-width:1.5;}
@@ -59,7 +92,7 @@ body{
   -webkit-font-smoothing:antialiased;
   overscroll-behavior-y:none;
 }
-::selection{background:var(--gold-dim);color:#fff;}
+::selection{background:var(--gold-dim);color:var(--selection-text);}
 h1,h2,h3,h4{font-family:var(--font-display);font-weight:600;margin:0;text-wrap:balance;letter-spacing:-.01em;}
 p{margin:0;}
 button{font-family:inherit;}
@@ -168,9 +201,9 @@ label.field span.hint{font-weight:400;color:var(--text-faint);font-size:11px;}
 .pill.red{background:var(--red-bg);color:var(--red);}
 
 table{width:100%;border-collapse:collapse;font-size:13px;}
-th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-faint);font-weight:700;padding:8px 10px;background:rgba(255,255,255,.02);}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-faint);font-weight:700;padding:8px 10px;background:var(--overlay-1);}
 td{padding:10px 10px;border-bottom:1px solid var(--border);}
-tr:hover td{background:rgba(255,255,255,.015);}
+tr:hover td{background:var(--overlay-2);}
 .table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius-m);}
 .table-wrap table{min-width:520px;}
 
@@ -223,6 +256,9 @@ tr:hover td{background:rgba(255,255,255,.015);}
 .iconbtn{width:36px;height:36px;border-radius:8px;background:var(--bg-2);border:1px solid var(--border-2);color:var(--text-dim);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;}
 .iconbtn:hover{color:var(--text);background:var(--bg-3);}
 .iconbtn svg{width:15px;height:15px;stroke-width:2;}
+.theme-toggle-btn{width:26px;height:26px;border-radius:6px;background:var(--bg-2);border:1px solid var(--border-2);color:var(--text-dim);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;}
+.theme-toggle-btn:hover{color:var(--gold-bright);background:var(--bg-3);}
+.theme-toggle-btn svg{width:14px;height:14px;stroke-width:2;}
 .cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;}
 .cal-dow{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-faint);text-align:center;padding-bottom:4px;}
 .cal-cell{aspect-ratio:1/.82;border-radius:9px;border:1px solid var(--border);background:var(--bg-1);padding:6px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;position:relative;}
@@ -245,6 +281,11 @@ tr:hover td{background:rgba(255,255,255,.015);}
 .op-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;border-radius:var(--radius-m);border:1px solid var(--border);margin-bottom:8px;background:var(--bg-1);flex-wrap:wrap;}
 .op-row .l{display:flex;align-items:center;gap:12px;min-width:0;}
 .op-row .l .meta{min-width:0;}
+.user-status{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--text-faint);margin-top:3px;}
+.user-status.online{color:var(--green);}
+.user-status i{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;flex:none;}
+.admin-badge{display:inline-block;font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;font-weight:700;color:var(--gold-ink);background:var(--gold);padding:2px 6px;border-radius:999px;margin-left:6px;vertical-align:middle;}
+
 .op-row .l .meta .nm{font-weight:600;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .op-row .l .meta .loc{font-size:11.5px;color:var(--text-faint);}
 .op-row .r{display:flex;align-items:center;gap:14px;flex:none;text-align:right;}
@@ -265,7 +306,7 @@ tr:hover td{background:rgba(255,255,255,.015);}
 .map-raster-wrap.tilt-3d{transform:rotateX(11deg);transform-style:preserve-3d;filter:drop-shadow(0 14px 12px rgba(0,0,0,.4));}
 .map-raster-wrap img{width:100%;height:100%;display:block;object-fit:fill;image-rendering:auto;-webkit-user-select:none;user-select:none;}
 .map-raster-wrap svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;}
-.brazil-outline{fill:none;stroke:rgba(255,255,255,.4);stroke-width:1.6;stroke-linejoin:round;}
+.brazil-outline{fill:none;stroke:var(--map-outline);stroke-width:1.6;stroke-linejoin:round;}
 .uf-label{font-family:var(--font-mono);font-size:12px;font-weight:700;fill:#f4e9cf;dominant-baseline:middle;pointer-events:none;text-anchor:middle;paint-order:stroke;stroke:rgba(0,0,0,.6);stroke-width:3px;stroke-linejoin:round;}
 .uf-label.empty{fill:var(--text-dim);}
 .map-legend{display:flex;align-items:center;gap:10px;justify-content:center;margin-top:14px;font-size:11px;color:var(--text-faint);}
@@ -281,12 +322,33 @@ tr:hover td{background:rgba(255,255,255,.015);}
 .city-dot.approx{fill:var(--bg-2);stroke:var(--text-faint);stroke-dasharray:1.6 1.2;}
 .city-label{font-family:var(--font-mono);font-size:11px;fill:var(--text);pointer-events:none;text-anchor:middle;paint-order:stroke;stroke:var(--bg-1);stroke-width:3px;}
 .city-label.p{fill:var(--gold-bright);}
+.city-leader{stroke:var(--text-faint);stroke-width:.8;opacity:.55;}
 .city-note{text-align:center;color:var(--text-faint);font-size:11px;margin-top:10px;}
 
 .list-toggle{display:flex;gap:8px;margin-bottom:14px;}
 
 /* ---------- Cargas ---------- */
-.carga-card{border:1px solid var(--border);border-radius:var(--radius-m);padding:14px 16px;margin-bottom:10px;background:var(--bg-1);}
+.carga-card{border:1px solid var(--border);border-left-width:3px;border-left-style:solid;border-left-color:var(--border-2);border-radius:var(--radius-m);padding:14px 16px;margin-bottom:10px;background:var(--bg-1);}
+.carga-card.tipo-compra{border-left-color:var(--text-faint);}
+.carga-card.tipo-venda{border-left-color:var(--green);}
+.carga-card.tipo-casada{border-left-color:var(--gold);}
+.carga-result{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:12px;padding:10px 14px;background:var(--bg-2);border-radius:var(--radius-s);}
+.carga-result .rpart{display:flex;flex-direction:column;gap:2px;}
+.carga-result .rlabel{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-faint);}
+.carga-result .rvalue{font-family:var(--font-mono);font-size:19px;font-weight:600;}
+.carga-result .rvalue.gold{color:var(--gold-bright);}
+.carga-result .rvalue.pos{color:var(--green);}
+.carga-result .rvalue.neg{color:var(--red);}
+.carga-result .rsep{color:var(--text-faint);font-size:15px;}
+.carga-result.casada .rpart.lucro{padding-left:14px;border-left:1px solid var(--border-2);}
+.carga-details{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-top:12px;}
+.carga-details .k{font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.05em;}
+.carga-details .v{font-family:var(--font-mono);font-size:13.5px;margin-top:2px;}
+.carga-docs{display:flex;gap:18px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px dashed var(--border);}
+.doc-chip{display:flex;align-items:center;gap:8px;}
+.doc-chip .doc-label{font-size:11px;color:var(--text-faint);}
+.thumb-empty{display:flex;align-items:center;justify-content:center;color:var(--text-faint);background:var(--bg-2);border-style:dashed;}
+.thumb-empty svg{width:16px;height:16px;}
 .carga-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
 .carga-top .left{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 .carga-num{font-family:var(--font-mono);font-size:11px;color:var(--text-faint);background:var(--bg-3);padding:2px 7px;border-radius:5px;}
@@ -359,7 +421,7 @@ tr:hover td{background:rgba(255,255,255,.015);}
     <div id="sidebar-foot">
       <div><span class="status-dot off" id="db-dot"></span><span id="db-label">conectando…</span></div>
       <div class="who"><span id="who-email"></span><button class="linklike" data-action="logout">sair</button></div>
-      <div style="margin-top:6px"><button class="linklike" data-action="gerenciar-usuarios">gerenciar acesso</button></div>
+      <div style="margin-top:6px;display:flex;align-items:center;gap:8px;"><button class="linklike" data-action="gerenciar-usuarios">gerenciar acesso</button><button class="theme-toggle-btn" id="theme-toggle-btn" data-action="toggle-theme" aria-label="Alternar tema claro/escuro"></button></div>
     </div>
   </aside>
   <main id="main"></main>
@@ -367,7 +429,7 @@ tr:hover td{background:rgba(255,255,255,.015);}
 <div id="mobiletopbar" hidden>
   <div class="mtb-status"><span class="status-dot off" id="db-dot-m"></span><span id="who-email-m"></span></div>
   <img class="mtb-logo" id="mtb-logo" alt="Ariel Tomateiro">
-  <button class="iconbtn" data-action="gerenciar-usuarios" aria-label="Conta e acesso"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1.2-4 4-6 7-6s5.8 2 7 6"/></svg></button>
+  <div style="display:flex;gap:6px;justify-self:end;"><button class="iconbtn" id="theme-toggle-btn-m" data-action="toggle-theme" aria-label="Alternar tema claro/escuro"></button><button class="iconbtn" data-action="gerenciar-usuarios" aria-label="Conta e acesso"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1.2-4 4-6 7-6s5.8 2 7 6"/></svg></button></div>
 </div>
 <nav class="tabs" id="bottomnav" hidden></nav>
 <div id="toasts"></div>
@@ -608,7 +670,8 @@ var ICONS = {
   edit:'<svg viewBox="0 0 24 24"><path d="M4 20h4L18.5 9.5a2 2 0 0 0 0-2.8l-1.2-1.2a2 2 0 0 0-2.8 0L4 15.5V20Z"/><path d="M13.2 6.8l4 4"/></svg>',
   trash:'<svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2m-8 0 1 13a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2l1-13"/></svg>',
   box:'<svg viewBox="0 0 24 24"><path d="m3 8 9-5 9 5-9 5-9-5Z"/><path d="M3 8v9l9 5 9-5V8M12 13v9"/></svg>',
-  lock:'<svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>'
+  lock:'<svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>',
+  send:'<svg viewBox="0 0 24 24"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/></svg>'
 };
 
 /* ============ utils ============ */
@@ -624,6 +687,33 @@ function fmtNum(n,d){if(n==null||isNaN(n))return "—";return Number(n).toLocale
 function uid(){return (crypto.randomUUID?crypto.randomUUID():("id-"+Date.now()+"-"+Math.random().toString(16).slice(2)));}
 function esc(s){return (s==null?"":String(s)).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
 function normalize(s){return (s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").trim();}
+/* ============ tema claro/escuro ============ */
+var THEME_KEY="ariel_tema";
+function getTheme(){
+  try{ return localStorage.getItem(THEME_KEY)==="light"?"light":"dark"; }catch(e){ return "dark"; }
+}
+function themeIconSvg(cur){
+  if(cur==="light"){
+    return '<svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
+  }
+  return '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8l1.8-1.8M18 6l1.8-1.8"/></svg>';
+}
+function applyThemeIcons(){
+  var svg=themeIconSvg(getTheme());
+  var b1=document.getElementById("theme-toggle-btn");
+  var b2=document.getElementById("theme-toggle-btn-m");
+  if(b1) b1.innerHTML=svg;
+  if(b2) b2.innerHTML=svg;
+}
+function setTheme(t){
+  try{ localStorage.setItem(THEME_KEY,t); }catch(e){}
+  if(t==="light"){ document.documentElement.setAttribute("data-theme","light"); }
+  else { document.documentElement.removeAttribute("data-theme"); }
+  var mc=document.querySelector('meta[name="theme-color"]');
+  if(mc) mc.setAttribute("content", t==="light"?"#faf7f1":"#0a0a0b");
+  applyThemeIcons();
+}
+function toggleTheme(){ setTheme(getTheme()==="light"?"dark":"light"); }
 function toast(msg,isErr){
   var el=document.createElement("div");el.className="toast"+(isErr?" err":"");el.textContent=msg;
   document.getElementById("toasts").appendChild(el);
@@ -800,6 +890,27 @@ var FIREBASE_CONFIG={
 };
 var mem={entidades:{},dias:{},fotos:{},usuarios:{}};
 var db=null;
+var ADMIN_EMAILS=["lpacastro@hotmail.com","arieljsg@hotmail.com"];
+function isAdminUser(u){
+  if(!u) return false;
+  if(ADMIN_EMAILS.indexOf((u.email||"").toLowerCase())!==-1) return true;
+  return !!u.isAdmin;
+}
+function souAdmin(){ return isAdminUser(state.authUser); }
+var ONLINE_MS=90*1000;
+function statusUsuario(u){
+  if(!u||!u.lastSeen) return {online:false,texto:"sem acessos registrados"};
+  var ms=Date.now()-new Date(u.lastSeen).getTime();
+  if(ms<ONLINE_MS) return {online:true,texto:"online"};
+  var mins=Math.max(1,Math.floor(ms/60000));
+  var texto;
+  if(mins<60){ texto="online por último há "+mins+(mins===1?" minuto":" minutos"); }
+  else{
+    var horas=Math.floor(mins/60), restoMin=mins%60;
+    texto="online por último há "+horas+(horas===1?" hora":" horas")+(restoMin>0?(" e "+restoMin+(restoMin===1?" minuto":" minutos")):"");
+  }
+  return {online:false,texto:texto};
+}
 
 function updateConnStatus(){
   [["db-dot","db-label"],["db-dot-m",null]].forEach(function(ids){
@@ -888,6 +999,20 @@ var Store={
     _userCache=cloneDeep(list);
     return cloneDeep(list);
   },
+  async listUsuariosFresh(){
+    var list;
+    if(db){ var s=await db.collection("usuarios").get(); list=s.docs.map(function(d){return Object.assign({id:d.id},d.data());}); }
+    else { list=Object.keys(mem.usuarios).map(function(k){return mem.usuarios[k];}); }
+    _userCache=cloneDeep(list);
+    return cloneDeep(list);
+  },
+  async touchPresence(){
+    if(!state.authUser) return;
+    var iso=new Date().toISOString();
+    if(db){ db.collection("usuarios").doc(state.authUser.id).set({lastSeen:iso},{merge:true}).catch(function(){}); }
+    else if(mem.usuarios[state.authUser.id]){ mem.usuarios[state.authUser.id].lastSeen=iso; }
+    if(_userCache){ _userCache=_userCache.map(function(u){ return u.id===state.authUser.id?Object.assign({},u,{lastSeen:iso}):u; }); }
+  },
   async saveUsuario(u){
     if(!u.id) u.id=uid();
     var copy=cloneDeep(u);
@@ -936,11 +1061,11 @@ var _mtbLogoImg=document.getElementById("mtb-logo"); if(_mtbLogoImg) _mtbLogoImg
 var _authTransition=null; // "pending" enquanto um cadastro está gravando o doc do usuário no Firestore
 
 var TABS=[
-  {id:"calendario",label:"Calendário",mobileLabel:"Calendário",icon:"cal"},
-  {id:"catalogo",label:"Catálogo",mobileLabel:"Catálogo",icon:"book"},
+  {id:"catalogo",label:"Cadastros",mobileLabel:"Cadastros",icon:"book"},
   {id:"precos",label:"Preços do Dia",mobileLabel:"Preços",icon:"tag"},
   {id:"praca",label:"Praça (resumo)",mobileLabel:"Praça",icon:"map"},
-  {id:"cargas",label:"Cargas",mobileLabel:"Cargas",icon:"truck"}
+  {id:"cargas",label:"Cargas",mobileLabel:"Cargas",icon:"truck"},
+  {id:"calendario",label:"Fechamentos",mobileLabel:"Fechamentos",icon:"cal"}
 ];
 
 /* ============ boot / auth ============ */
@@ -955,6 +1080,12 @@ async function boot(){
   window.addEventListener("online",updateConnStatus);
   window.addEventListener("offline",updateConnStatus);
 
+  try{
+    if(new URLSearchParams(location.search).get("convite")==="1"){
+      state._convite=true;
+      state._authModo="cadastro";
+    }
+  }catch(e){}
   state._temUsuarios=false;
   if(db){
     try{
@@ -1007,7 +1138,9 @@ function renderAuth(){
   el.innerHTML='<div class="auth-card">'+
     '<div class="auth-brand"><img class="logo" src="'+LOGO_DATAURI+'" alt="Ariel Tomateiro"><div class="s">Compra &amp; venda de tomate</div></div>'+
     (modo==="cadastro"?
-      '<div class="auth-title">Criar acesso</div><div class="auth-lede">Primeiro acesso: cadastre seu e-mail e senha para proteger os dados.</div>'
+      (state._convite?
+        '<div class="auth-title">Bem-vindo(a)!</div><div class="auth-lede">Você recebeu um convite para acessar o Ariel Tomateiro. Crie seu nome, e-mail e senha para entrar.</div>'
+        :'<div class="auth-title">Criar acesso</div><div class="auth-lede">Primeiro acesso: cadastre seu e-mail e senha para proteger os dados.</div>')
       :'<div class="auth-title">Entrar</div><div class="auth-lede">Acesso restrito. Informe seu e-mail e senha.</div>')+
     (err?'<div class="auth-err">'+esc(err)+'</div>':"")+
     '<div id="auth-form" style="display:flex;flex-direction:column;gap:12px">'+
@@ -1017,12 +1150,14 @@ function renderAuth(){
     (modo==="cadastro"?'<label class="field">Confirmar senha<input type="password" id="auth-senha2" placeholder="••••••••" autocomplete="new-password"></label>':"")+
     '<button class="btn primary block" id="auth-submit" style="margin-top:4px">'+ICONS.lock+(modo==="cadastro"?" Criar e entrar":" Entrar")+"</button>"+
     "</div>"+
-    (temUsuarios?('<div class="auth-switch">'+(modo==="cadastro"?'Já tem uma conta? <button data-auth-switch="login">Entrar</button>':'Precisa cadastrar outro usuário? Peça para quem já tem acesso usar "gerenciar acesso" depois de entrar.')+'</div>'):"")+
+    (state._convite?
+      ('<div class="auth-switch">'+(modo==="cadastro"?'Já tem uma conta? <button data-auth-switch="login">Entrar</button>':'Ainda não tem conta? <button data-auth-switch="cadastro">Criar conta</button>')+'</div>')
+      :(temUsuarios?('<div class="auth-switch">'+(modo==="cadastro"?'Já tem uma conta? <button data-auth-switch="login">Entrar</button>':'Precisa cadastrar outro usuário? Peça para quem já tem acesso usar "gerenciar acesso" depois de entrar.')+'</div>'):""))+
   "</div>";
   var btn=document.getElementById("auth-submit");
   btn.onclick=guarded(modo==="cadastro"?onAuthCadastro:onAuthLogin);
   var sw=el.querySelector("[data-auth-switch]");
-  if(sw) sw.onclick=function(){ state._authModo="login"; state._authErr=""; renderAuth(); };
+  if(sw) sw.onclick=function(){ state._authModo=sw.getAttribute("data-auth-switch"); state._authErr=""; renderAuth(); };
   [document.getElementById("auth-email"),document.getElementById("auth-senha")].forEach(function(inp){
     if(inp) inp.onkeydown=function(e){ if(e.key==="Enter") btn.click(); };
   });
@@ -1051,7 +1186,7 @@ async function onAuthCadastro(){
   _authTransition="pending";
   try{ cred=await firebase.auth().createUserWithEmailAndPassword(email,senha); }
   catch(e){ _authTransition=null; state._authErr=traduzErroAuth(e); renderAuth(); return; }
-  var novoUsuario={id:cred.user.uid,nome:nome||email,email:email,criadoEm:new Date().toISOString()};
+  var novoUsuario={id:cred.user.uid,nome:nome||email,email:email,criadoEm:new Date().toISOString(),lastSeen:new Date().toISOString()};
   var gravou=false;
   try{
     await db.collection("usuarios").doc(cred.user.uid).set(novoUsuario);
@@ -1107,30 +1242,58 @@ async function afterLogin(){
   var whoTxt=state.authUser.nome||state.authUser.email;
   document.getElementById("who-email").textContent=whoTxt;
   var whoM=document.getElementById("who-email-m"); if(whoM) whoM.textContent=whoTxt;
+  Store.touchPresence();
+  if(!window._presenceHeartbeat){
+    window._presenceHeartbeat=setInterval(function(){ Store.touchPresence(); },60000);
+    document.addEventListener("visibilitychange",function(){ if(!document.hidden) Store.touchPresence(); });
+  }
   await seedIfNeeded();
   state.entidades=await Store.listEntidades();
   await refreshCurrentTabData();
   render();
 }
 
-function modalUsuarios(){
-  var rows=state.usuarios.map(function(u){
-    return '<div class="op-row"><div class="l"><div class="meta"><div class="nm">'+esc(u.nome||u.email)+'</div><div class="loc">'+esc(u.email)+'</div></div></div>'+
-      (state.usuarios.length>1?'<button class="iconbtn" data-del-usuario="'+u.id+'">'+ICONS.x+"</button>":"")+
+function renderUserRows(list){
+  var meAdmin=souAdmin();
+  return list.map(function(u){
+    var admin=isAdminUser(u);
+    var st=statusUsuario(u);
+    var fixo=ADMIN_EMAILS.indexOf((u.email||"").toLowerCase())!==-1;
+    var promoBtn="";
+    if(meAdmin && !fixo){
+      promoBtn=admin?
+        '<button type="button" class="linklike" data-admin-toggle="'+u.id+'" data-novo="0">Remover admin</button>'
+        :'<button type="button" class="linklike" data-admin-toggle="'+u.id+'" data-novo="1">Tornar admin</button>';
+    }
+    var delBtn=(meAdmin && list.length>1)?('<button class="iconbtn" data-del-usuario="'+u.id+'" aria-label="Remover usuário">'+ICONS.x+"</button>"):"";
+    return '<div class="op-row"><div class="l"><div class="meta">'+
+        '<div class="nm">'+esc(u.nome||u.email)+(admin?' <span class="admin-badge">admin</span>':"")+'</div>'+
+        '<div class="loc">'+esc(u.email)+'</div>'+
+        '<div class="user-status'+(st.online?" online":"")+'">'+(st.online?"<i></i>":"")+esc(st.texto)+'</div>'+
+      '</div></div>'+
+      '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end">'+promoBtn+delBtn+'</div>'+
     "</div>";
   }).join("");
-  return '<div class="modal-back" data-close-modal="1"><div class="modal" onclick="event.stopPropagation()">'+
-    "<h3>Gerenciar acesso</h3>"+
-    '<div class="section-title">Usuários com acesso</div>'+rows+
+}
+function modalUsuarios(){
+  var meAdmin=souAdmin();
+  var inviteSection=meAdmin?(
     '<div class="section-title" style="margin-top:18px">Adicionar novo usuário</div>'+
     '<div style="display:flex;flex-direction:column;gap:10px">'+
-      '<label class="field">Nome<input type="text" id="nu-nome"></label>'+
-      '<label class="field">E-mail<input type="email" id="nu-email"></label>'+
-      '<label class="field">Senha<input type="password" id="nu-senha"></label>'+
+      '<label class="field">Insira o número de whatsapp com ddd para enviar o convite<input type="tel" id="nu-whats" value="+55 " placeholder="+55 11 91234-5678"></label>'+
     "</div>"+
+    '<div class="modal-actions" style="justify-content:flex-end;margin-top:6px">'+
+      '<button type="button" class="btn primary" id="nu-invite">'+ICONS.send+" Enviar convite pelo WhatsApp</button>"+
+    "</div>"
+  ):"";
+  return '<div class="modal-back" data-close-modal="1"><div class="modal" onclick="event.stopPropagation()">'+
+    "<h3>Gerenciar acesso</h3>"+
+    '<div class="section-title">Usuários com acesso</div>'+
+    '<div id="gu-rows">'+renderUserRows(state.usuarios)+"</div>"+
+    inviteSection+
     '<div class="modal-actions" style="justify-content:space-between">'+
     '<button type="button" class="btn danger ghost" data-action="logout">Sair</button>'+
-    '<div style="display:flex;gap:8px"><button type="button" class="btn ghost" data-close-modal="1">Fechar</button><button type="button" class="btn primary" id="nu-add">'+ICONS.plus+" Adicionar</button></div>"+
+    '<div style="display:flex;gap:8px"><button type="button" class="btn ghost" data-close-modal="1">Fechar</button></div>'+
     "</div>"+
   "</div></div>";
 }
@@ -1142,9 +1305,9 @@ async function seedIfNeeded(){
   var already = db ? (await db.doc("meta/config").get()) : null;
   if(already && already.exists && already.data().seeded) return;
 
-  var fornecedor={id:uid(),tipo:"fornecedor",nome:"Sítio Boa Colheita (exemplo)",razaoSocial:"J. Almeida Produção Agrícola",cnpj:"",endereco:"Zona Rural, km 4",cidade:"Uberlândia",estado:"MG",observacoes:"Dado de exemplo — pode excluir no Catálogo."};
-  var fornecedor2={id:uid(),tipo:"fornecedor",nome:"Agropecuária Vale Verde (exemplo)",razaoSocial:"Vale Verde Agropecuária Ltda",cnpj:"",endereco:"Rod. BR-153, s/n",cidade:"Goiânia",estado:"GO",observacoes:"Dado de exemplo — pode excluir no Catálogo."};
-  var cliente={id:uid(),tipo:"cliente",nome:"Mercado Central Atacado (exemplo)",razaoSocial:"Mercado Central Distribuição Ltda",cnpj:"",endereco:"Av. dos Atacadistas, 900",cidade:"São Paulo",estado:"SP",observacoes:"Dado de exemplo — pode excluir no Catálogo."};
+  var fornecedor={id:uid(),tipo:"fornecedor",nome:"Sítio Boa Colheita (exemplo)",razaoSocial:"J. Almeida Produção Agrícola",cnpj:"",endereco:"Zona Rural, km 4",cidade:"Uberlândia",estado:"MG",observacoes:"Dado de exemplo — pode excluir em Cadastros."};
+  var fornecedor2={id:uid(),tipo:"fornecedor",nome:"Agropecuária Vale Verde (exemplo)",razaoSocial:"Vale Verde Agropecuária Ltda",cnpj:"",endereco:"Rod. BR-153, s/n",cidade:"Goiânia",estado:"GO",observacoes:"Dado de exemplo — pode excluir em Cadastros."};
+  var cliente={id:uid(),tipo:"cliente",nome:"Mercado Central Atacado (exemplo)",razaoSocial:"Mercado Central Distribuição Ltda",cnpj:"",endereco:"Av. dos Atacadistas, 900",cidade:"São Paulo",estado:"SP",observacoes:"Dado de exemplo — pode excluir em Cadastros."};
   await Store.saveEntidade(fornecedor); await Store.saveEntidade(fornecedor2); await Store.saveEntidade(cliente);
 
   var iso="2025-03-11";
@@ -1303,7 +1466,7 @@ function viewCalendario(){
     return '<div class="op-row"><div class="l"><div class="meta"><div class="nm">'+esc(p.nome)+'</div><div class="loc">'+esc(p.cidade)+"/"+esc(p.estado)+'</div></div></div><div class="r"><span class="valor num">'+fmtMoney(p.preco)+'/cx</span></div></div>';
   }).join("") || '<div class="empty">Nenhum preço lançado neste dia.</div>';
 
-  return '<div class="page-head"><div><h1>Calendário</h1><p class="lede">Clique em um dia para ver todas as operações e o fechamento do dia.</p></div></div>'+
+  return '<div class="page-head"><div><h1>Fechamentos</h1><p class="lede">Clique em um dia para ver todas as operações e o fechamento do dia.</p></div></div>'+
     banner+
     '<div class="card">'+
       '<div class="cal-head"><div class="month">'+(MESES[m].charAt(0).toUpperCase()+MESES[m].slice(1))+" de "+y+'</div><div class="cal-nav"><button class="iconbtn" data-cal-nav="-1">'+ICONS.chevL+'</button><button class="iconbtn" data-cal-nav="1">'+ICONS.chevR+'</button></div></div>'+
@@ -1338,7 +1501,7 @@ function viewCatalogo(){
     "</div>";
   }).join("") || '<div class="empty">'+ICONS.book+'<div class="t">Nenhum fornecedor ou cliente encontrado.</div></div>';
 
-  return '<div class="page-head"><div><h1>Catálogo</h1><p class="lede">Fornecedores e clientes cadastrados.</p></div>'+
+  return '<div class="page-head"><div><h1>Cadastros</h1><p class="lede">Fornecedores e clientes cadastrados.</p></div>'+
     '<div class="toolbar"><button class="btn primary" data-action="novo-ent">'+ICONS.plus+" Novo cadastro</button></div></div>"+
     '<div class="toolbar" style="margin-bottom:14px">'+
       '<div class="seg">'+["todos","fornecedor","cliente"].map(function(f){return '<button class="'+(filtro===f?"active":"")+'" data-cat-filtro="'+f+'">'+(f==="todos"?"Todos":f==="fornecedor"?"Fornecedores":"Clientes")+"</button>";}).join("")+'</div>'+
@@ -1505,6 +1668,39 @@ function renderMapaBrasil(agg){
     '</div><p class="city-note">Mapa geográfico por posição real dos estados (divisão pelo centro geográfico de cada estado; contorno e fronteiras simplificados, não é o traçado oficial do IBGE). Toque em um estado com dado para ver as cidades.</p></div>';
 }
 
+function rasterZoomHiRes(mc,uf,x0,y0,wPx0,hPx0){
+  // recalcula a divisão por estado numa resolução própria, bem mais alta que
+  // a do raster do Brasil inteiro (pensado pra caber o país todo numa única
+  // imagem) — sem isso, ampliar um estado só faz esticar poucos pixels e as
+  // bordas ficam serrilhadas.
+  var ufIdx=mc.ufList.indexOf(uf);
+  var lx0=mc.minX+x0/mc.W*(mc.maxX-mc.minX), lx1=mc.minX+(x0+wPx0)/mc.W*(mc.maxX-mc.minX);
+  var ly0=mc.minY+y0/mc.H*(mc.maxY-mc.minY), ly1=mc.minY+(y0+hPx0)/mc.H*(mc.maxY-mc.minY);
+  var TARGET=900;
+  var scale=Math.min(6,Math.max(1,TARGET/Math.max(wPx0,hPx0)));
+  var w=Math.max(1,Math.round(wPx0*scale)), h=Math.max(1,Math.round(hPx0*scale));
+  var cv=document.createElement("canvas"); cv.width=w; cv.height=h;
+  var ctx=cv.getContext("2d");
+  var img=ctx.createImageData(w,h);
+  for(var py=0;py<h;py++){
+    var y=ly0+(py+0.5)/h*(ly1-ly0);
+    for(var px=0;px<w;px++){
+      var x=lx0+(px+0.5)/w*(lx1-lx0);
+      if(!pointInPolyXY(x,y,mc.outlineXY)) continue;
+      var best=0,bestD=Infinity;
+      for(var k=0;k<mc.centroidsXY.length;k++){
+        var dx=x-mc.centroidsXY[k][0], dy=y-mc.centroidsXY[k][1], d=dx*dx+dy*dy;
+        if(d<bestD){bestD=d;best=k;}
+      }
+      if(best===ufIdx){
+        var o=(py*w+px)*4;
+        img.data[o]=201; img.data[o+1]=162; img.data[o+2]=78; img.data[o+3]=255;
+      }
+    }
+  }
+  ctx.putImageData(img,0,0);
+  return cv.toDataURL("image/png");
+}
 function renderStateZoom(agg,dia,uf){
   var mc=buildMapGeo();
   var info=agg.porEstado[uf];
@@ -1516,7 +1712,7 @@ function renderStateZoom(agg,dia,uf){
   var w=Math.max(1,x1-x0), h=Math.max(1,y1-y0);
   // o recorte de um estado é puramente geométrico (não depende do preço do
   // dia) — gerado uma vez por estado e reaproveitado sempre depois.
-  if(!_zoomRasterCache[uf]) _zoomRasterCache[uf]=rasterToDataURLCropped(mc,function(u2){ return u2===uf?[201,162,78,255]:null; },x0,y0,w,h);
+  if(!_zoomRasterCache[uf]) _zoomRasterCache[uf]=rasterZoomHiRes(mc,uf,x0,y0,w,h);
   var dataUrl=_zoomRasterCache[uf];
 
   function toPx(lat,lon){ var xy=project(lat,lon); return [(xy[0]-mc.minX)/(mc.maxX-mc.minX)*mc.W-x0,(xy[1]-mc.minY)/(mc.maxY-mc.minY)*mc.H-y0]; }
@@ -1544,16 +1740,50 @@ function renderStateZoom(agg,dia,uf){
   // evita nomes cortados perto das bordas: perto da esquerda/direita muda o
   // alinhamento do texto e desloca; perto do topo/base, prende (clamp) a
   // posição vertical do rótulo dentro do viewBox.
+  // quando cidades próximas deixariam os rótulos um em cima do outro, empurra
+  // os mais ao sul pra baixo em vários passes até ninguém mais se sobrepor —
+  // alternativa simples e previsível a um algoritmo de layout completo.
+  marcadores.forEach(function(mk){
+    var anchor="middle", lx=mk.x;
+    if(mk.x<w*0.16){ anchor="start"; lx=Math.max(2,mk.x-dotR); }
+    else if(mk.x>w*0.84){ anchor="end"; lx=Math.min(w-2,mk.x+dotR); }
+    mk.anchor=anchor; mk.lx=lx;
+    mk.textLen=Math.max((mk.nome||"").length,5)*fontMain*0.56;
+    mk.nameY=Math.max(fontMain*0.95,mk.y-dotR-fontMain*0.5);
+    mk.priceY=Math.min(h-2,mk.y+dotR+fontSub*1.1);
+    mk.deslocado=false;
+  });
+  function boxOf(mk){
+    var left=mk.anchor==="start"?mk.lx:(mk.anchor==="end"?mk.lx-mk.textLen:mk.lx-mk.textLen/2);
+    return {left:left,right:left+mk.textLen,top:mk.nameY-fontMain*0.9,bottom:mk.priceY+fontSub*0.35};
+  }
+  function colide(a,b){
+    return !(a.right<b.left-3||a.left>b.right+3||a.bottom<b.top-3||a.top>b.bottom+3);
+  }
+  var ordenados=marcadores.slice().sort(function(a,b){return a.y-b.y;});
+  for(var pass=0;pass<18;pass++){
+    var moveu=false;
+    for(var i=0;i<ordenados.length;i++){
+      for(var j=0;j<i;j++){
+        if(colide(boxOf(ordenados[i]),boxOf(ordenados[j]))){
+          ordenados[i].nameY+=fontMain*0.5; ordenados[i].priceY+=fontMain*0.5;
+          ordenados[i].deslocado=true; moveu=true;
+        }
+      }
+    }
+    if(!moveu) break;
+  }
+  marcadores.forEach(function(mk){
+    mk.nameY=Math.min(h-fontSub*1.4,mk.nameY);
+    mk.priceY=Math.min(h-2,Math.max(mk.priceY,mk.nameY+fontMain*0.9));
+  });
   var svgOverlay='<svg viewBox="0 0 '+w+" "+h+'" xmlns="http://www.w3.org/2000/svg">'+
     marcadores.map(function(mk){
-      var anchor="middle", lx=mk.x;
-      if(mk.x<w*0.16){ anchor="start"; lx=Math.max(2,mk.x-dotR); }
-      else if(mk.x>w*0.84){ anchor="end"; lx=Math.min(w-2,mk.x+dotR); }
-      var nameY=Math.max(fontMain*0.95,mk.y-dotR-fontMain*0.5);
-      var priceY=Math.min(h-2,mk.y+dotR+fontSub*1.1);
+      var leader=mk.deslocado?('<line class="city-leader" x1="'+mk.x.toFixed(2)+'" y1="'+(mk.y-dotR).toFixed(2)+'" x2="'+mk.lx.toFixed(2)+'" y2="'+(mk.nameY+fontMain*0.15).toFixed(2)+'"></line>'):"";
       return '<circle class="city-dot'+(mk.approx?" approx":"")+'" cx="'+mk.x.toFixed(2)+'" cy="'+mk.y.toFixed(2)+'" r="'+dotR.toFixed(2)+'" style="stroke-width:'+(dotR*0.3).toFixed(2)+'"></circle>'+
-        '<text class="city-label" x="'+lx.toFixed(2)+'" y="'+nameY.toFixed(2)+'" text-anchor="'+anchor+'" style="font-size:'+fontMain.toFixed(2)+'px;stroke-width:'+strokeHalo.toFixed(2)+'px">'+esc(mk.nome)+'</text>'+
-        '<text class="city-label p" x="'+lx.toFixed(2)+'" y="'+priceY.toFixed(2)+'" text-anchor="'+anchor+'" style="font-size:'+fontSub.toFixed(2)+'px;stroke-width:'+strokeHalo.toFixed(2)+'px">'+fmtMoney(mk.avg)+'</text>';
+        leader+
+        '<text class="city-label" x="'+mk.lx.toFixed(2)+'" y="'+mk.nameY.toFixed(2)+'" text-anchor="'+mk.anchor+'" style="font-size:'+fontMain.toFixed(2)+'px;stroke-width:'+strokeHalo.toFixed(2)+'px">'+esc(mk.nome)+'</text>'+
+        '<text class="city-label p" x="'+mk.lx.toFixed(2)+'" y="'+mk.priceY.toFixed(2)+'" text-anchor="'+mk.anchor+'" style="font-size:'+fontSub.toFixed(2)+'px;stroke-width:'+strokeHalo.toFixed(2)+'px">'+fmtMoney(mk.avg)+'</text>';
     }).join("")+
   "</svg>";
 
@@ -1631,6 +1861,12 @@ function viewCargas(){
 
   var tipoPill={compra:"gray",venda:"green",casada:"gold"};
 
+  function docChip(label,fotoId){
+    return '<div class="doc-chip">'+
+      (fotoId?'<img class="thumb" data-view-foto="'+state.cargaData+"|"+fotoId+'" src="">':'<div class="thumb thumb-empty">'+ICONS.cam+"</div>")+
+      '<span class="doc-label">'+label+"</span></div>";
+  }
+
   var cards=cargas.map(function(c){
     var st=statusInfo(c.status);
     var actions='<div class="carga-top-actions">'+
@@ -1647,34 +1883,35 @@ function viewCargas(){
       '<strong>'+(c.tipo==="casada"?(esc(c.nome)+" &rarr; "+esc(c.clienteNome||"—")):esc(c.nome))+"</strong></div>"+
       actions+"</div>";
 
-    var grid;
+    var result, details, docs;
     if(c.tipo==="casada"){
       var lucro=c.lucroLiquido||0;
-      grid='<div class="carga-grid">'+
-        '<div><div class="k">Vendedor</div><div class="v">'+esc(c.nome)+"</div></div>"+
-        '<div><div class="k">Comprador</div><div class="v">'+esc(c.clienteNome||"—")+"</div></div>"+
+      result='<div class="carga-result casada">'+
+        '<div class="rpart"><div class="rlabel">Total compra</div><div class="rvalue">'+fmtMoney(c.valorTotal)+"</div></div>"+
+        '<div class="rsep">&rarr;</div>'+
+        '<div class="rpart"><div class="rlabel">Total venda</div><div class="rvalue">'+fmtMoney(c.valorTotalVenda)+"</div></div>"+
+        '<div class="rpart lucro"><div class="rlabel">Lucro líquido</div><div class="rvalue '+(lucro>=0?"pos":"neg")+'">'+fmtMoney(lucro)+"</div></div>"+
+      "</div>";
+      details='<div class="carga-details">'+
         '<div><div class="k">Quantidade</div><div class="v">'+fmtNum(c.quantidadeCaixas||0)+" cx</div></div>"+
         '<div><div class="k">Preço de compra / cx</div><div class="v">'+fmtMoney(c.preco)+"</div></div>"+
         '<div><div class="k">Preço de venda / cx</div><div class="v">'+fmtMoney(c.precoVenda)+"</div></div>"+
-        '<div><div class="k">Valor total (compra)</div><div class="v">'+fmtMoney(c.valorTotal)+"</div></div>"+
-        '<div><div class="k">Valor total (venda)</div><div class="v">'+fmtMoney(c.valorTotalVenda)+"</div></div>"+
-        '<div><div class="k">Lucro líquido</div><div class="v '+(lucro>=0?"pos":"neg")+'">'+fmtMoney(lucro)+"</div></div>"+
         '<div><div class="k">Placa</div><div class="v">'+esc(c.placa||"—")+"</div></div>"+
-        '<div><div class="k">Nota fiscal</div><div class="v">'+(c.fotoId?'<img class="thumb" data-view-foto="'+state.cargaData+"|"+c.fotoId+'" src="">':"—")+"</div></div>"+
-        '<div><div class="k">Qualidade da mercadoria</div><div class="v">'+(c.fotoQualidadeId?'<img class="thumb" data-view-foto="'+state.cargaData+"|"+c.fotoQualidadeId+'" src="">':"—")+"</div></div>"+
       "</div>";
+      docs='<div class="carga-docs">'+docChip("Nota fiscal",c.fotoId)+docChip("Qualidade",c.fotoQualidadeId)+"</div>";
     } else {
-      grid='<div class="carga-grid">'+
+      result='<div class="carga-result">'+
+        '<div class="rpart"><div class="rlabel">Valor total</div><div class="rvalue gold">'+fmtMoney(c.valorTotal)+"</div></div>"+
+      "</div>";
+      details='<div class="carga-details">'+
         '<div><div class="k">Preço / caixa</div><div class="v">'+fmtMoney(c.preco)+"</div></div>"+
         '<div><div class="k">Quantidade</div><div class="v">'+fmtNum(c.quantidadeCaixas||0)+" cx</div></div>"+
-        '<div><div class="k">Valor total</div><div class="v gold">'+fmtMoney(c.valorTotal)+"</div></div>"+
         '<div><div class="k">Placa</div><div class="v">'+esc(c.placa||"—")+"</div></div>"+
-        '<div><div class="k">'+(c.tipo==="compra"?"Nota fiscal (entrada)":"Nota fiscal (saída)")+'</div><div class="v">'+(c.fotoId?'<img class="thumb" data-view-foto="'+state.cargaData+"|"+c.fotoId+'" src="">':"—")+"</div></div>"+
-        '<div><div class="k">Qualidade da mercadoria</div><div class="v">'+(c.fotoQualidadeId?'<img class="thumb" data-view-foto="'+state.cargaData+"|"+c.fotoQualidadeId+'" src="">':"—")+"</div></div>"+
       "</div>";
+      docs='<div class="carga-docs">'+docChip(c.tipo==="compra"?"Nota fiscal (entrada)":"Nota fiscal (saída)",c.fotoId)+docChip("Qualidade",c.fotoQualidadeId)+"</div>";
     }
 
-    return '<div class="carga-card">'+top+grid+"</div>";
+    return '<div class="carga-card tipo-'+c.tipo+'">'+top+result+details+docs+"</div>";
   }).join("") || '<div class="empty">'+ICONS.box+'<div class="t">Nenhuma carga nesta data</div>Cadastre uma nova carga de compra ou venda.</div>';
 
   return head+seg+cards;
@@ -2133,48 +2370,68 @@ document.addEventListener("click",function(e){
   if(!t) return;
   var action=t.getAttribute("data-action");
   if(action==="logout"){ logout(); }
+  else if(action==="toggle-theme"){ toggleTheme(); }
   else if(action==="gerenciar-usuarios"){
     var node=openModal(modalUsuarios());
     var sairBtn=node.querySelector('[data-action="logout"]');
     if(sairBtn) sairBtn.onclick=logout;
-    var addBtn=node.querySelector("#nu-add");
-    addBtn.onclick=guarded(async function(){
-      var nome=(node.querySelector("#nu-nome").value||"").trim();
-      var email=(node.querySelector("#nu-email").value||"").trim().toLowerCase();
-      var senha=node.querySelector("#nu-senha").value;
-      if(!email||!senha){ toast("Preencha e-mail e senha.",true); return; }
-      if(senha.length<6){ toast("A senha precisa ter pelo menos 6 caracteres.",true); return; }
-      if(state.usuarios.some(function(u){return (u.email||"").toLowerCase()===email;})){ toast("Já existe um usuário com esse e-mail.",true); return; }
-      try{
-        // cria a conta em um app do Firebase separado ("secondary") para não
-        // derrubar a sessão de quem está logado adicionando o novo usuário.
-        var secApp=firebase.apps.filter(function(a){return a.name==="secondary";})[0] || firebase.initializeApp(FIREBASE_CONFIG,"secondary");
-        var cred=await secApp.auth().createUserWithEmailAndPassword(email,senha);
-        var uid=cred.user.uid;
-        await db.collection("usuarios").doc(uid).set({id:uid,nome:nome||email,email:email,criadoEm:new Date().toISOString()});
-        await db.doc("meta/public").set({hasUsers:true},{merge:true});
-        await secApp.auth().signOut();
-        state.usuarios=await Store.listUsuarios();
-        toast("Usuário adicionado.");
-        closeModal(node);
-      }catch(e){
-        toast(traduzErroAuth(e),true);
-      }
-    });
-    node.querySelectorAll("[data-del-usuario]").forEach(function(el){
-      el.onclick=guarded(async function(){
-        if(state.usuarios.length<=1){ toast("Precisa existir ao menos um usuário.",true); return; }
-        if(!confirm("Remover este usuário?"))return;
-        await Store.deleteUsuario(el.getAttribute("data-del-usuario"));
-        state.usuarios=await Store.listUsuarios();
-        closeModal(node);
-        toast("Usuário removido.");
+
+    function wireRowButtons(){
+      node.querySelectorAll("[data-admin-toggle]").forEach(function(el){
+        el.onclick=guarded(async function(){
+          var id=el.getAttribute("data-admin-toggle");
+          var tornar=el.getAttribute("data-novo")==="1";
+          var alvo=state.usuarios.filter(function(u){return u.id===id;})[0];
+          if(!alvo) return;
+          await Store.saveUsuario(Object.assign({},alvo,{isAdmin:tornar}));
+          state.usuarios=await Store.listUsuariosFresh();
+          closeModal(node);
+          toast(tornar?"Usuário agora é administrador.":"Privilégio de administrador removido.");
+        });
       });
-    });
+      node.querySelectorAll("[data-del-usuario]").forEach(function(el){
+        el.onclick=guarded(async function(){
+          if(state.usuarios.length<=1){ toast("Precisa existir ao menos um usuário.",true); return; }
+          if(!confirm("Remover este usuário?"))return;
+          await Store.deleteUsuario(el.getAttribute("data-del-usuario"));
+          state.usuarios=await Store.listUsuarios();
+          closeModal(node);
+          toast("Usuário removido.");
+        });
+      });
+    }
+    wireRowButtons();
+
+    var inviteBtn=node.querySelector("#nu-invite");
+    if(inviteBtn){
+      inviteBtn.onclick=guarded(function(){
+        var raw=(node.querySelector("#nu-whats").value||"").trim();
+        var digitos=raw.replace(/\D/g,"");
+        if(digitos.length<12||digitos.length>13){ toast("Informe o número completo com DDI (+55), DDD e telefone.",true); return; }
+        var link=location.origin+location.pathname+"?convite=1";
+        var msg="Parabéns, você foi selecionado para uma lista restrita de convidados para elevar o nível do seu negócio com o aplicativo Ariel Tomateiro! Acesse o link e faça seu cadastro.\n\n"+link;
+        window.open("https://wa.me/"+digitos+"?text="+encodeURIComponent(msg),"_blank");
+      });
+    }
+
+    var guRows=node.querySelector("#gu-rows");
+    var tick=setInterval(function(){
+      if(!document.body.contains(node)){ clearInterval(tick); return; }
+      if(guRows) guRows.innerHTML=renderUserRows(state.usuarios);
+      wireRowButtons();
+    },20000);
+    Store.listUsuariosFresh().then(function(list){
+      state.usuarios=list;
+      if(document.body.contains(node)){
+        if(guRows) guRows.innerHTML=renderUserRows(state.usuarios);
+        wireRowButtons();
+      }
+    }).catch(function(){});
   }
 });
 
 /* ============ boot ============ */
+applyThemeIcons();
 boot();
 })();
 </script>
