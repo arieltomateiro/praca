@@ -322,10 +322,10 @@ tr:hover td{background:var(--overlay-2);}
 .city-dot.approx{fill:var(--bg-2);stroke:var(--text-faint);stroke-dasharray:1.6 1.2;}
 .city-card-bg{fill:var(--bg-1);fill-opacity:.97;stroke:var(--border-2);stroke-width:1;}
 .city-card-divider{stroke:var(--border-2);stroke-width:1;}
-.city-label{font-family:var(--font-mono);font-size:11px;fill:var(--text);pointer-events:none;text-anchor:middle;dominant-baseline:middle;}
-.city-label.p{fill:var(--gold-bright);font-weight:600;}
+.city-label{font-family:var(--font-mono);font-size:11px;font-weight:600;fill:var(--text);stroke:none;pointer-events:none;text-anchor:middle;dominant-baseline:middle;}
+.city-label.p{fill:var(--gold-bright);font-weight:700;}
 .city-leader{stroke:var(--text-faint);stroke-width:1;opacity:.6;}
-.city-leader-head{fill:var(--text-faint);opacity:.6;}
+.city-leader-head{fill:var(--text-faint);stroke:none;opacity:.6;}
 .city-note{text-align:center;color:var(--text-faint);font-size:11px;margin-top:10px;}
 
 .list-toggle{display:flex;gap:8px;margin-bottom:14px;}
@@ -1876,12 +1876,26 @@ function renderStateZoom(agg,dia,uf){
   function colide(a,b){
     return !(a.cardLeft+a.cardW<b.cardLeft-3||a.cardLeft>b.cardLeft+b.cardW+3||a.cardTop+a.cardH<b.cardTop-3||a.cardTop>b.cardTop+b.cardH+3);
   }
+  // um quadro nunca pode acabar por cima de um ponto (o dele ou o de outra
+  // cidade) — senão o círculo apaga um pedaço do nome/preço e fica ilegível.
+  // margem = exatamente o raio do ponto (toque geométrico círculo-retângulo),
+  // pra só disparar quando realmente encostaria, sem falso positivo por perto.
+  function colidePonto(card,px,py){
+    var m=dotR;
+    return px>card.cardLeft-m&&px<card.cardLeft+card.cardW+m&&py>card.cardTop-m&&py<card.cardTop+card.cardH+m;
+  }
   var ordenados=marcadores.slice().sort(function(a,b){return a.y-b.y;});
-  for(var pass=0;pass<18;pass++){
+  for(var pass=0;pass<30;pass++){
     var moveu=false;
     for(var i=0;i<ordenados.length;i++){
       for(var j=0;j<i;j++){
         if(colide(ordenados[i],ordenados[j])){
+          ordenados[i].cardTop+=fontMain*0.55;
+          ordenados[i].deslocado=true; moveu=true;
+        }
+      }
+      for(var k=0;k<marcadores.length;k++){
+        if(colidePonto(ordenados[i],marcadores[k].x,marcadores[k].y)){
           ordenados[i].cardTop+=fontMain*0.55;
           ordenados[i].deslocado=true; moveu=true;
         }
