@@ -1148,7 +1148,7 @@ var _authTransition=null; // "pending" enquanto um cadastro está gravando o doc
 
 var TABS=[
   {id:"catalogo",label:"Cadastros",mobileLabel:"Cadastros",icon:"book"},
-  {id:"precos",label:"Preços do Dia",mobileLabel:"Preços",icon:"tag"},
+  {id:"precos",label:"Cotações",mobileLabel:"Cotações",icon:"tag"},
   {id:"praca",label:"Praça (resumo)",mobileLabel:"Praça",icon:"map"},
   {id:"cargas",label:"Cargas",mobileLabel:"Cargas",icon:"truck"},
   {id:"calendario",label:"Fechamentos",mobileLabel:"Fechamentos",icon:"cal"}
@@ -1723,10 +1723,11 @@ function viewCatalogo(){
   var filtro=state._catFiltro||"todos";
   var busca=(state._catBusca||"").toLowerCase();
   var list=state.entidades.filter(function(e){
-    if(filtro!=="todos"){
-      if(filtro==="mercadoria"){ if(e.tipo!=="mercadoria") return false; }
-      else if(e.tipo!==filtro && e.tipo!=="ambos") return false;
-    }
+    if(filtro==="todos"){
+      if(e.tipo==="mercadoria") return false;
+    } else if(filtro==="mercadoria"){
+      if(e.tipo!=="mercadoria") return false;
+    } else if(e.tipo!==filtro && e.tipo!=="ambos") return false;
     if(busca && (e.nome||"").toLowerCase().indexOf(busca)<0 && (e.cidade||"").toLowerCase().indexOf(busca)<0) return false;
     return true;
   }).sort(function(a,b){return (a.nome||"").localeCompare(b.nome||"");});
@@ -1794,7 +1795,7 @@ function modalEntidade(ent){
 /* ============ VIEW: Preços do dia ============ */
 function viewPrecos(){
   var dia=state.precoDia||{precos:[]};
-  var fornecedores=state.entidades.filter(function(e){return e.tipo==="fornecedor"||e.tipo==="ambos";}).sort(function(a,b){return a.nome.localeCompare(b.nome);});
+  var fornecedoresClientes=state.entidades.filter(function(e){return e.tipo==="fornecedor"||e.tipo==="cliente"||e.tipo==="ambos";}).sort(function(a,b){return a.nome.localeCompare(b.nome);});
   var mercadorias=state.entidades.filter(function(e){return e.tipo==="mercadoria";}).sort(function(a,b){return a.nome.localeCompare(b.nome);});
   var novo=state._precoNovo==="1";
   var selId=state._precoEntId||"";
@@ -1804,9 +1805,9 @@ function viewPrecos(){
 
   var formInner="";
   if(!novo){
-    formInner='<label class="field">Fornecedor cadastrado<select id="preco-ent-select">'+
-      '<option value="">selecione um fornecedor…</option>'+
-      fornecedores.map(function(f){return '<option value="'+f.id+'"'+(selId===f.id?" selected":"")+">"+esc(f.nome)+"</option>";}).join("")+
+    formInner='<label class="field">Fornecedor/Cliente Cadastrado<select id="preco-ent-select">'+
+      '<option value="">selecione um fornecedor ou cliente…</option>'+
+      fornecedoresClientes.map(function(f){return '<option value="'+f.id+'"'+(selId===f.id?" selected":"")+">"+esc(f.nome)+"</option>";}).join("")+
       '</select></label>'+
       (selEnt?'<div class="field-row grid-2" style="margin-top:10px"><div class="field">Cidade<div class="num" style="padding-top:4px">'+esc(selEnt.cidade)+'</div></div><div class="field">Estado<div class="num" style="padding-top:4px">'+esc(selEnt.estado)+'</div></div></div>':"");
   }else{
@@ -1859,7 +1860,7 @@ function viewPrecos(){
     "</select></label>"+
   "</div>";
 
-  return '<div class="page-head"><div><h1>Preços do Dia</h1><p class="lede">Registre o preço por caixa que cada fornecedor passou hoje.</p></div></div>'+
+  return '<div class="page-head"><div><h1>Cotações</h1><p class="lede">Registre o preço por caixa que cada fornecedor ou cliente passou hoje.</p></div></div>'+
     form+
     '<div class="card">'+filtroListaHtml+lista+"</div>";
 }
@@ -1913,7 +1914,7 @@ function viewPraca(){
   else if(state.resumoView==="lista") body = renderListaResumo(agg);
   else body = renderPorFornecedor(dia);
 
-  return head+(agg.geralN?kpis:'<div class="empty" style="margin-bottom:18px">'+ICONS.map+'<div class="t">Nenhum preço lançado em '+fmtDateBR(state.resumoData)+'</div>Lance preços na aba "Preços do Dia" para ver o resumo aqui.</div>')+toggle+body;
+  return head+(agg.geralN?kpis:'<div class="empty" style="margin-bottom:18px">'+ICONS.map+'<div class="t">Nenhum preço lançado em '+fmtDateBR(state.resumoData)+'</div>Lance preços na aba "Cotações" para ver o resumo aqui.</div>')+toggle+body;
 }
 
 function priceColor(v,min,max){ if(min===max) return 0.6; return 0.15+0.75*((v-min)/(max-min)); }
@@ -2276,8 +2277,8 @@ function viewCargas(){
     return Object.assign({},c,{valorTotal:valorTotal,valorTotalVenda:valorTotalVenda,despesasExtras:despesasExtras,despesasTotal:despesasTotal,lucroBruto:lucroBruto,lucroLiquido:lucroLiquido});
   });
 
-  var head='<div class="page-head"><div><h1>Cargas</h1><p class="lede">'+(opView?"Tipo, status, quantidade, placa e foto das cargas da data selecionada.":"Todas as cargas de compra, venda e compra casada da data selecionada.")+'</p></div>'+
-    '<div class="toolbar"><input type="date" id="carga-data" value="'+state.cargaData+'" style="width:auto">'+(opView?"":'<button class="btn primary" data-action="nova-carga">'+ICONS.plus+" Nova carga</button>")+"</div></div>";
+  var head='<div class="page-head"><div><h1>Cargas</h1><p class="lede">'+(opView?"Tipo, status, quantidade, placa e fotos das cargas da data selecionada. Um administrador preenche os valores depois.":"Todas as cargas de compra, venda e compra casada da data selecionada.")+'</p></div>'+
+    '<div class="toolbar"><input type="date" id="carga-data" value="'+state.cargaData+'" style="width:auto"><button class="btn primary" data-action="nova-carga">'+ICONS.plus+" Nova carga</button></div></div>";
 
   var seg='<div class="seg" style="margin-bottom:16px">'+["todas","compra","venda","casada"].map(function(f){return '<button class="'+(filtro===f?"active":"")+'" data-carga-filtro="'+f+'">'+(f==="todas"?"Todas":f==="compra"?"Compras":f==="venda"?"Vendas":"Compras Casadas")+"</button>";}).join("")+"</div>";
 
@@ -2305,7 +2306,7 @@ function viewCargas(){
         '<div class="item"><div class="k">Quantidade</div><div class="v">'+fmtNum(c.quantidadeCaixas||0)+" cx</div></div>"+
         '<div class="item"><div class="k">Placa</div><div class="v">'+esc(c.placa||"—")+"</div></div>"+
       "</div>";
-      var docsOp='<div class="carga-docs">'+docChip("Foto da mercadoria",c.fotoId)+"</div>";
+      var docsOp='<div class="carga-docs">'+docChip(c.tipo==="compra"?"Nota fiscal (entrada)":c.tipo==="venda"?"Nota fiscal (saída)":"Nota fiscal",c.fotoId)+docChip("Nota de Romaneio",c.fotoRomaneioId)+docChip("Foto do produto",c.fotoQualidadeId)+"</div>";
       return '<div class="carga-card tipo-'+c.tipo+'">'+topOp+detailsOp+docsOp+"</div>";
     }
 
@@ -2320,6 +2321,7 @@ function viewCargas(){
     var top='<div class="carga-top"><div class="left">'+
       '<span class="pill '+(tipoPill[c.tipo]||"gray")+'">'+(c.tipo==="casada"?"compra casada":c.tipo)+'</span>'+
       (c.mercadoriaNome?'<span class="pill amber">'+esc(c.mercadoriaNome)+"</span>":"")+
+      (c.preco==null?'<span class="pill orange">aguardando valores</span>':"")+
       '<span class="carga-num">carga nº '+(c.numeroSequencial||"—")+'</span>'+
       '<strong>'+(c.tipo==="casada"?(esc(c.nome)+" &rarr; "+esc(c.clienteNome||"—")):esc(c.nome))+"</strong></div>"+
       actions+"</div>";
@@ -2340,7 +2342,7 @@ function viewCargas(){
         '<div class="item"><div class="k">Preço de venda / cx</div><div class="v">'+fmtMoney(c.precoVenda)+"</div></div>"+
         '<div class="item"><div class="k">Placa</div><div class="v">'+esc(c.placa||"—")+"</div></div>"+
       "</div>";
-      docs='<div class="carga-docs">'+docChip("Nota fiscal",c.fotoId)+docChip("Qualidade",c.fotoQualidadeId)+"</div>";
+      docs='<div class="carga-docs">'+docChip("Nota fiscal",c.fotoId)+docChip("Nota de Romaneio",c.fotoRomaneioId)+docChip("Foto do produto",c.fotoQualidadeId)+"</div>";
     } else {
       result='<div class="carga-resumo"><div class="linha final"><span class="rlabel">Valor total</span><span class="rvalue gold">'+fmtMoney(c.valorTotal)+"</span></div></div>";
       details='<div class="carga-details">'+
@@ -2348,11 +2350,11 @@ function viewCargas(){
         '<div class="item"><div class="k">Quantidade</div><div class="v">'+fmtNum(c.quantidadeCaixas||0)+" cx</div></div>"+
         '<div class="item"><div class="k">Placa</div><div class="v">'+esc(c.placa||"—")+"</div></div>"+
       "</div>";
-      docs='<div class="carga-docs">'+docChip(c.tipo==="compra"?"Nota fiscal (entrada)":"Nota fiscal (saída)",c.fotoId)+docChip("Qualidade",c.fotoQualidadeId)+"</div>";
+      docs='<div class="carga-docs">'+docChip(c.tipo==="compra"?"Nota fiscal (entrada)":"Nota fiscal (saída)",c.fotoId)+docChip("Nota de Romaneio",c.fotoRomaneioId)+docChip("Foto do produto",c.fotoQualidadeId)+"</div>";
     }
 
     return '<div class="carga-card tipo-'+c.tipo+'">'+top+result+details+docs+"</div>";
-  }).join("") || '<div class="empty">'+ICONS.box+'<div class="t">Nenhuma carga nesta data</div>'+(opView?"":"Cadastre uma nova carga de compra ou venda.")+'</div>';
+  }).join("") || '<div class="empty">'+ICONS.box+'<div class="t">Nenhuma carga nesta data</div>Cadastre uma nova carga de compra ou venda.</div>';
 
   return head+seg+cards;
 }
@@ -2392,9 +2394,13 @@ function despesasExtrasEditorHtml(){
     '<div class="carga-resumo" id="carga-resumo-live" style="margin-bottom:14px"></div>';
 }
 
-function cargaPrecoAreaHtml(tipo,carga){
+function cargaPrecoAreaHtml(tipo,carga,restrito){
   var preco=carga&&carga.preco!=null?carga.preco:"";
   var qtd=carga&&carga.quantidadeCaixas!=null?carga.quantidadeCaixas:"";
+  if(restrito){
+    return '<label class="field" style="margin-bottom:6px;max-width:220px">Quantidade (caixas)<input type="number" step="1" min="1" name="quantidadeCaixas" id="carga-qtd" value="'+qtd+'" required></label>'+
+      '<p style="font-size:12px;color:var(--text-faint);margin-bottom:14px">Os valores de compra'+(tipo==="casada"?" e de venda":"")+' serão preenchidos por um administrador.</p>';
+  }
   if(tipo==="casada"){
     var precoVenda=carga&&carga.precoVenda!=null?carga.precoVenda:"";
     return '<div class="field-row grid-2" style="margin-bottom:6px">'+
@@ -2414,6 +2420,7 @@ function cargaPrecoAreaHtml(tipo,carga){
 function modalCarga(carga){
   var tipo=carga?carga.tipo:"compra";
   var titulo=carga?"Editar carga":"Nova carga";
+  var restrito=!souAdmin();
   var mercadorias=state.entidades.filter(function(e){return e.tipo==="mercadoria";}).sort(function(a,b){return a.nome.localeCompare(b.nome);});
   var mercSelId=(carga&&carga.mercadoriaId)||"";
   return '<div class="modal-back" data-close-modal="1"><div class="modal" onclick="event.stopPropagation()">'+
@@ -2428,21 +2435,22 @@ function modalCarga(carga){
       mercadorias.map(function(m){return '<option value="'+m.id+'"'+(mercSelId===m.id?" selected":"")+">"+esc(m.nome)+([m.cor,m.tamanho].filter(Boolean).length?" ("+[m.cor,m.tamanho].filter(Boolean).map(esc).join(", ")+")":"")+"</option>";}).join("")+
     "</select></label></div>"+
     '<div id="carga-ent-area">'+cargaEntAreaHtml(tipo,carga)+"</div>"+
-    '<div id="carga-preco-area">'+cargaPrecoAreaHtml(tipo,carga)+"</div>"+
+    '<div id="carga-preco-area">'+cargaPrecoAreaHtml(tipo,carga,restrito)+"</div>"+
     '<div class="field-row grid-2" style="margin-bottom:12px">'+
       '<label class="field">Placa do caminhão<input type="text" name="placa" placeholder="ABC-1D23" value="'+esc((carga&&carga.placa)||"")+'"></label>'+
       '<label class="field">Status inicial<select name="status">'+["acarregar","transporte","entregue"].map(function(s){var si=statusInfo(s);return '<option value="'+s+'"'+((carga?carga.status:"acarregar")===s?" selected":"")+">"+si.label+"</option>";}).join("")+"</select></label>"+
     "</div>"+
-    '<div class="field-row grid-2">'+
+    '<div class="field-row grid-3">'+
       '<div class="photo-slot"><span class="lbl">Foto da nota fiscal (opcional)</span><div class="row"><div class="thumb-add" id="carga-foto-nota-add">'+(carga&&carga.fotoId?'<img class="thumb" id="carga-foto-nota-preview" src="">':ICONS.cam)+'</div><input type="file" accept="image/*" id="carga-foto-nota-input" style="display:none"></div></div>'+
-      '<div class="photo-slot"><span class="lbl">Foto da qualidade da mercadoria (opcional)</span><div class="row"><div class="thumb-add" id="carga-foto-qual-add">'+(carga&&carga.fotoQualidadeId?'<img class="thumb" id="carga-foto-qual-preview" src="">':ICONS.cam)+'</div><input type="file" accept="image/*" id="carga-foto-qual-input" style="display:none"></div></div>'+
+      '<div class="photo-slot"><span class="lbl">Foto da nota de romaneio (opcional)</span><div class="row"><div class="thumb-add" id="carga-foto-romaneio-add">'+(carga&&carga.fotoRomaneioId?'<img class="thumb" id="carga-foto-romaneio-preview" src="">':ICONS.cam)+'</div><input type="file" accept="image/*" id="carga-foto-romaneio-input" style="display:none"></div></div>'+
+      '<div class="photo-slot"><span class="lbl">Foto do produto (opcional)</span><div class="row"><div class="thumb-add" id="carga-foto-qual-add">'+(carga&&carga.fotoQualidadeId?'<img class="thumb" id="carga-foto-qual-preview" src="">':ICONS.cam)+'</div><input type="file" accept="image/*" id="carga-foto-qual-input" style="display:none"></div></div>'+
     "</div>"+
     '<div class="modal-actions"><button type="button" class="btn ghost" data-close-modal="1">Cancelar</button><button type="button" class="btn primary" id="carga-save">Salvar carga</button></div>'+
     "</div></div></div>";
 }
 
 /* ============ handlers ============ */
-var modalFotoNota=null, modalFotoQual=null, modalDespesasExtras=[];
+var modalFotoNota=null, modalFotoQual=null, modalFotoRomaneio=null, modalDespesasExtras=[];
 
 function attachHandlers(){
   document.querySelectorAll("[data-goto]").forEach(function(el){el.onclick=function(){goto(el.getAttribute("data-goto"));};});
@@ -2523,7 +2531,7 @@ function attachHandlers(){
   if(state.tab==="cargas"){
     var cd=document.getElementById("carga-data"); if(cd) cd.onchange=async function(){state.cargaData=cd.value;state.cargaDia=await Store.getDia(state.cargaData);render();};
     document.querySelectorAll("[data-carga-filtro]").forEach(function(el){el.onclick=function(){state.cargaFiltroTipo=el.getAttribute("data-carga-filtro");render();};});
-    var nc=document.querySelector('[data-action="nova-carga"]'); if(nc) nc.onclick=function(){ if(!souAdmin()){toast("Somente administradores podem registrar cargas.",true);return;} modalFotoNota=null;modalFotoQual=null;modalDespesasExtras=[];openModal(modalCarga());hookCargaModal();};
+    var nc=document.querySelector('[data-action="nova-carga"]'); if(nc) nc.onclick=function(){ modalFotoNota=null;modalFotoQual=null;modalFotoRomaneio=null;modalDespesasExtras=[];openModal(modalCarga());hookCargaModal();};
     document.querySelectorAll("[data-status-carga]").forEach(function(el){el.onchange=async function(){
       if(!souAdmin()){ toast("Somente administradores podem alterar o status.",true); render(); return; }
       var id=el.getAttribute("data-status-carga");
@@ -2536,7 +2544,7 @@ function attachHandlers(){
       var id=el.getAttribute("data-id");
       var carga=(state.cargaDia.cargas||[]).filter(function(c){return c.id===id;})[0];
       if(!carga) return;
-      modalFotoNota=null; modalFotoQual=null;
+      modalFotoNota=null; modalFotoQual=null; modalFotoRomaneio=null;
       modalDespesasExtras=(carga.despesasExtras||[]).map(function(d){return {nome:d.nome,valor:d.valor};});
       openModal(modalCarga(carga)); hookCargaModal(carga);
     };});
@@ -2680,7 +2688,7 @@ async function onAddPreco(){
   var entry={id:uid(),entidadeId:entidadeId||null,nome:nome,cidade:cidade,estado:estado,preco:preco,obs:obs,fotoId:null,mercadoriaId:mercadoriaId,mercadoriaNome:mercadoriaNome,criadoEm:new Date().toISOString(),criadoPor:meuUid()};
 
   if(novoModo){
-    var newEnt={tipo:"fornecedor",nome:nome,razaoSocial:"",cnpj:"",endereco:"",cidade:cidade,estado:estado,observacoes:"Cadastrado automaticamente via Preços do Dia.",criadoPor:meuUid()};
+    var newEnt={tipo:"fornecedor",nome:nome,razaoSocial:"",cnpj:"",endereco:"",cidade:cidade,estado:estado,observacoes:"Cadastrado automaticamente via Cotações.",criadoPor:meuUid()};
     newEnt=await Store.saveEntidade(newEnt);
     entry.entidadeId=newEnt.id;
     state.entidades=await Store.listEntidades();
@@ -2705,6 +2713,7 @@ function hookCargaModal(carga){
   var tipoSel=document.getElementById("carga-tipo-sel");
   var entArea=document.getElementById("carga-ent-area");
   var precoArea=document.getElementById("carga-preco-area");
+  var restrito=!souAdmin();
 
   function updateValorTotal(){
     var preco=parseFloat((document.getElementById("carga-preco")||{}).value)||0;
@@ -2750,7 +2759,7 @@ function hookCargaModal(carga){
     var pEl=document.getElementById("carga-preco"); if(pEl) pEl.oninput=updateValorTotal;
     var qEl=document.getElementById("carga-qtd"); if(qEl) qEl.oninput=updateValorTotal;
     var pvEl=document.getElementById("carga-preco-venda"); if(pvEl) pvEl.oninput=updateValorTotal;
-    if(tipoSel.value==="casada") wireDespesasRows();
+    if(tipoSel.value==="casada" && !restrito) wireDespesasRows();
     updateValorTotal();
   }
   wirePrecoInputs();
@@ -2758,7 +2767,7 @@ function hookCargaModal(carga){
   tipoSel.onchange=function(){
     modalDespesasExtras=[];
     entArea.innerHTML=cargaEntAreaHtml(tipoSel.value,null);
-    precoArea.innerHTML=cargaPrecoAreaHtml(tipoSel.value,null);
+    precoArea.innerHTML=cargaPrecoAreaHtml(tipoSel.value,null,restrito);
     wirePrecoInputs();
   };
 
@@ -2779,6 +2788,15 @@ function hookCargaModal(carga){
     faQ.innerHTML='<span style="font-size:10px;color:var(--text-faint)">enviando…</span>';
     try{ modalFotoQual=await compressImage(e.target.files[0]); faQ.innerHTML='<img class="thumb" src="'+modalFotoQual+'">'; }
     catch(err){ toast(err.message,true); faQ.innerHTML=prevQ; }
+  };
+  var faR=document.getElementById("carga-foto-romaneio-add");
+  faR.onclick=function(){document.getElementById("carga-foto-romaneio-input").click();};
+  document.getElementById("carga-foto-romaneio-input").onchange=async function(e){
+    if(!e.target.files[0])return;
+    var prevR=faR.innerHTML;
+    faR.innerHTML='<span style="font-size:10px;color:var(--text-faint)">enviando…</span>';
+    try{ modalFotoRomaneio=await compressImage(e.target.files[0]); faR.innerHTML='<img class="thumb" src="'+modalFotoRomaneio+'">'; }
+    catch(err){ toast(err.message,true); faR.innerHTML=prevR; }
   };
 
   if(carga && carga.fotoId){
@@ -2801,20 +2819,34 @@ function hookCargaModal(carga){
       })();
     })();
   }
+  if(carga && carga.fotoRomaneioId){
+    (function(){
+      var fid=carga.fotoRomaneioId, diaIso=state.cargaData;
+      (async function(){
+        var key=diaIso+"/"+fid;
+        var url=photoCache[key]; if(!url){ url=await Store.getFoto(diaIso,fid); photoCache[key]=url; }
+        var img=document.getElementById("carga-foto-romaneio-preview"); if(url && img) img.src=url;
+      })();
+    })();
+  }
 
   document.getElementById("carga-save").onclick=guarded(async function(){
-    if(!souAdmin()){ toast("Somente administradores podem registrar ou editar cargas.",true); return; }
+    var editId0=node.getAttribute("data-carga-id")||"";
+    if(editId0 && !souAdmin()){ toast("Somente administradores podem editar cargas.",true); return; }
+    var restritoSave=!souAdmin();
     var get=function(name){ var el=node.querySelector('[name="'+name+'"]'); return el?el.value:""; };
     var tipo=get("tipo");
-    var preco=parseFloat(get("preco"));
     var qtd=parseFloat(get("quantidadeCaixas"));
-    if(!preco||preco<=0){toast("Informe o preço por caixa.",true);return;}
     if(!qtd||qtd<=0){toast("Informe a quantidade de caixas.",true);return;}
 
-    var precoVenda=null;
-    if(tipo==="casada"){
-      precoVenda=parseFloat(get("precoVenda"));
-      if(!precoVenda||precoVenda<=0){toast("Informe o preço de venda por caixa.",true);return;}
+    var preco=null, precoVenda=null;
+    if(!restritoSave){
+      preco=parseFloat(get("preco"));
+      if(!preco||preco<=0){toast("Informe o preço por caixa.",true);return;}
+      if(tipo==="casada"){
+        precoVenda=parseFloat(get("precoVenda"));
+        if(!precoVenda||precoVenda<=0){toast("Informe o preço de venda por caixa.",true);return;}
+      }
     }
 
     var entidadeId=get("entidadeId");
@@ -2837,7 +2869,7 @@ function hookCargaModal(carga){
       clienteEntId=clienteEntidadeId; clienteNome=clEnt.nome;
     }
 
-    var despesasExtras=tipo==="casada"?modalDespesasExtras.filter(function(d){return (d.nome&&d.nome.trim())||(d.valor&&d.valor>0);}).map(function(d){return {nome:(d.nome||"").trim(),valor:parseFloat(d.valor)||0};}):[];
+    var despesasExtras=(tipo==="casada"&&!restritoSave)?modalDespesasExtras.filter(function(d){return (d.nome&&d.nome.trim())||(d.valor&&d.valor>0);}).map(function(d){return {nome:(d.nome||"").trim(),valor:parseFloat(d.valor)||0};}):[];
 
     var dataIso=get("data")||state.cargaData;
     var diaAlvo = dataIso===state.cargaData ? state.cargaDia : await Store.getDia(dataIso);
@@ -2855,14 +2887,16 @@ function hookCargaModal(carga){
 
     var fotoId=existing?existing.fotoId:null;
     var fotoQualidadeId=existing?existing.fotoQualidadeId:null;
+    var fotoRomaneioId=existing?existing.fotoRomaneioId:null;
     if(modalFotoNota){ fotoId=uid(); await Store.saveFoto(dataIso,fotoId,modalFotoNota,tipo==="compra"?"notaFiscalEntrada":(tipo==="venda"?"notaFiscalSaida":"notaFiscalCasada")); photoCache[dataIso+"/"+fotoId]=modalFotoNota; }
     if(modalFotoQual){ fotoQualidadeId=uid(); await Store.saveFoto(dataIso,fotoQualidadeId,modalFotoQual,"qualidade"); photoCache[dataIso+"/"+fotoQualidadeId]=modalFotoQual; }
+    if(modalFotoRomaneio){ fotoRomaneioId=uid(); await Store.saveFoto(dataIso,fotoRomaneioId,modalFotoRomaneio,"notaRomaneio"); photoCache[dataIso+"/"+fotoRomaneioId]=modalFotoRomaneio; }
 
     var mercadoriaId=get("mercadoriaId")||null;
     var mercEnt=mercadoriaId?state.entidades.filter(function(e){return e.id===mercadoriaId;})[0]:null;
     var mercadoriaNome=mercEnt?mercEnt.nome:null;
 
-    var carga={id:editId||uid(),tipo:tipo,entidadeId:entId,nome:nome,preco:preco,quantidadeCaixas:qtd,placa:get("placa"),status:get("status"),numeroSequencial:seq,fotoId:fotoId,fotoQualidadeId:fotoQualidadeId,mercadoriaId:mercadoriaId,mercadoriaNome:mercadoriaNome,criadoEm:existing?existing.criadoEm:new Date().toISOString(),criadoPor:existing?existing.criadoPor:meuUid()};
+    var carga={id:editId||uid(),tipo:tipo,entidadeId:entId,nome:nome,preco:preco,quantidadeCaixas:qtd,placa:get("placa"),status:get("status"),numeroSequencial:seq,fotoId:fotoId,fotoQualidadeId:fotoQualidadeId,fotoRomaneioId:fotoRomaneioId,mercadoriaId:mercadoriaId,mercadoriaNome:mercadoriaNome,criadoEm:existing?existing.criadoEm:new Date().toISOString(),criadoPor:existing?existing.criadoPor:meuUid()};
     if(tipo==="casada"){
       carga.precoVenda=precoVenda;
       carga.clienteEntidadeId=clienteEntId;
@@ -2877,7 +2911,7 @@ function hookCargaModal(carga){
     }
     await Store.saveDia(dataIso,diaAlvo);
     if(dataIso===state.cargaData) state.cargaDia=diaAlvo;
-    modalFotoNota=null; modalFotoQual=null; modalDespesasExtras=[];
+    modalFotoNota=null; modalFotoQual=null; modalFotoRomaneio=null; modalDespesasExtras=[];
     toast(isEdit?"Carga atualizada.":"Carga registrada.");
     closeModal(document.querySelector(".modal-back"));
     render();
