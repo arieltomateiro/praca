@@ -904,15 +904,40 @@ var FIREBASE_CONFIG={
   appId: "1:155174703121:web:7b033933a182a99ed221b0",
   measurementId: "G-F845XFH226"
 };
-var mem={entidades:{},dias:{},fotos:{},usuarios:{}};
+var mem={entidades:{},dias:{},fotos:{},usuarios:{},empresas:{}};
 var db=null;
 var ADMIN_EMAILS=["lpacastro@hotmail.com","arieljsg@hotmail.com"];
+// único usuário que pode alternar a própria visão entre Administrador/Operacional
+// pra testar o app (o programador que faz manutenção) — é só simulação de tela,
+// não grava papel nenhum no banco.
+var DEV_TOGGLE_EMAIL="lpacastro@hotmail.com";
+function souDevToggle(){ return !!(state.authUser && (state.authUser.email||"").toLowerCase()===DEV_TOGGLE_EMAIL); }
+function papelDe(u){
+  if(!u) return null;
+  if(u.papel) return u.papel;
+  return u.isAdmin?"administrador":"operacional"; // compat com docs antigos (binário isAdmin)
+}
 function isAdminUser(u){
   if(!u) return false;
   if(ADMIN_EMAILS.indexOf((u.email||"").toLowerCase())!==-1) return true;
-  return !!u.isAdmin;
+  return papelDe(u)==="administrador";
 }
-function souAdmin(){ return isAdminUser(state.authUser); }
+// papel "de verdade" salvo no banco pro usuário logado, ignorando o toggle de teste
+function souAdminReal(){ return isAdminUser(state.authUser); }
+// papel efetivo usado por toda a UI — respeita o toggle de visualização quando
+// é o usuário exclusivo autorizado a simular a visão de Operacional
+function souAdmin(){
+  if(souDevToggle() && state._devViewAs){ return state._devViewAs==="administrador"; }
+  return souAdminReal();
+}
+function meuUid(){ return state.authUser?state.authUser.id:null; }
+function minhaEmpresaId(){ return state.authUser?state.authUser.empresaId:null; }
+// dono do registro (criadoPor) ou administrador de verdade sempre pode editar/excluir;
+// um operacional só mexe no que ele mesmo cadastrou
+function possoEditar(registro){
+  if(souAdmin()) return true;
+  return !!(registro && registro.criadoPor && registro.criadoPor===meuUid());
+}
 var ONLINE_MS=90*1000;
 function statusUsuario(u){
   if(!u||!u.lastSeen) return {online:false,texto:"sem acessos registrados"};
@@ -954,58 +979,78 @@ function bgSync(promise,label){
 }
 
 var Store={
+  // ---- empresa (tenant) ----
+  async getEmpresa(empId){
+    if(!empId) return null;
+    if(db){ var s=await db.doc("empresas/"+empId).get(); return s.exists?Object.assign({id:empId},s.data()):null; }
+    return mem.empresas[empId]?cloneDeep(mem.empresas[empId]):null;
+  },
+  async saveEmpresa(emp){
+    if(!emp.id) emp.id=uid();
+    var copy=cloneDeep(emp);
+    if(db){ bgSync(db.doc("empresas/"+emp.id).set(copy,{merge:true}),"empresa"); } else { mem.empresas[emp.id]=copy; }
+    return emp;
+  },
+  // ---- dados de cada empresa (entidades/dias/fotos vivem sob empresas/{id}/...) ----
   async listEntidades(){
+    var empId=minhaEmpresaId(); if(!empId) return [];
     if(_entCache) return cloneDeep(_entCache);
     var list;
-    if(db){ var s=await db.collection("entidades").get(); list=s.docs.map(function(d){return Object.assign({id:d.id},d.data());}); }
-    else { list=Object.keys(mem.entidades).map(function(k){return mem.entidades[k];}); }
+    if(db){ var s=await db.collection("empresas").doc(empId).collection("entidades").get(); list=s.docs.map(function(d){return Object.assign({id:d.id},d.data());}); }
+    else { list=Object.keys(mem.entidades).map(function(k){return mem.entidades[k];}).filter(function(e){return e._empresaId===empId;}); }
     _entCache=cloneDeep(list);
     return cloneDeep(list);
   },
   async saveEntidade(ent){
+    var empId=minhaEmpresaId();
     if(!ent.id) ent.id=uid();
     var copy=cloneDeep(ent);
     if(_entCache) _entCache=_entCache.filter(function(e){return e.id!==ent.id;}).concat([copy]);
-    if(db){ bgSync(db.collection("entidades").doc(ent.id).set(copy),"cadastro"); } else { mem.entidades[ent.id]=copy; }
+    if(db){ bgSync(db.collection("empresas").doc(empId).collection("entidades").doc(ent.id).set(copy),"cadastro"); }
+    else { copy._empresaId=empId; mem.entidades[ent.id]=copy; }
     return ent;
   },
   async getDia(iso){
+    var empId=minhaEmpresaId(); if(!empId) return {data:iso,precos:[],cargas:[]};
     if(_diaCache[iso]) return cloneDeep(_diaCache[iso]);
     var data;
     // clona o documento: snapshots do banco vêm congelados (frozen) e o resto
     // do app edita o objeto antes de salvar de volta — sem clonar, essa edição
     // lança erro (modo estrito) e a ação para silenciosamente.
-    if(db){ var s=await db.doc("dias/"+iso).get(); data=s.exists?JSON.parse(JSON.stringify(s.data())):{data:iso,precos:[],cargas:[]}; }
-    else { data=mem.dias[iso]?JSON.parse(JSON.stringify(mem.dias[iso])):{data:iso,precos:[],cargas:[]}; }
+    if(db){ var s=await db.doc("empresas/"+empId+"/dias/"+iso).get(); data=s.exists?JSON.parse(JSON.stringify(s.data())):{data:iso,precos:[],cargas:[]}; }
+    else { var k=empId+"|"+iso; data=mem.dias[k]?JSON.parse(JSON.stringify(mem.dias[k])):{data:iso,precos:[],cargas:[]}; }
     _diaCache[iso]=cloneDeep(data);
     return data;
   },
   async saveDia(iso,dia){
+    var empId=minhaEmpresaId(); if(!empId) return dia;
     dia.data=iso; dia.atualizadoEm=new Date().toISOString();
     var copy=cloneDeep(dia);
     _diaCache[iso]=copy;
     _mesCache={}; // resumo do mês (calendário) pode ter mudado
-    if(db){ bgSync(db.doc("dias/"+iso).set(copy),"dados do dia"); } else { mem.dias[iso]=copy; }
+    if(db){ bgSync(db.doc("empresas/"+empId+"/dias/"+iso).set(copy),"dados do dia"); } else { mem.dias[empId+"|"+iso]=copy; }
     return dia;
   },
   async getDiasNoMes(y,m){
-    var key=y+"-"+m;
+    var empId=minhaEmpresaId(); if(!empId) return [];
+    var key=empId+"|"+y+"-"+m;
     if(_mesCache[key]) return cloneDeep(_mesCache[key]);
     var b=monthBounds(y,m);
     var list;
-    if(db){ var s=await db.collection("dias").where("data",">=",b.first).where("data","<=",b.last).limit(60).get(); list=s.docs.map(function(d){return d.data();}); }
-    else { list=Object.keys(mem.dias).filter(function(k){return k>=b.first&&k<=b.last;}).map(function(k){return mem.dias[k];}); }
+    if(db){ var s=await db.collection("empresas").doc(empId).collection("dias").where("data",">=",b.first).where("data","<=",b.last).limit(60).get(); list=s.docs.map(function(d){return d.data();}); }
+    else { list=Object.keys(mem.dias).filter(function(k){return k.indexOf(empId+"|")===0;}).map(function(k){return mem.dias[k];}).filter(function(d){return d.data>=b.first&&d.data<=b.last;}); }
     _mesCache[key]=cloneDeep(list);
     return list;
   },
   async saveFoto(diaIso,fotoId,dataUrl,tipo){
+    var empId=minhaEmpresaId(); if(!empId) return;
     var body={dataUrl:dataUrl,tipo:tipo,criadoEm:new Date().toISOString()};
-    if(db){ bgSync(db.doc("dias/"+diaIso).collection("fotos").doc(fotoId).set(body),"foto"); } else { mem.fotos[diaIso+"/"+fotoId]=body; }
+    if(db){ bgSync(db.doc("empresas/"+empId+"/dias/"+diaIso).collection("fotos").doc(fotoId).set(body),"foto"); } else { mem.fotos[empId+"|"+diaIso+"/"+fotoId]=body; }
   },
   async getFoto(diaIso,fotoId){
-    if(!fotoId) return null;
-    if(db){ var s=await db.doc("dias/"+diaIso).collection("fotos").doc(fotoId).get(); return s.exists?s.data().dataUrl:null; }
-    var f=mem.fotos[diaIso+"/"+fotoId]; return f?f.dataUrl:null;
+    var empId=minhaEmpresaId(); if(!empId||!fotoId) return null;
+    if(db){ var s=await db.doc("empresas/"+empId+"/dias/"+diaIso).collection("fotos").doc(fotoId).get(); return s.exists?s.data().dataUrl:null; }
+    var f=mem.fotos[empId+"|"+diaIso+"/"+fotoId]; return f?f.dataUrl:null;
   },
   async listUsuarios(){
     if(_userCache) return cloneDeep(_userCache);
@@ -1037,8 +1082,9 @@ var Store={
     return u;
   },
   async deleteEntidade(id){
+    var empId=minhaEmpresaId();
     if(_entCache) _entCache=_entCache.filter(function(e){return e.id!==id;});
-    if(db){ bgSync(db.doc("entidades/"+id).delete(),"exclusão de cadastro"); } else { delete mem.entidades[id]; }
+    if(db){ bgSync(db.doc("empresas/"+empId+"/entidades/"+id).delete(),"exclusão de cadastro"); } else { delete mem.entidades[id]; }
   },
   async deleteUsuario(id){
     if(_userCache) _userCache=_userCache.filter(function(x){return x.id!==id;});
@@ -1068,7 +1114,9 @@ var state={
   resumoView:"mapa",
   resumoListaModo:"brasil",
   mapZoomUF:null,
-  seedBannerDia:null
+  seedBannerDia:null,
+  empresa:null,
+  _devViewAs:null
 };
 var photoCache={};
 var SESSION_KEY="praca_session_v1";
@@ -1097,16 +1145,20 @@ async function boot(){
   window.addEventListener("offline",updateConnStatus);
 
   try{
-    if(new URLSearchParams(location.search).get("convite")==="1"){
+    var qs=new URLSearchParams(location.search);
+    if(qs.get("convite")==="1"){
       state._convite=true;
       state._authModo="cadastro";
+      state._conviteEmpresaId=qs.get("empresa")||null;
     }
   }catch(e){}
   state._temUsuarios=false;
+  state._temEmpresaMigrada=false;
   if(db){
     try{
       var mdoc=await db.doc("meta/public").get();
       state._temUsuarios=!!(mdoc.exists && mdoc.data().hasUsers);
+      state._temEmpresaMigrada=!!(mdoc.exists && mdoc.data().empresaMigrada);
     }catch(e){ console.error(e); }
   }
 
@@ -1125,7 +1177,7 @@ async function boot(){
       var u=list.filter(function(x){return x.id===user.uid;})[0];
       if(u){
         state.usuarios=list;
-        state.authUser={id:u.id,email:u.email,nome:u.nome};
+        state.authUser={id:u.id,email:u.email,nome:u.nome,papel:papelDe(u),empresaId:u.empresaId||null,isAdmin:u.isAdmin};
         state._authErr="";
         await afterLogin();
       } else {
@@ -1179,6 +1231,94 @@ function renderAuth(){
   });
 }
 
+/* ============ empresa: onboarding de quem ainda não tem empresaId ============ */
+function elegivelMigracao(){
+  return !!(state.authUser && state._temUsuarios && !state._temEmpresaMigrada && ADMIN_EMAILS.indexOf((state.authUser.email||"").toLowerCase())!==-1);
+}
+function renderSemEmpresa(){
+  document.querySelectorAll(".modal-back").forEach(function(m){m.remove();});
+  document.getElementById("shell").hidden=true;
+  document.getElementById("bottomnav").hidden=true;
+  document.getElementById("mobiletopbar").hidden=true;
+  var el=document.getElementById("auth-screen");
+  el.hidden=false;
+  var migrar=elegivelMigracao();
+  var err=state._empresaErr||"";
+  el.innerHTML='<div class="auth-card">'+
+    '<div class="auth-brand"><img class="logo" src="'+LOGO_DATAURI+'" alt="Ariel Tomateiro"><div class="s">Compra &amp; venda de tomate</div></div>'+
+    '<div class="auth-title">Cadastre sua empresa</div>'+
+    '<div class="auth-lede">'+(migrar?
+      "Detectamos dados já existentes do app. Confirme os dados da empresa abaixo — ao confirmar, todo o histórico atual (cadastros, preços, cargas e usuários) é migrado automaticamente pra ela."
+      :"Sua conta ainda não faz parte de uma empresa. Cadastre a sua empresa abaixo — você vira administrador dela — ou peça o link de convite pra quem já é administrador de uma empresa.")+'</div>'+
+    (err?'<div class="auth-err">'+esc(err)+'</div>':"")+
+    '<div style="display:flex;flex-direction:column;gap:12px">'+
+      '<label class="field">Nome fantasia<input type="text" id="emp-fantasia" value="'+esc(migrar?"Ariel Tomateiro":"")+'" placeholder="Como sua empresa é conhecida"></label>'+
+      '<label class="field">Razão social<input type="text" id="emp-razao" placeholder="Razão social completa"></label>'+
+      '<label class="field">CNPJ<input type="text" id="emp-cnpj" placeholder="00.000.000/0000-00"></label>'+
+      '<button class="btn primary block" id="emp-criar" style="margin-top:4px">'+ICONS.lock+" "+(migrar?"Migrar e criar empresa":"Cadastrar empresa")+"</button>"+
+    "</div>"+
+    '<div class="auth-switch">Foi convidado por um administrador? Peça o link de convite dele — ele já te coloca direto na empresa certa.<br><button type="button" class="linklike" data-action="logout" style="margin-top:8px">Sair</button></div>'+
+  "</div>";
+  var btn=document.getElementById("emp-criar");
+  btn.onclick=guarded(criarEmpresa);
+}
+async function criarEmpresa(){
+  var fantasia=(document.getElementById("emp-fantasia").value||"").trim();
+  var razao=(document.getElementById("emp-razao").value||"").trim();
+  var cnpj=(document.getElementById("emp-cnpj").value||"").trim();
+  if(!fantasia){ state._empresaErr="Informe o nome fantasia da empresa."; renderSemEmpresa(); return; }
+  var migrar=elegivelMigracao();
+  var emp={id:uid(),nomeFantasia:fantasia,razaoSocial:razao,cnpj:cnpj,criadoPorUid:meuUid(),criadoEm:new Date().toISOString()};
+  try{
+    await Store.saveEmpresa(emp);
+    await db.doc("usuarios/"+meuUid()).set({empresaId:emp.id,papel:"administrador"},{merge:true});
+    if(typeof db.waitForPendingWrites==="function"){
+      try{ await Promise.race([db.waitForPendingWrites(),new Promise(function(res){setTimeout(res,8000);})]); }catch(e2){ console.error(e2); }
+    }
+  }catch(e){ console.error(e); state._empresaErr="Não foi possível criar a empresa agora. Tente novamente."; renderSemEmpresa(); return; }
+  state.authUser.empresaId=emp.id; state.authUser.papel="administrador";
+  state._empresaErr="";
+  if(migrar){
+    try{ await migrarDadosLegados(emp.id); toast("Empresa criada e dados existentes migrados."); }
+    catch(e){ console.error(e); toast("Empresa criada, mas a migração dos dados antigos falhou. Avise o suporte.",true); }
+  } else {
+    toast("Empresa criada.");
+  }
+  await afterLogin();
+}
+// copia o pool de dados global (de antes de existir o conceito de empresa) pra
+// dentro da empresa recém-criada — roda uma única vez, disparada por um dos
+// administradores fixos (ADMIN_EMAILS) na primeira vez que ele entra depois
+// desta atualização. Não apaga os dados antigos, só deixa de usá-los.
+async function migrarDadosLegados(empresaId){
+  if(!db) return;
+  var usSnap=await db.collection("usuarios").get();
+  for(var i=0;i<usSnap.docs.length;i++){
+    var ud=usSnap.docs[i], u=ud.data();
+    if(u.empresaId) continue;
+    var papel = ud.id===meuUid() ? "administrador" : papelDe(u);
+    await db.doc("usuarios/"+ud.id).set({empresaId:empresaId,papel:papel},{merge:true});
+  }
+  var entSnap=await db.collection("entidades").get();
+  for(var j=0;j<entSnap.docs.length;j++){
+    var ed=entSnap.docs[j], edata=ed.data();
+    if(!edata.criadoPor) edata.criadoPor=meuUid();
+    await db.doc("empresas/"+empresaId+"/entidades/"+ed.id).set(edata);
+  }
+  var diasSnap=await db.collection("dias").get();
+  for(var k=0;k<diasSnap.docs.length;k++){
+    var dd=diasSnap.docs[k], ddata=dd.data();
+    await db.doc("empresas/"+empresaId+"/dias/"+dd.id).set(ddata);
+    var fotosSnap=await db.doc("dias/"+dd.id).collection("fotos").get();
+    for(var f=0;f<fotosSnap.docs.length;f++){
+      await db.doc("empresas/"+empresaId+"/dias/"+dd.id).collection("fotos").doc(fotosSnap.docs[f].id).set(fotosSnap.docs[f].data());
+    }
+  }
+  await db.doc("empresas/"+empresaId+"/meta/config").set({seeded:true});
+  await db.doc("meta/public").set({empresaMigrada:true,empresaMigradaEm:new Date().toISOString(),empresaMigradaId:empresaId},{merge:true});
+  state._temEmpresaMigrada=true;
+}
+
 function traduzErroAuth(e){
   var code=e&&e.code||"";
   if(code==="auth/email-already-in-use") return "Esse e-mail já está cadastrado. Tente entrar em vez de cadastrar.";
@@ -1203,6 +1343,15 @@ async function onAuthCadastro(){
   try{ cred=await firebase.auth().createUserWithEmailAndPassword(email,senha); }
   catch(e){ _authTransition=null; state._authErr=traduzErroAuth(e); renderAuth(); return; }
   var novoUsuario={id:cred.user.uid,nome:nome||email,email:email,criadoEm:new Date().toISOString(),lastSeen:new Date().toISOString()};
+  // convite com empresa embutida no link: já entra como Operacional da empresa que convidou.
+  // promover pra Administrador é sempre feito depois, de dentro do app (nunca pelo link) —
+  // assim ninguém consegue virar admin só editando a URL do convite.
+  if(state._conviteEmpresaId){
+    try{
+      var empDoc=await db.doc("empresas/"+state._conviteEmpresaId).get();
+      if(empDoc.exists){ novoUsuario.empresaId=state._conviteEmpresaId; novoUsuario.papel="operacional"; }
+    }catch(e){ console.error(e); }
+  }
   var gravou=false;
   try{
     await db.collection("usuarios").doc(cred.user.uid).set(novoUsuario);
@@ -1228,7 +1377,7 @@ async function onAuthCadastro(){
   // conclui a entrada diretamente (não depende de o onAuthStateChanged ter disparado antes da gravação)
   if(gravou && firebase.auth().currentUser && firebase.auth().currentUser.uid===novoUsuario.id){
     state.usuarios=[novoUsuario].concat((state.usuarios||[]).filter(function(u){return u.id!==novoUsuario.id;}));
-    state.authUser={id:novoUsuario.id,email:novoUsuario.email,nome:novoUsuario.nome};
+    state.authUser={id:novoUsuario.id,email:novoUsuario.email,nome:novoUsuario.nome,papel:papelDe(novoUsuario),empresaId:novoUsuario.empresaId||null,isAdmin:novoUsuario.isAdmin};
     await afterLogin();
   } else if(!gravou){
     renderAuth();
@@ -1251,6 +1400,8 @@ function logout(){
 }
 
 async function afterLogin(){
+  if(!minhaEmpresaId()){ renderSemEmpresa(); return; }
+  state.empresa=await Store.getEmpresa(minhaEmpresaId());
   document.getElementById("auth-screen").hidden=true;
   document.getElementById("shell").hidden=false;
   document.getElementById("bottomnav").hidden=false;
@@ -1269,21 +1420,29 @@ async function afterLogin(){
   render();
 }
 
+function usuariosDaEmpresa(list){
+  var empId=minhaEmpresaId();
+  return (list||[]).filter(function(u){ return u.empresaId && u.empresaId===empId; });
+}
 function renderUserRows(list){
-  var meAdmin=souAdmin();
+  var meAdminReal=souAdminReal();
+  var meuId=meuUid();
   return list.map(function(u){
     var admin=isAdminUser(u);
     var st=statusUsuario(u);
     var fixo=ADMIN_EMAILS.indexOf((u.email||"").toLowerCase())!==-1;
+    var souEu=u.id===meuId;
     var promoBtn="";
-    if(meAdmin && !fixo){
+    // a decisão de promover/rebaixar é sempre autorização "de verdade" — nunca
+    // segue o toggle de simulação de tela do desenvolvedor
+    if(meAdminReal && !fixo && !souEu){
       promoBtn=admin?
-        '<button type="button" class="linklike" data-admin-toggle="'+u.id+'" data-novo="0">Remover admin</button>'
-        :'<button type="button" class="linklike" data-admin-toggle="'+u.id+'" data-novo="1">Tornar admin</button>';
+        '<button type="button" class="linklike" data-admin-toggle="'+u.id+'" data-novo="0">Tornar operacional</button>'
+        :'<button type="button" class="linklike" data-admin-toggle="'+u.id+'" data-novo="1">Tornar administrador</button>';
     }
-    var delBtn=(meAdmin && list.length>1)?('<button class="iconbtn" data-del-usuario="'+u.id+'" aria-label="Remover usuário">'+ICONS.x+"</button>"):"";
+    var delBtn=(meAdminReal && !souEu)?('<button class="iconbtn" data-del-usuario="'+u.id+'" aria-label="Remover da empresa">'+ICONS.x+"</button>"):"";
     return '<div class="op-row"><div class="l"><div class="meta">'+
-        '<div class="nm">'+esc(u.nome||u.email)+(admin?' <span class="admin-badge">admin</span>':"")+'</div>'+
+        '<div class="nm">'+esc(u.nome||u.email)+(souEu?" (você)":"")+(admin?' <span class="admin-badge">admin</span>':' <span class="admin-badge" style="opacity:.7">operacional</span>')+'</div>'+
         '<div class="loc">'+esc(u.email)+'</div>'+
         '<div class="user-status'+(st.online?" online":"")+'">'+(st.online?"<i></i>":"")+esc(st.texto)+'</div>'+
       '</div></div>'+
@@ -1291,8 +1450,27 @@ function renderUserRows(list){
     "</div>";
   }).join("");
 }
+function devToggleSection(){
+  if(!souDevToggle()) return "";
+  var efetivo=souAdmin()?"administrador":"operacional";
+  var real=souAdminReal()?"administrador":"operacional";
+  return '<div class="section-title" style="margin-top:18px">Modo de teste (exclusivo pra você)</div>'+
+    '<div style="font-size:13px;color:var(--muted);margin-bottom:10px">Simula na tela como o app aparece pra cada papel, sem alterar nada no banco. Seu papel real continua sendo <b>'+real+'</b>.</div>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+      '<button type="button" class="btn'+(efetivo==="administrador"?" primary":" ghost")+'" data-dev-view="administrador">Ver como administrador</button>'+
+      '<button type="button" class="btn'+(efetivo==="operacional"?" primary":" ghost")+'" data-dev-view="operacional">Ver como operacional</button>'+
+    "</div>";
+}
 function modalUsuarios(){
   var meAdmin=souAdmin();
+  var emp=state.empresa||{};
+  var empresaCard=
+    '<div class="section-title">Empresa</div>'+
+    '<div class="op-row"><div class="l"><div class="meta">'+
+      '<div class="nm">'+esc(emp.nomeFantasia||"—")+'</div>'+
+      '<div class="loc">'+esc(emp.razaoSocial||"")+(emp.cnpj?" · "+esc(emp.cnpj):"")+'</div>'+
+    "</div></div></div>";
+  var usuariosEmpresa=usuariosDaEmpresa(state.usuarios);
   var inviteSection=meAdmin?(
     '<div class="section-title" style="margin-top:18px">Adicionar novo usuário</div>'+
     '<div style="display:flex;flex-direction:column;gap:10px">'+
@@ -1304,9 +1482,11 @@ function modalUsuarios(){
   ):"";
   return '<div class="modal-back" data-close-modal="1"><div class="modal" onclick="event.stopPropagation()">'+
     "<h3>Gerenciar acesso</h3>"+
-    '<div class="section-title">Usuários com acesso</div>'+
-    '<div id="gu-rows">'+renderUserRows(state.usuarios)+"</div>"+
+    empresaCard+
+    '<div class="section-title" style="margin-top:18px">Usuários com acesso</div>'+
+    '<div id="gu-rows">'+renderUserRows(usuariosEmpresa)+"</div>"+
     inviteSection+
+    devToggleSection()+
     '<div class="modal-actions" style="justify-content:space-between">'+
     '<button type="button" class="btn danger ghost" data-action="logout">Sair</button>'+
     '<div style="display:flex;gap:8px"><button type="button" class="btn ghost" data-close-modal="1">Fechar</button></div>'+
@@ -1318,12 +1498,13 @@ function modalUsuarios(){
 async function seedIfNeeded(){
   var marcador = await Store.getDia("2025-03-11");
   if(marcador.precos && marcador.precos.length){ state.seedBannerDia="2025-03-11"; return; }
-  var already = db ? (await db.doc("meta/config").get()) : null;
+  var empId=minhaEmpresaId();
+  var already = db ? (await db.doc("empresas/"+empId+"/meta/config").get()) : null;
   if(already && already.exists && already.data().seeded) return;
 
-  var fornecedor={id:uid(),tipo:"fornecedor",nome:"Sítio Boa Colheita (exemplo)",razaoSocial:"J. Almeida Produção Agrícola",cnpj:"",endereco:"Zona Rural, km 4",cidade:"Uberlândia",estado:"MG",observacoes:"Dado de exemplo — pode excluir em Cadastros."};
-  var fornecedor2={id:uid(),tipo:"fornecedor",nome:"Agropecuária Vale Verde (exemplo)",razaoSocial:"Vale Verde Agropecuária Ltda",cnpj:"",endereco:"Rod. BR-153, s/n",cidade:"Goiânia",estado:"GO",observacoes:"Dado de exemplo — pode excluir em Cadastros."};
-  var cliente={id:uid(),tipo:"cliente",nome:"Mercado Central Atacado (exemplo)",razaoSocial:"Mercado Central Distribuição Ltda",cnpj:"",endereco:"Av. dos Atacadistas, 900",cidade:"São Paulo",estado:"SP",observacoes:"Dado de exemplo — pode excluir em Cadastros."};
+  var fornecedor={id:uid(),tipo:"fornecedor",nome:"Sítio Boa Colheita (exemplo)",razaoSocial:"J. Almeida Produção Agrícola",cnpj:"",endereco:"Zona Rural, km 4",cidade:"Uberlândia",estado:"MG",observacoes:"Dado de exemplo — pode excluir em Cadastros.",criadoPor:meuUid()};
+  var fornecedor2={id:uid(),tipo:"fornecedor",nome:"Agropecuária Vale Verde (exemplo)",razaoSocial:"Vale Verde Agropecuária Ltda",cnpj:"",endereco:"Rod. BR-153, s/n",cidade:"Goiânia",estado:"GO",observacoes:"Dado de exemplo — pode excluir em Cadastros.",criadoPor:meuUid()};
+  var cliente={id:uid(),tipo:"cliente",nome:"Mercado Central Atacado (exemplo)",razaoSocial:"Mercado Central Distribuição Ltda",cnpj:"",endereco:"Av. dos Atacadistas, 900",cidade:"São Paulo",estado:"SP",observacoes:"Dado de exemplo — pode excluir em Cadastros.",criadoPor:meuUid()};
   await Store.saveEntidade(fornecedor); await Store.saveEntidade(fornecedor2); await Store.saveEntidade(cliente);
 
   var iso="2025-03-11";
@@ -1341,7 +1522,7 @@ async function seedIfNeeded(){
   await Store.saveDia(iso,dia);
   fornecedor.contadorComoFornecedor=1; cliente.contadorComoCliente=1;
   await Store.saveEntidade(fornecedor);
-  if(db){ await db.doc("meta/config").set({seeded:true}); }
+  if(db){ await db.doc("empresas/"+empId+"/meta/config").set({seeded:true}); }
   state.seedBannerDia=iso;
 }
 
@@ -1432,22 +1613,25 @@ function render(){
 /* ============ VIEW: Calendário ============ */
 function opRow(c){
   var tipoVenda=c.tipo==="venda";
+  var oculto=!souAdmin();
   return '<div class="op-row"><div class="l"><span class="pill '+(tipoVenda?"green":"gray")+'">'+c.tipo+'</span>'+
     '<div class="meta"><div class="nm">'+esc(c.nome)+'</div><div class="loc">carga nº '+(c.numeroSequencial||"—")+" · "+fmtNum(c.quantidadeCaixas||0)+' cx</div></div></div>'+
-    '<div class="r"><div><div class="valor num">'+fmtMoney(c.valorTotal)+'</div><div class="unit">'+fmtMoney(c.preco)+"/cx</div></div></div></div>";
+    (oculto?"":'<div class="r"><div><div class="valor num">'+fmtMoney(c.valorTotal)+'</div><div class="unit">'+fmtMoney(c.preco)+"/cx</div></div></div>")+"</div>";
 }
 
 function opRowCasada(c){
   var lucro=c.lucroLiquido||0;
+  var oculto=!souAdmin();
   return '<div class="op-row"><div class="l"><span class="pill gold">casada</span>'+
     '<div class="meta"><div class="nm">'+esc(c.nome)+" &rarr; "+esc(c.clienteNome||"—")+'</div><div class="loc">carga nº '+(c.numeroSequencial||"—")+" · "+fmtNum(c.quantidadeCaixas||0)+' cx</div></div></div>'+
-    '<div class="r"><div><div class="valor num '+(lucro>=0?"pos":"neg")+'">'+fmtMoney(lucro)+'</div><div class="unit">lucro líquido</div></div></div></div>';
+    (oculto?"":'<div class="r"><div><div class="valor num '+(lucro>=0?"pos":"neg")+'">'+fmtMoney(lucro)+'</div><div class="unit">lucro líquido</div></div></div>')+"</div>";
 }
 
 function viewCalendario(){
   var y=state.calYear,m=state.calMonth;
   var b=monthBounds(y,m);
   var firstDow=isoToDate(b.first).getDay();
+  var opViewCal=!souAdmin();
   var cells="";
   for(var i=0;i<firstDow;i++) cells+='<div class="cal-cell pad"></div>';
   for(var d=1;d<=b.lastDay;d++){
@@ -1458,22 +1642,25 @@ function viewCalendario(){
     if(iso===state.calSelected) cls+=" selected";
     var tag="";
     if(info&&info.exemplo) tag='<span class="tag demo">exemplo</span>';
-    else if(info&&info.saldo!=null) tag='<span class="tag '+(info.saldo>=0?"pos":"neg")+'">'+fmtMoney(info.saldo)+"</span>";
+    else if(info&&info.saldo!=null) tag=opViewCal?'<span class="tag" style="color:var(--text-dim);background:var(--bg-3)">dados</span>':'<span class="tag '+(info.saldo>=0?"pos":"neg")+'">'+fmtMoney(info.saldo)+"</span>";
     else if(info&&info.tem) tag='<span class="tag" style="color:var(--text-dim);background:var(--bg-3)">dados</span>';
     cells+='<div class="'+cls+'" data-cal-day="'+iso+'"><span class="d">'+d+"</span>"+tag+"</div>";
   }
+  var opView=!souAdmin();
   var banner="";
-  if(state.seedBannerDia){
+  if(state.seedBannerDia && !opView){
     banner='<div class="banner"><span>Este app começa com um dia de <strong>exemplo</strong> (11/03/2025) só para você ver como tudo funciona.</span><button class="btn ghost" data-action="remover-exemplo">Remover exemplo</button></div>';
   }
   var sel=state.calDiaSel||{precos:[],cargas:[]};
   var calc=calcDia(sel);
-  var kpis='<div class="kpi-row">'+
+  var kpis=opView?
+    ('<div class="kpi-row"><div class="kpi"><div class="label">Preços lançados</div><div class="value">'+(sel.precos||[]).length+'</div></div></div>')
+    :('<div class="kpi-row">'+
     '<div class="kpi"><div class="label">Entradas (vendas)</div><div class="value gold">'+fmtMoney(calc.entradas)+'</div></div>'+
     '<div class="kpi"><div class="label">Saídas (compras)</div><div class="value gold">'+fmtMoney(calc.saidas)+'</div></div>'+
     '<div class="kpi"><div class="label">Fechamento do dia</div><div class="value '+(calc.saldo>=0?"pos":"neg")+'">'+fmtMoney(calc.saldo)+'</div></div>'+
     '<div class="kpi"><div class="label">Preços lançados</div><div class="value">'+(sel.precos||[]).length+'</div></div>'+
-  '</div>';
+  '</div>');
 
   var vendasRows=calc.vendas.map(opRow).join("") || '<div class="empty">Nenhuma venda neste dia.</div>';
   var comprasRows=calc.compras.map(opRow).join("") || '<div class="empty">Nenhuma compra neste dia.</div>';
@@ -1511,8 +1698,9 @@ function viewCatalogo(){
 
   var rows=list.map(function(e){
     var loc=esc(e.cidade||"—")+"/"+esc(e.estado||"—")+(e.razaoSocial?" · "+esc(e.razaoSocial):"")+(e.cnpj?" · "+esc(e.cnpj):"");
+    var somenteLeitura=!possoEditar(e);
     return '<div class="op-row" data-ent-edit="'+e.id+'" style="cursor:pointer">'+
-      '<div class="l"><div class="meta"><div class="nm">'+esc(e.nome)+'</div><div class="loc">'+loc+'</div></div></div>'+
+      '<div class="l"><div class="meta"><div class="nm">'+esc(e.nome)+(somenteLeitura?' <span class="admin-badge" style="opacity:.7">somente leitura</span>':"")+'</div><div class="loc">'+loc+'</div></div></div>'+
       '<div class="r"><span class="pill '+(e.tipo==="fornecedor"?"gold":e.tipo==="cliente"?"green":"gray")+'">'+esc(e.tipo)+'</span></div>'+
     "</div>";
   }).join("") || '<div class="empty">'+ICONS.book+'<div class="t">Nenhum fornecedor ou cliente encontrado.</div></div>';
@@ -1528,23 +1716,28 @@ function viewCatalogo(){
 
 function modalEntidade(ent){
   ent=ent||{tipo:"fornecedor",nome:"",razaoSocial:"",cnpj:"",endereco:"",cidade:"",estado:"",observacoes:""};
+  var somenteLeitura=!!(ent.id && !possoEditar(ent));
+  var dis=somenteLeitura?" disabled":"";
   var estadosOpts=Object.keys(ESTADOS).sort().map(function(uf){return '<option value="'+uf+'"'+(ent.estado===uf?" selected":"")+">"+uf+" — "+ESTADOS[uf]+"</option>";}).join("");
+  var acoes=somenteLeitura?
+    ('<div class="modal-actions" style="justify-content:space-between"><span style="font-size:12px;color:var(--muted)">cadastrado por outro usuário — só visualização</span><button type="button" class="btn ghost" data-close-modal="1">Fechar</button></div>')
+    :('<div class="modal-actions">'+(ent.id?'<button type="button" class="btn danger ghost" data-action="del-ent" data-id="'+ent.id+'">Excluir</button>':"")+'<button type="button" class="btn ghost" data-close-modal="1">Cancelar</button><button type="button" class="btn primary" id="ent-save">Salvar</button></div>');
   return '<div class="modal-back" data-close-modal="1"><div class="modal" onclick="event.stopPropagation()">'+
-    '<h3>'+(ent.id?"Editar cadastro":"Novo cadastro")+'</h3>'+
+    '<h3>'+(ent.id?(somenteLeitura?"Ver cadastro":"Editar cadastro"):"Novo cadastro")+'</h3>'+
     '<div id="form-ent" data-ent-id="'+(ent.id||"")+'">'+
     '<div class="field-row grid-2" style="margin-bottom:12px">'+
-      '<label class="field">Tipo<select name="tipo">'+["fornecedor","cliente","ambos"].map(function(t){return '<option value="'+t+'"'+(ent.tipo===t?" selected":"")+">"+t+"</option>";}).join("")+'</select></label>'+
-      '<label class="field">CNPJ<input type="text" name="cnpj" value="'+esc(ent.cnpj)+'" placeholder="00.000.000/0000-00"></label>'+
+      '<label class="field">Tipo<select name="tipo"'+dis+'>'+["fornecedor","cliente","ambos"].map(function(t){return '<option value="'+t+'"'+(ent.tipo===t?" selected":"")+">"+t+"</option>";}).join("")+'</select></label>'+
+      '<label class="field">CNPJ<input type="text" name="cnpj"'+dis+' value="'+esc(ent.cnpj)+'" placeholder="00.000.000/0000-00"></label>'+
     '</div>'+
-    '<div class="field-row" style="margin-bottom:12px"><label class="field">Nome<input type="text" name="nome" required value="'+esc(ent.nome)+'" placeholder="Como você chama essa pessoa/empresa"></label></div>'+
-    '<div class="field-row" style="margin-bottom:12px"><label class="field">Razão social<input type="text" name="razaoSocial" value="'+esc(ent.razaoSocial)+'"></label></div>'+
-    '<div class="field-row" style="margin-bottom:12px"><label class="field">Endereço<input type="text" name="endereco" value="'+esc(ent.endereco)+'"></label></div>'+
+    '<div class="field-row" style="margin-bottom:12px"><label class="field">Nome<input type="text" name="nome" required'+dis+' value="'+esc(ent.nome)+'" placeholder="Como você chama essa pessoa/empresa"></label></div>'+
+    '<div class="field-row" style="margin-bottom:12px"><label class="field">Razão social<input type="text" name="razaoSocial"'+dis+' value="'+esc(ent.razaoSocial)+'"></label></div>'+
+    '<div class="field-row" style="margin-bottom:12px"><label class="field">Endereço<input type="text" name="endereco"'+dis+' value="'+esc(ent.endereco)+'"></label></div>'+
     '<div class="field-row grid-2" style="margin-bottom:12px">'+
-      '<label class="field">Cidade<input type="text" name="cidade" required value="'+esc(ent.cidade)+'"></label>'+
-      '<label class="field">Estado<select name="estado" required>'+'<option value="">selecione</option>'+estadosOpts+'</select></label>'+
+      '<label class="field">Cidade<input type="text" name="cidade" required'+dis+' value="'+esc(ent.cidade)+'"></label>'+
+      '<label class="field">Estado<select name="estado" required'+dis+'>'+'<option value="">selecione</option>'+estadosOpts+'</select></label>'+
     '</div>'+
-    '<div class="field-row" style="margin-bottom:4px"><label class="field">Observações<textarea name="observacoes" rows="3">'+esc(ent.observacoes)+'</textarea></label></div>'+
-    '<div class="modal-actions">'+(ent.id?'<button type="button" class="btn danger ghost" data-action="del-ent" data-id="'+ent.id+'">Excluir</button>':"")+'<button type="button" class="btn ghost" data-close-modal="1">Cancelar</button><button type="button" class="btn primary" id="ent-save">Salvar</button></div>'+
+    '<div class="field-row" style="margin-bottom:4px"><label class="field">Observações<textarea name="observacoes" rows="3"'+dis+'>'+esc(ent.observacoes)+'</textarea></label></div>'+
+    acoes+
     "</div></div></div>";
 }
 
@@ -1590,10 +1783,11 @@ function viewPrecos(){
   "</div>";
 
   var lista=(dia.precos||[]).slice().reverse().map(function(p){
+    var delBtn=possoEditar(p)?('<button class="iconbtn" data-del-preco="'+p.id+'">'+ICONS.x+"</button>"):"";
     return '<div class="op-row"><div class="l">'+
       (p.fotoId?'<img class="thumb" data-view-foto="'+state.precoData+"|"+p.fotoId+'" src="">':"")+
       '<div class="meta"><div class="nm">'+esc(p.nome)+'</div><div class="loc">'+esc(p.cidade)+"/"+esc(p.estado)+(p.obs?" · "+esc(p.obs):"")+'</div></div></div>'+
-      '<div class="r"><span class="valor num">'+fmtMoney(p.preco)+'/cx</span><button class="iconbtn" data-del-preco="'+p.id+'">'+ICONS.x+"</button></div></div>";
+      '<div class="r"><span class="valor num">'+fmtMoney(p.preco)+'/cx</span>'+delBtn+"</div></div>";
   }).join("") || '<div class="empty">Nenhum preço lançado nesta data ainda.</div>';
 
   return '<div class="page-head"><div><h1>Preços do Dia</h1><p class="lede">Registre o preço por caixa que cada fornecedor passou hoje.</p></div></div>'+
@@ -1989,6 +2183,7 @@ function statusInfo(s){
 function viewCargas(){
   var dia=state.cargaDia||{cargas:[]};
   var filtro=state.cargaFiltroTipo;
+  var opView=!souAdmin(); // operacional: sem valores financeiros, sem editar/excluir/adicionar
   var cargas=(dia.cargas||[]).filter(function(c){return filtro==="todas"||c.tipo===filtro;}).map(function(c){
     var qtd=c.quantidadeCaixas||0;
     var valorTotal=(c.preco||0)*qtd;
@@ -1997,8 +2192,8 @@ function viewCargas(){
     return Object.assign({},c,{valorTotal:valorTotal,valorTotalVenda:valorTotalVenda,lucroLiquido:lucroLiquido});
   });
 
-  var head='<div class="page-head"><div><h1>Cargas</h1><p class="lede">Todas as cargas de compra, venda e compra casada da data selecionada.</p></div>'+
-    '<div class="toolbar"><input type="date" id="carga-data" value="'+state.cargaData+'" style="width:auto"><button class="btn primary" data-action="nova-carga">'+ICONS.plus+" Nova carga</button></div></div>";
+  var head='<div class="page-head"><div><h1>Cargas</h1><p class="lede">'+(opView?"Tipo, status, quantidade, placa e foto das cargas da data selecionada.":"Todas as cargas de compra, venda e compra casada da data selecionada.")+'</p></div>'+
+    '<div class="toolbar"><input type="date" id="carga-data" value="'+state.cargaData+'" style="width:auto">'+(opView?"":'<button class="btn primary" data-action="nova-carga">'+ICONS.plus+" Nova carga</button>")+"</div></div>";
 
   var seg='<div class="seg" style="margin-bottom:16px">'+["todas","compra","venda","casada"].map(function(f){return '<button class="'+(filtro===f?"active":"")+'" data-carga-filtro="'+f+'">'+(f==="todas"?"Todas":f==="compra"?"Compras":f==="venda"?"Vendas":"Casadas")+"</button>";}).join("")+"</div>";
 
@@ -2012,6 +2207,23 @@ function viewCargas(){
 
   var cards=cargas.map(function(c){
     var st=statusInfo(c.status);
+
+    if(opView){
+      // visão operacional: status/tipo/nome/quantidade/placa/foto da mercadoria/número da
+      // carga — sem qualquer valor financeiro (preço, valor total, lucro) e sem ações
+      var topOp='<div class="carga-top"><div class="left">'+
+        '<span class="pill '+(tipoPill[c.tipo]||"gray")+'">'+(c.tipo==="casada"?"compra casada":c.tipo)+'</span>'+
+        '<span class="pill '+st.cls+'">'+esc(st.label)+"</span>"+
+        '<span class="carga-num">carga nº '+(c.numeroSequencial||"—")+'</span>'+
+        '<strong>'+(c.tipo==="casada"?(esc(c.nome)+" &rarr; "+esc(c.clienteNome||"—")):esc(c.nome))+"</strong></div></div>";
+      var detailsOp='<div class="carga-details">'+
+        '<div><div class="k">Quantidade</div><div class="v">'+fmtNum(c.quantidadeCaixas||0)+" cx</div></div>"+
+        '<div><div class="k">Placa</div><div class="v">'+esc(c.placa||"—")+"</div></div>"+
+      "</div>";
+      var docsOp='<div class="carga-docs">'+docChip("Foto da mercadoria",c.fotoId)+"</div>";
+      return '<div class="carga-card tipo-'+c.tipo+'">'+topOp+detailsOp+docsOp+"</div>";
+    }
+
     var actions='<div class="carga-top-actions">'+
       '<select class="status-select '+st.cls+'" data-status-carga="'+c.id+'">'+
         ["acarregar","transporte","entregue"].map(function(s){var si=statusInfo(s);return '<option value="'+s+'"'+(c.status===s?" selected":"")+">"+si.label+"</option>";}).join("")+
@@ -2055,7 +2267,7 @@ function viewCargas(){
     }
 
     return '<div class="carga-card tipo-'+c.tipo+'">'+top+result+details+docs+"</div>";
-  }).join("") || '<div class="empty">'+ICONS.box+'<div class="t">Nenhuma carga nesta data</div>Cadastre uma nova carga de compra ou venda.</div>';
+  }).join("") || '<div class="empty">'+ICONS.box+'<div class="t">Nenhuma carga nesta data</div>'+(opView?"":"Cadastre uma nova carga de compra ou venda.")+'</div>';
 
   return head+seg+cards;
 }
@@ -2178,6 +2390,8 @@ function attachHandlers(){
     var add=document.querySelector('[data-action="add-preco"]'); if(add) add.onclick=guarded(onAddPreco);
     document.querySelectorAll("[data-del-preco]").forEach(function(el){el.onclick=guarded(async function(){
       var id=el.getAttribute("data-del-preco");
+      var alvo=(state.precoDia.precos||[]).filter(function(p){return p.id===id;})[0];
+      if(!possoEditar(alvo)){ toast("Você só pode excluir preços lançados por você.",true); return; }
       state.precoDia.precos=state.precoDia.precos.filter(function(p){return p.id!==id;});
       await Store.saveDia(state.precoData,state.precoDia);
       render();
@@ -2207,14 +2421,16 @@ function attachHandlers(){
   if(state.tab==="cargas"){
     var cd=document.getElementById("carga-data"); if(cd) cd.onchange=async function(){state.cargaData=cd.value;state.cargaDia=await Store.getDia(state.cargaData);render();};
     document.querySelectorAll("[data-carga-filtro]").forEach(function(el){el.onclick=function(){state.cargaFiltroTipo=el.getAttribute("data-carga-filtro");render();};});
-    var nc=document.querySelector('[data-action="nova-carga"]'); if(nc) nc.onclick=function(){modalFotoNota=null;modalFotoQual=null;openModal(modalCarga());hookCargaModal();};
+    var nc=document.querySelector('[data-action="nova-carga"]'); if(nc) nc.onclick=function(){ if(!souAdmin()){toast("Somente administradores podem registrar cargas.",true);return;} modalFotoNota=null;modalFotoQual=null;openModal(modalCarga());hookCargaModal();};
     document.querySelectorAll("[data-status-carga]").forEach(function(el){el.onchange=async function(){
+      if(!souAdmin()){ toast("Somente administradores podem alterar o status.",true); render(); return; }
       var id=el.getAttribute("data-status-carga");
       state.cargaDia.cargas.forEach(function(c){if(c.id===id)c.status=el.value;});
       await Store.saveDia(state.cargaData,state.cargaDia);
       render();
     };});
     document.querySelectorAll('[data-action="editar-carga"]').forEach(function(el){el.onclick=function(){
+      if(!souAdmin()){ toast("Somente administradores podem editar cargas.",true); return; }
       var id=el.getAttribute("data-id");
       var carga=(state.cargaDia.cargas||[]).filter(function(c){return c.id===id;})[0];
       if(!carga) return;
@@ -2222,6 +2438,7 @@ function attachHandlers(){
       openModal(modalCarga(carga)); hookCargaModal(carga);
     };});
     document.querySelectorAll('[data-action="apagar-carga"]').forEach(function(el){el.onclick=guarded(async function(){
+      if(!souAdmin()){ toast("Somente administradores podem apagar cargas.",true); return; }
       var id=el.getAttribute("data-id");
       if(!confirm("Apagar esta carga? Essa ação não pode ser desfeita.")) return;
       state.cargaDia.cargas=(state.cargaDia.cargas||[]).filter(function(c){return c.id!==id;});
@@ -2247,14 +2464,17 @@ function closeModal(node){ if(node&&node.remove) node.remove(); }
 function hookEntidadeModal(ent){
   var node=document.getElementById("form-ent");
   var save=document.getElementById("ent-save");
+  if(!save) return; // modal em modo somente-leitura (sem permissão de editar) — nada a conectar
   save.onclick=guarded(async function(){
+    if(ent&&ent.id&&!possoEditar(ent)){ toast("Você só pode editar cadastros feitos por você.",true); return; }
     var get=function(name){ var el=node.querySelector('[name="'+name+'"]'); return el?el.value:""; };
     var nome=get("nome").trim(), cidade=get("cidade").trim(), estado=get("estado");
     if(!nome||!cidade||!estado){ toast("Preencha nome, cidade e estado.",true); return; }
     var entObj={
       id:node.getAttribute("data-ent-id")||undefined,
       tipo:get("tipo"),nome:nome,razaoSocial:get("razaoSocial"),cnpj:get("cnpj"),
-      endereco:get("endereco"),cidade:cidade,estado:estado,observacoes:get("observacoes")
+      endereco:get("endereco"),cidade:cidade,estado:estado,observacoes:get("observacoes"),
+      criadoPor:(ent&&ent.criadoPor)||meuUid(),criadoEm:(ent&&ent.criadoEm)||new Date().toISOString()
     };
     if(!entObj.id) delete entObj.id;
     await Store.saveEntidade(entObj);
@@ -2264,6 +2484,7 @@ function hookEntidadeModal(ent){
   });
   var del=node.querySelector('[data-action="del-ent"]');
   if(del) del.onclick=guarded(async function(){
+    if(ent&&!possoEditar(ent)){ toast("Você só pode excluir cadastros feitos por você.",true); return; }
     if(!confirm("Excluir este cadastro?"))return;
     var id=del.getAttribute("data-id");
     await Store.deleteEntidade(id);
@@ -2323,10 +2544,10 @@ async function onAddPreco(){
   if(!preco&&preco!==0){toast("Informe o preço por caixa.",true);return;}
   var obs=document.getElementById("preco-obs").value.trim();
 
-  var entry={id:uid(),entidadeId:entidadeId||null,nome:nome,cidade:cidade,estado:estado,preco:preco,obs:obs,fotoId:null,criadoEm:new Date().toISOString()};
+  var entry={id:uid(),entidadeId:entidadeId||null,nome:nome,cidade:cidade,estado:estado,preco:preco,obs:obs,fotoId:null,criadoEm:new Date().toISOString(),criadoPor:meuUid()};
 
   if(novoModo){
-    var newEnt={tipo:"fornecedor",nome:nome,razaoSocial:"",cnpj:"",endereco:"",cidade:cidade,estado:estado,observacoes:"Cadastrado automaticamente via Preços do Dia."};
+    var newEnt={tipo:"fornecedor",nome:nome,razaoSocial:"",cnpj:"",endereco:"",cidade:cidade,estado:estado,observacoes:"Cadastrado automaticamente via Preços do Dia.",criadoPor:meuUid()};
     newEnt=await Store.saveEntidade(newEnt);
     entry.entidadeId=newEnt.id;
     state.entidades=await Store.listEntidades();
@@ -2419,6 +2640,7 @@ function hookCargaModal(carga){
   }
 
   document.getElementById("carga-save").onclick=guarded(async function(){
+    if(!souAdmin()){ toast("Somente administradores podem registrar ou editar cargas.",true); return; }
     var get=function(name){ var el=node.querySelector('[name="'+name+'"]'); return el?el.value:""; };
     var tipo=get("tipo");
     var preco=parseFloat(get("preco"));
@@ -2448,7 +2670,7 @@ function hookCargaModal(carga){
       var ent=state.entidades.filter(function(e){return e.id===entidadeId;})[0];
       nome=ent.nome;
     } else {
-      var novoEnt={tipo:tipo==="venda"?"cliente":"fornecedor",nome:nomeAvulso,razaoSocial:"",cnpj:"",endereco:"",cidade:"",estado:"",observacoes:"Cadastrado automaticamente via Cargas."};
+      var novoEnt={tipo:tipo==="venda"?"cliente":"fornecedor",nome:nomeAvulso,razaoSocial:"",cnpj:"",endereco:"",cidade:"",estado:"",observacoes:"Cadastrado automaticamente via Cargas.",criadoPor:meuUid()};
       novoEnt=await Store.saveEntidade(novoEnt);
       entId=novoEnt.id; nome=novoEnt.nome;
       state.entidades=await Store.listEntidades();
@@ -2460,7 +2682,7 @@ function hookCargaModal(carga){
         var clEnt=state.entidades.filter(function(e){return e.id===clienteEntidadeId;})[0];
         clienteEntId=clienteEntidadeId; clienteNome=clEnt.nome;
       } else {
-        var novoCli={tipo:"cliente",nome:clienteNomeAvulso,razaoSocial:"",cnpj:"",endereco:"",cidade:"",estado:"",observacoes:"Cadastrado automaticamente via Cargas."};
+        var novoCli={tipo:"cliente",nome:clienteNomeAvulso,razaoSocial:"",cnpj:"",endereco:"",cidade:"",estado:"",observacoes:"Cadastrado automaticamente via Cargas.",criadoPor:meuUid()};
         novoCli=await Store.saveEntidade(novoCli);
         clienteEntId=novoCli.id; clienteNome=novoCli.nome;
         state.entidades=await Store.listEntidades();
@@ -2486,7 +2708,7 @@ function hookCargaModal(carga){
     if(modalFotoNota){ fotoId=uid(); await Store.saveFoto(dataIso,fotoId,modalFotoNota,tipo==="compra"?"notaFiscalEntrada":(tipo==="venda"?"notaFiscalSaida":"notaFiscalCasada")); photoCache[dataIso+"/"+fotoId]=modalFotoNota; }
     if(modalFotoQual){ fotoQualidadeId=uid(); await Store.saveFoto(dataIso,fotoQualidadeId,modalFotoQual,"qualidade"); photoCache[dataIso+"/"+fotoQualidadeId]=modalFotoQual; }
 
-    var carga={id:editId||uid(),tipo:tipo,entidadeId:entId,nome:nome,preco:preco,quantidadeCaixas:qtd,placa:get("placa"),status:get("status"),numeroSequencial:seq,fotoId:fotoId,fotoQualidadeId:fotoQualidadeId,criadoEm:existing?existing.criadoEm:new Date().toISOString()};
+    var carga={id:editId||uid(),tipo:tipo,entidadeId:entId,nome:nome,preco:preco,quantidadeCaixas:qtd,placa:get("placa"),status:get("status"),numeroSequencial:seq,fotoId:fotoId,fotoQualidadeId:fotoQualidadeId,criadoEm:existing?existing.criadoEm:new Date().toISOString(),criadoPor:existing?existing.criadoPor:meuUid()};
     if(tipo==="casada"){
       carga.precoVenda=precoVenda;
       carga.clienteEntidadeId=clienteEntId;
@@ -2522,24 +2744,36 @@ document.addEventListener("click",function(e){
     function wireRowButtons(){
       node.querySelectorAll("[data-admin-toggle]").forEach(function(el){
         el.onclick=guarded(async function(){
+          if(!souAdminReal()){ toast("Só um administrador pode alterar papéis.",true); return; }
           var id=el.getAttribute("data-admin-toggle");
-          var tornar=el.getAttribute("data-novo")==="1";
+          var tornarAdmin=el.getAttribute("data-novo")==="1";
           var alvo=state.usuarios.filter(function(u){return u.id===id;})[0];
-          if(!alvo) return;
-          await Store.saveUsuario(Object.assign({},alvo,{isAdmin:tornar}));
+          if(!alvo||alvo.empresaId!==minhaEmpresaId()) return;
+          await Store.saveUsuario(Object.assign({},alvo,{papel:tornarAdmin?"administrador":"operacional"}));
           state.usuarios=await Store.listUsuariosFresh();
-          closeModal(node);
-          toast(tornar?"Usuário agora é administrador.":"Privilégio de administrador removido.");
+          rerenderModal();
+          toast(tornarAdmin?"Usuário agora é administrador.":"Usuário agora é operacional.");
         });
       });
       node.querySelectorAll("[data-del-usuario]").forEach(function(el){
         el.onclick=guarded(async function(){
-          if(state.usuarios.length<=1){ toast("Precisa existir ao menos um usuário.",true); return; }
-          if(!confirm("Remover este usuário?"))return;
-          await Store.deleteUsuario(el.getAttribute("data-del-usuario"));
-          state.usuarios=await Store.listUsuarios();
+          if(!souAdminReal()){ toast("Só um administrador pode remover usuários da empresa.",true); return; }
+          var id=el.getAttribute("data-del-usuario");
+          var alvo=state.usuarios.filter(function(u){return u.id===id;})[0];
+          if(!alvo||alvo.empresaId!==minhaEmpresaId()) return;
+          if(!confirm("Remover \""+(alvo.nome||alvo.email)+"\" desta empresa? A conta continua existindo, mas perde o acesso aos dados da empresa até um administrador convidá-la de novo."))return;
+          await Store.saveUsuario(Object.assign({},alvo,{empresaId:null,papel:null}));
+          state.usuarios=await Store.listUsuariosFresh();
+          rerenderModal();
+          toast("Usuário removido da empresa.");
+        });
+      });
+      node.querySelectorAll("[data-dev-view]").forEach(function(el){
+        el.onclick=guarded(function(){
+          state._devViewAs=el.getAttribute("data-dev-view");
           closeModal(node);
-          toast("Usuário removido.");
+          render();
+          toast("Visualizando como "+state._devViewAs+" (simulação, nada foi salvo).");
         });
       });
     }
@@ -2551,13 +2785,19 @@ document.addEventListener("click",function(e){
         var raw=(node.querySelector("#nu-whats").value||"").trim();
         var digitos=raw.replace(/\D/g,"");
         if(digitos.length<12||digitos.length>13){ toast("Informe o número completo com DDI (+55), DDD e telefone.",true); return; }
-        var link=location.origin+location.pathname+"?convite=1";
+        var empId=minhaEmpresaId();
+        var link=location.origin+location.pathname+"?convite=1"+(empId?"&empresa="+encodeURIComponent(empId):"");
         var msg="Parabéns, você foi selecionado para uma lista restrita de convidados para elevar o nível do seu negócio com o aplicativo Ariel Tomateiro! Acesse o link e faça seu cadastro.\n\n"+link;
         window.open("https://wa.me/"+digitos+"?text="+encodeURIComponent(msg),"_blank");
       });
     }
 
     var guRows=node.querySelector("#gu-rows");
+    function rerenderModal(){
+      if(!document.body.contains(node)) return;
+      if(guRows) guRows.innerHTML=renderUserRows(usuariosDaEmpresa(state.usuarios));
+      wireRowButtons();
+    }
     // enquanto o modal estiver aberto, rebusca do servidor periodicamente —
     // não só atualiza o relógio local — pra "online agora" refletir o
     // instante real mesmo se alguém entrar/sair enquanto você está olhando.
@@ -2567,8 +2807,7 @@ document.addEventListener("click",function(e){
       Store.listUsuariosFresh().then(function(list){
         if(!document.body.contains(node)) return;
         state.usuarios=list;
-        if(guRows) guRows.innerHTML=renderUserRows(state.usuarios);
-        wireRowButtons();
+        rerenderModal();
       }).catch(function(){});
     }
     atualizarStatusUsuarios();
