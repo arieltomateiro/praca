@@ -907,11 +907,11 @@ var FIREBASE_CONFIG={
 var mem={entidades:{},dias:{},fotos:{},usuarios:{},empresas:{}};
 var db=null;
 var ADMIN_EMAILS=["lpacastro@hotmail.com","arieljsg@hotmail.com"];
-// único usuário que pode alternar a própria visão entre Administrador/Operacional
-// pra testar o app (o programador que faz manutenção) — é só simulação de tela,
+// usuários que podem alternar a própria visão entre Administrador/Operacional
+// pra testar o app (quem faz manutenção) — é só simulação de tela,
 // não grava papel nenhum no banco.
-var DEV_TOGGLE_EMAIL="lpacastro@hotmail.com";
-function souDevToggle(){ return !!(state.authUser && (state.authUser.email||"").toLowerCase()===DEV_TOGGLE_EMAIL); }
+var DEV_TOGGLE_EMAILS=["lpacastro@hotmail.com","arieljsg@hotmail.com"];
+function souDevToggle(){ return !!(state.authUser && DEV_TOGGLE_EMAILS.indexOf((state.authUser.email||"").toLowerCase())!==-1); }
 function papelDe(u){
   if(!u) return null;
   if(u.papel) return u.papel;
@@ -1461,15 +1461,27 @@ function devToggleSection(){
       '<button type="button" class="btn'+(efetivo==="operacional"?" primary":" ghost")+'" data-dev-view="operacional">Ver como operacional</button>'+
     "</div>";
 }
+function modalEmpresa(emp){
+  emp=emp||{};
+  return '<div class="modal-back" data-close-modal="1"><div class="modal" onclick="event.stopPropagation()">'+
+    "<h3>Editar empresa</h3>"+
+    '<div id="form-empresa">'+
+    '<div class="field-row" style="margin-bottom:12px"><label class="field">Nome fantasia<input type="text" name="nomeFantasia" required value="'+esc(emp.nomeFantasia||"")+'"></label></div>'+
+    '<div class="field-row" style="margin-bottom:12px"><label class="field">Razão social<input type="text" name="razaoSocial" value="'+esc(emp.razaoSocial||"")+'"></label></div>'+
+    '<div class="field-row" style="margin-bottom:4px"><label class="field">CNPJ<input type="text" name="cnpj" value="'+esc(emp.cnpj||"")+'" placeholder="00.000.000/0000-00"></label></div>'+
+    "</div>"+
+    '<div class="modal-actions"><button type="button" class="btn ghost" data-close-modal="1">Cancelar</button><button type="button" class="btn primary" id="empresa-save">Salvar</button></div>'+
+  "</div></div>";
+}
 function modalUsuarios(){
   var meAdmin=souAdmin();
   var emp=state.empresa||{};
   var empresaCard=
     '<div class="section-title">Empresa</div>'+
-    '<div class="op-row"><div class="l"><div class="meta">'+
+    '<div class="op-row"'+(meAdmin?' data-action="editar-empresa" style="cursor:pointer" role="button" aria-label="Editar dados da empresa"':"")+'><div class="l"><div class="meta">'+
       '<div class="nm">'+esc(emp.nomeFantasia||"—")+'</div>'+
       '<div class="loc">'+esc(emp.razaoSocial||"")+(emp.cnpj?" · "+esc(emp.cnpj):"")+'</div>'+
-    "</div></div></div>";
+    "</div></div>"+(meAdmin?'<div class="iconbtn" aria-hidden="true">'+ICONS.edit+"</div>":"")+"</div>";
   var usuariosEmpresa=usuariosDaEmpresa(state.usuarios);
   var inviteSection=meAdmin?(
     '<div class="section-title" style="margin-top:18px">Adicionar novo usuário</div>'+
@@ -1691,34 +1703,58 @@ function viewCatalogo(){
   var filtro=state._catFiltro||"todos";
   var busca=(state._catBusca||"").toLowerCase();
   var list=state.entidades.filter(function(e){
-    if(filtro!=="todos" && e.tipo!==filtro && e.tipo!=="ambos") return false;
+    if(filtro!=="todos"){
+      if(filtro==="mercadoria"){ if(e.tipo!=="mercadoria") return false; }
+      else if(e.tipo!==filtro && e.tipo!=="ambos") return false;
+    }
     if(busca && (e.nome||"").toLowerCase().indexOf(busca)<0 && (e.cidade||"").toLowerCase().indexOf(busca)<0) return false;
     return true;
   }).sort(function(a,b){return (a.nome||"").localeCompare(b.nome||"");});
 
   var rows=list.map(function(e){
-    var loc=esc(e.cidade||"—")+"/"+esc(e.estado||"—")+(e.razaoSocial?" · "+esc(e.razaoSocial):"")+(e.cnpj?" · "+esc(e.cnpj):"");
+    var loc=e.tipo==="mercadoria"?
+      ([e.cor,e.tamanho].filter(Boolean).map(esc).join(" · ")||"—")
+      :(esc(e.cidade||"—")+"/"+esc(e.estado||"—")+(e.razaoSocial?" · "+esc(e.razaoSocial):"")+(e.cnpj?" · "+esc(e.cnpj):""));
     var somenteLeitura=!possoEditar(e);
+    var pillCls=e.tipo==="fornecedor"?"gold":e.tipo==="cliente"?"green":e.tipo==="mercadoria"?"amber":"gray";
     return '<div class="op-row" data-ent-edit="'+e.id+'" style="cursor:pointer">'+
       '<div class="l"><div class="meta"><div class="nm">'+esc(e.nome)+(somenteLeitura?' <span class="admin-badge" style="opacity:.7">somente leitura</span>':"")+'</div><div class="loc">'+loc+'</div></div></div>'+
-      '<div class="r"><span class="pill '+(e.tipo==="fornecedor"?"gold":e.tipo==="cliente"?"green":"gray")+'">'+esc(e.tipo)+'</span></div>'+
+      '<div class="r"><span class="pill '+pillCls+'">'+(e.tipo==="mercadoria"?"mercadoria":esc(e.tipo))+'</span></div>'+
     "</div>";
-  }).join("") || '<div class="empty">'+ICONS.book+'<div class="t">Nenhum fornecedor ou cliente encontrado.</div></div>';
+  }).join("") || '<div class="empty">'+ICONS.book+'<div class="t">Nenhum cadastro encontrado.</div></div>';
 
-  return '<div class="page-head"><div><h1>Cadastros</h1><p class="lede">Fornecedores e clientes cadastrados.</p></div>'+
+  return '<div class="page-head"><div><h1>Cadastros</h1><p class="lede">Fornecedores, clientes e mercadorias cadastrados.</p></div>'+
     '<div class="toolbar"><button class="btn primary" data-action="novo-ent">'+ICONS.plus+" Novo cadastro</button></div></div>"+
     '<div class="toolbar" style="margin-bottom:14px">'+
-      '<div class="seg">'+["todos","fornecedor","cliente"].map(function(f){return '<button class="'+(filtro===f?"active":"")+'" data-cat-filtro="'+f+'">'+(f==="todos"?"Todos":f==="fornecedor"?"Fornecedores":"Clientes")+"</button>";}).join("")+'</div>'+
+      '<div class="seg">'+["todos","fornecedor","cliente","mercadoria"].map(function(f){return '<button class="'+(filtro===f?"active":"")+'" data-cat-filtro="'+f+'">'+(f==="todos"?"Todos":f==="fornecedor"?"Fornecedores":f==="cliente"?"Clientes":"Mercadorias")+"</button>";}).join("")+'</div>'+
       '<input type="text" placeholder="Buscar por nome ou cidade…" style="max-width:260px" id="cat-busca" value="'+esc(state._catBusca||"")+'">'+
     '</div>'+
     rows;
 }
 
+function entFieldsHtml(tipo,ent,dis){
+  ent=ent||{};
+  if(tipo==="mercadoria"){
+    return '<div class="field-row grid-2" style="margin-bottom:12px">'+
+      '<label class="field">Cor<input type="text" name="cor"'+dis+' value="'+esc(ent.cor||"")+'" placeholder="ex: vermelho"></label>'+
+      '<label class="field">Tamanho<input type="text" name="tamanho"'+dis+' value="'+esc(ent.tamanho||"")+'" placeholder="ex: graúdo, médio, extra"></label>'+
+    '</div>';
+  }
+  var estadosOpts=Object.keys(ESTADOS).sort().map(function(uf){return '<option value="'+uf+'"'+(ent.estado===uf?" selected":"")+">"+uf+" — "+ESTADOS[uf]+"</option>";}).join("");
+  return '<div class="field-row grid-2" style="margin-bottom:12px">'+
+      '<label class="field">CNPJ<input type="text" name="cnpj"'+dis+' value="'+esc(ent.cnpj||"")+'" placeholder="00.000.000/0000-00"></label>'+
+      '<label class="field">Razão social<input type="text" name="razaoSocial"'+dis+' value="'+esc(ent.razaoSocial||"")+'"></label>'+
+    '</div>'+
+    '<div class="field-row" style="margin-bottom:12px"><label class="field">Endereço<input type="text" name="endereco"'+dis+' value="'+esc(ent.endereco||"")+'"></label></div>'+
+    '<div class="field-row grid-2" style="margin-bottom:12px">'+
+      '<label class="field">Cidade<input type="text" name="cidade" required'+dis+' value="'+esc(ent.cidade||"")+'"></label>'+
+      '<label class="field">Estado<select name="estado" required'+dis+'>'+'<option value="">selecione</option>'+estadosOpts+'</select></label>'+
+    '</div>';
+}
 function modalEntidade(ent){
-  ent=ent||{tipo:"fornecedor",nome:"",razaoSocial:"",cnpj:"",endereco:"",cidade:"",estado:"",observacoes:""};
+  ent=ent||{tipo:"fornecedor",nome:"",razaoSocial:"",cnpj:"",endereco:"",cidade:"",estado:"",observacoes:"",cor:"",tamanho:""};
   var somenteLeitura=!!(ent.id && !possoEditar(ent));
   var dis=somenteLeitura?" disabled":"";
-  var estadosOpts=Object.keys(ESTADOS).sort().map(function(uf){return '<option value="'+uf+'"'+(ent.estado===uf?" selected":"")+">"+uf+" — "+ESTADOS[uf]+"</option>";}).join("");
   var acoes=somenteLeitura?
     ('<div class="modal-actions" style="justify-content:space-between"><span style="font-size:12px;color:var(--muted)">cadastrado por outro usuário — só visualização</span><button type="button" class="btn ghost" data-close-modal="1">Fechar</button></div>')
     :('<div class="modal-actions">'+(ent.id?'<button type="button" class="btn danger ghost" data-action="del-ent" data-id="'+ent.id+'">Excluir</button>':"")+'<button type="button" class="btn ghost" data-close-modal="1">Cancelar</button><button type="button" class="btn primary" id="ent-save">Salvar</button></div>');
@@ -1726,16 +1762,10 @@ function modalEntidade(ent){
     '<h3>'+(ent.id?(somenteLeitura?"Ver cadastro":"Editar cadastro"):"Novo cadastro")+'</h3>'+
     '<div id="form-ent" data-ent-id="'+(ent.id||"")+'">'+
     '<div class="field-row grid-2" style="margin-bottom:12px">'+
-      '<label class="field">Tipo<select name="tipo"'+dis+'>'+["fornecedor","cliente","ambos"].map(function(t){return '<option value="'+t+'"'+(ent.tipo===t?" selected":"")+">"+t+"</option>";}).join("")+'</select></label>'+
-      '<label class="field">CNPJ<input type="text" name="cnpj"'+dis+' value="'+esc(ent.cnpj)+'" placeholder="00.000.000/0000-00"></label>'+
+      '<label class="field">Tipo<select name="tipo" id="ent-tipo-sel"'+dis+'>'+["fornecedor","cliente","ambos","mercadoria"].map(function(t){return '<option value="'+t+'"'+(ent.tipo===t?" selected":"")+">"+(t==="mercadoria"?"Mercadoria":t)+"</option>";}).join("")+'</select></label>'+
+      '<label class="field">Nome<input type="text" name="nome" required'+dis+' value="'+esc(ent.nome)+'" placeholder="Como você chama essa pessoa/empresa/mercadoria"></label>'+
     '</div>'+
-    '<div class="field-row" style="margin-bottom:12px"><label class="field">Nome<input type="text" name="nome" required'+dis+' value="'+esc(ent.nome)+'" placeholder="Como você chama essa pessoa/empresa"></label></div>'+
-    '<div class="field-row" style="margin-bottom:12px"><label class="field">Razão social<input type="text" name="razaoSocial"'+dis+' value="'+esc(ent.razaoSocial)+'"></label></div>'+
-    '<div class="field-row" style="margin-bottom:12px"><label class="field">Endereço<input type="text" name="endereco"'+dis+' value="'+esc(ent.endereco)+'"></label></div>'+
-    '<div class="field-row grid-2" style="margin-bottom:12px">'+
-      '<label class="field">Cidade<input type="text" name="cidade" required'+dis+' value="'+esc(ent.cidade)+'"></label>'+
-      '<label class="field">Estado<select name="estado" required'+dis+'>'+'<option value="">selecione</option>'+estadosOpts+'</select></label>'+
-    '</div>'+
+    '<div id="ent-fields-area">'+entFieldsHtml(ent.tipo,ent,dis)+'</div>'+
     '<div class="field-row" style="margin-bottom:4px"><label class="field">Observações<textarea name="observacoes" rows="3"'+dis+'>'+esc(ent.observacoes)+'</textarea></label></div>'+
     acoes+
     "</div></div></div>";
@@ -1745,9 +1775,12 @@ function modalEntidade(ent){
 function viewPrecos(){
   var dia=state.precoDia||{precos:[]};
   var fornecedores=state.entidades.filter(function(e){return e.tipo==="fornecedor"||e.tipo==="ambos";}).sort(function(a,b){return a.nome.localeCompare(b.nome);});
+  var mercadorias=state.entidades.filter(function(e){return e.tipo==="mercadoria";}).sort(function(a,b){return a.nome.localeCompare(b.nome);});
   var novo=state._precoNovo==="1";
   var selId=state._precoEntId||"";
   var selEnt=state.entidades.filter(function(e){return e.id===selId;})[0];
+  var selMercId=state._precoMercadoriaId||"";
+  function mercNome(id){ var m=mercadorias.filter(function(x){return x.id===id;})[0]; return m?m.nome:null; }
 
   var formInner="";
   if(!novo){
@@ -1771,6 +1804,10 @@ function viewPrecos(){
       '<label class="field precos-modo-field"><span>Modo</span><div class="seg precos-modo-seg"><button class="'+(!novo?"active":"")+'" data-preco-modo="cad">Cadastrado</button><button class="'+(novo?"active":"")+'" data-preco-modo="novo">Novo / avulso</button></div></label>'+
     '</div>'+
     '<div id="preco-ent-area">'+formInner+'</div>'+
+    '<div class="field-row" style="margin-top:14px"><label class="field">Mercadoria<select id="preco-merc-select">'+
+      '<option value="">sem categoria</option>'+
+      mercadorias.map(function(m){return '<option value="'+m.id+'"'+(selMercId===m.id?" selected":"")+">"+esc(m.nome)+([m.cor,m.tamanho].filter(Boolean).length?" ("+[m.cor,m.tamanho].filter(Boolean).map(esc).join(", ")+")":"")+"</option>";}).join("")+
+    '</select></label></div>'+
     '<div class="field-row grid-2" style="margin-top:14px">'+
       '<label class="field">Preço por caixa (R$)<input type="number" step="0.01" min="0" id="preco-valor" placeholder="0,00"></label>'+
       '<label class="field">Foto da mercadoria (opcional)<span class="hint">recebida do fornecedor</span>'+
@@ -1782,17 +1819,29 @@ function viewPrecos(){
     '<div class="modal-actions" style="margin-top:16px;justify-content:flex-start"><button class="btn primary" data-action="add-preco">'+ICONS.plus+" Adicionar preço</button></div>"+
   "</div>";
 
-  var lista=(dia.precos||[]).slice().reverse().map(function(p){
+  var filtroLista=state._precoFiltroMerc||"todas";
+  var precosDoDia=dia.precos||[];
+  var precosFiltrados=filtroLista==="todas"?precosDoDia:precosDoDia.filter(function(p){return (p.mercadoriaId||"")===filtroLista;});
+  var lista=precosFiltrados.slice().reverse().map(function(p){
     var delBtn=possoEditar(p)?('<button class="iconbtn" data-del-preco="'+p.id+'">'+ICONS.x+"</button>"):"";
+    var mercLabel=p.mercadoriaNome?'<span class="pill amber" style="margin-left:6px">'+esc(p.mercadoriaNome)+"</span>":"";
     return '<div class="op-row"><div class="l">'+
       (p.fotoId?'<img class="thumb" data-view-foto="'+state.precoData+"|"+p.fotoId+'" src="">':"")+
-      '<div class="meta"><div class="nm">'+esc(p.nome)+'</div><div class="loc">'+esc(p.cidade)+"/"+esc(p.estado)+(p.obs?" · "+esc(p.obs):"")+'</div></div></div>'+
+      '<div class="meta"><div class="nm">'+esc(p.nome)+mercLabel+'</div><div class="loc">'+esc(p.cidade)+"/"+esc(p.estado)+(p.obs?" · "+esc(p.obs):"")+'</div></div></div>'+
       '<div class="r"><span class="valor num">'+fmtMoney(p.preco)+'/cx</span>'+delBtn+"</div></div>";
   }).join("") || '<div class="empty">Nenhum preço lançado nesta data ainda.</div>';
 
+  var filtroListaHtml='<div class="toolbar" style="margin-bottom:10px;justify-content:space-between;flex-wrap:wrap;gap:8px">'+
+    '<div class="section-title" style="margin:0">Lançados em '+fmtDateBR(state.precoData)+' ('+precosFiltrados.length+")</div>"+
+    '<label class="field" style="flex-direction:row;align-items:center;gap:8px;width:auto"><span style="font-size:12px;color:var(--muted)">Mercadoria</span><select id="preco-filtro-merc" style="width:auto">'+
+      '<option value="todas"'+(filtroLista==="todas"?" selected":"")+'>Todas</option>'+
+      mercadorias.map(function(m){return '<option value="'+m.id+'"'+(filtroLista===m.id?" selected":"")+">"+esc(m.nome)+"</option>";}).join("")+
+    "</select></label>"+
+  "</div>";
+
   return '<div class="page-head"><div><h1>Preços do Dia</h1><p class="lede">Registre o preço por caixa que cada fornecedor passou hoje.</p></div></div>'+
     form+
-    '<div class="card"><div class="section-title">Lançados em '+fmtDateBR(state.precoData)+' ('+(dia.precos||[]).length+')</div>'+lista+"</div>";
+    '<div class="card">'+filtroListaHtml+lista+"</div>";
 }
 
 /* ============ VIEW: Praça (resumo + mapa geográfico) ============ */
@@ -1813,11 +1862,23 @@ function precosAgregados(dia){
   return {geralAvg:geral.length?avg(geral):null,geralN:geral.length,porEstado:estadoAvg,porCidade:cidadeAvg};
 }
 
+function pracaMercadoriaFiltrada(diaBruto){
+  var mercadorias=state.entidades.filter(function(e){return e.tipo==="mercadoria";}).sort(function(a,b){return a.nome.localeCompare(b.nome);});
+  var filtro=state._pracaMercadoriaId||"todas";
+  var precos=(diaBruto&&diaBruto.precos)||[];
+  var precosFiltrados=filtro==="todas"?precos:precos.filter(function(p){return (p.mercadoriaId||"")===filtro;});
+  return {dia:Object.assign({},diaBruto,{precos:precosFiltrados}),mercadorias:mercadorias,filtro:filtro};
+}
 function viewPraca(){
-  var dia=state.resumoDia||{precos:[]};
+  var pf=pracaMercadoriaFiltrada(state.resumoDia||{precos:[]});
+  var dia=pf.dia;
   var agg=precosAgregados(dia);
+  var mercSelectHtml='<label class="field" style="flex-direction:row;align-items:center;gap:8px"><select id="resumo-merc-select" style="width:auto">'+
+    '<option value="todas"'+(pf.filtro==="todas"?" selected":"")+'>Todas as mercadorias</option>'+
+    pf.mercadorias.map(function(m){return '<option value="'+m.id+'"'+(pf.filtro===m.id?" selected":"")+">"+esc(m.nome)+"</option>";}).join("")+
+  "</select></label>";
   var head='<div class="page-head"><div><h1>Praça — resumo de preços</h1><p class="lede">O que está sendo trabalhado no mercado nesta data (preço por caixa).</p></div>'+
-    '<div class="toolbar"><label class="field" style="flex-direction:row;align-items:center;gap:8px"><input type="date" id="resumo-data" value="'+state.resumoData+'" style="width:auto"></label></div></div>';
+    '<div class="toolbar"><label class="field" style="flex-direction:row;align-items:center;gap:8px"><input type="date" id="resumo-data" value="'+state.resumoData+'" style="width:auto"></label>'+mercSelectHtml+'</div></div>';
 
   var kpis='<div class="kpi-row"><div class="kpi"><div class="label">Média Brasil / caixa</div><div class="value gold">'+(agg.geralAvg!=null?fmtMoney(agg.geralAvg):"—")+'</div></div>'+
     '<div class="kpi"><div class="label">Fornecedores no dia</div><div class="value">'+agg.geralN+'</div></div>'+
@@ -2195,7 +2256,7 @@ function viewCargas(){
   var head='<div class="page-head"><div><h1>Cargas</h1><p class="lede">'+(opView?"Tipo, status, quantidade, placa e foto das cargas da data selecionada.":"Todas as cargas de compra, venda e compra casada da data selecionada.")+'</p></div>'+
     '<div class="toolbar"><input type="date" id="carga-data" value="'+state.cargaData+'" style="width:auto">'+(opView?"":'<button class="btn primary" data-action="nova-carga">'+ICONS.plus+" Nova carga</button>")+"</div></div>";
 
-  var seg='<div class="seg" style="margin-bottom:16px">'+["todas","compra","venda","casada"].map(function(f){return '<button class="'+(filtro===f?"active":"")+'" data-carga-filtro="'+f+'">'+(f==="todas"?"Todas":f==="compra"?"Compras":f==="venda"?"Vendas":"Casadas")+"</button>";}).join("")+"</div>";
+  var seg='<div class="seg" style="margin-bottom:16px">'+["todas","compra","venda","casada"].map(function(f){return '<button class="'+(filtro===f?"active":"")+'" data-carga-filtro="'+f+'">'+(f==="todas"?"Todas":f==="compra"?"Compras":f==="venda"?"Vendas":"Compras Casadas")+"</button>";}).join("")+"</div>";
 
   var tipoPill={compra:"gray",venda:"green",casada:"gold"};
 
@@ -2213,6 +2274,7 @@ function viewCargas(){
       // carga — sem qualquer valor financeiro (preço, valor total, lucro) e sem ações
       var topOp='<div class="carga-top"><div class="left">'+
         '<span class="pill '+(tipoPill[c.tipo]||"gray")+'">'+(c.tipo==="casada"?"compra casada":c.tipo)+'</span>'+
+        (c.mercadoriaNome?'<span class="pill amber">'+esc(c.mercadoriaNome)+"</span>":"")+
         '<span class="pill '+st.cls+'">'+esc(st.label)+"</span>"+
         '<span class="carga-num">carga nº '+(c.numeroSequencial||"—")+'</span>'+
         '<strong>'+(c.tipo==="casada"?(esc(c.nome)+" &rarr; "+esc(c.clienteNome||"—")):esc(c.nome))+"</strong></div></div>";
@@ -2234,6 +2296,7 @@ function viewCargas(){
 
     var top='<div class="carga-top"><div class="left">'+
       '<span class="pill '+(tipoPill[c.tipo]||"gray")+'">'+(c.tipo==="casada"?"compra casada":c.tipo)+'</span>'+
+      (c.mercadoriaNome?'<span class="pill amber">'+esc(c.mercadoriaNome)+"</span>":"")+
       '<span class="carga-num">carga nº '+(c.numeroSequencial||"—")+'</span>'+
       '<strong>'+(c.tipo==="casada"?(esc(c.nome)+" &rarr; "+esc(c.clienteNome||"—")):esc(c.nome))+"</strong></div>"+
       actions+"</div>";
@@ -2322,6 +2385,8 @@ function cargaPrecoAreaHtml(tipo,carga){
 function modalCarga(carga){
   var tipo=carga?carga.tipo:"compra";
   var titulo=carga?"Editar carga":"Nova carga";
+  var mercadorias=state.entidades.filter(function(e){return e.tipo==="mercadoria";}).sort(function(a,b){return a.nome.localeCompare(b.nome);});
+  var mercSelId=(carga&&carga.mercadoriaId)||"";
   return '<div class="modal-back" data-close-modal="1"><div class="modal" onclick="event.stopPropagation()">'+
     "<h3>"+titulo+"</h3>"+
     '<div id="form-carga" data-carga-id="'+(carga?carga.id:"")+'">'+
@@ -2329,6 +2394,10 @@ function modalCarga(carga){
       '<label class="field">Tipo<select name="tipo" id="carga-tipo-sel"><option value="compra"'+(tipo==="compra"?" selected":"")+'>Compra</option><option value="venda"'+(tipo==="venda"?" selected":"")+'>Venda</option><option value="casada"'+(tipo==="casada"?" selected":"")+'>Compra Casada</option></select></label>'+
       '<label class="field">Data<input type="date" name="data" value="'+state.cargaData+'"'+(carga?" disabled":"")+'></label>'+
     "</div>"+
+    '<div class="field-row" style="margin-bottom:12px"><label class="field">Mercadoria<select name="mercadoriaId">'+
+      '<option value="">sem categoria</option>'+
+      mercadorias.map(function(m){return '<option value="'+m.id+'"'+(mercSelId===m.id?" selected":"")+">"+esc(m.nome)+([m.cor,m.tamanho].filter(Boolean).length?" ("+[m.cor,m.tamanho].filter(Boolean).map(esc).join(", ")+")":"")+"</option>";}).join("")+
+    "</select></label></div>"+
     '<div id="carga-ent-area">'+cargaEntAreaHtml(tipo,carga)+"</div>"+
     '<div id="carga-preco-area">'+cargaPrecoAreaHtml(tipo,carga)+"</div>"+
     '<div class="field-row grid-2" style="margin-bottom:12px">'+
@@ -2375,6 +2444,8 @@ function attachHandlers(){
     var dt=document.getElementById("preco-data"); if(dt) dt.onchange=async function(){state.precoData=dt.value;state.precoDia=await Store.getDia(state.precoData);state.precoFotoPendente=null;render();};
     document.querySelectorAll("[data-preco-modo]").forEach(function(el){el.onclick=function(){state._precoNovo=el.getAttribute("data-preco-modo")==="novo"?"1":"0";render();};});
     var sel=document.getElementById("preco-ent-select"); if(sel) sel.onchange=function(){state._precoEntId=sel.value;render();};
+    var mercSel=document.getElementById("preco-merc-select"); if(mercSel) mercSel.onchange=function(){state._precoMercadoriaId=mercSel.value;};
+    var filtroMerc=document.getElementById("preco-filtro-merc"); if(filtroMerc) filtroMerc.onchange=function(){state._precoFiltroMerc=filtroMerc.value;render();};
     var fa=document.getElementById("preco-foto-add"); if(fa) fa.onclick=function(){document.getElementById("preco-foto-input").click();};
     var fi=document.getElementById("preco-foto-input"); if(fi) fi.onchange=async function(){
       if(!fi.files[0])return;
@@ -2401,6 +2472,7 @@ function attachHandlers(){
 
   if(state.tab==="praca"){
     var rd=document.getElementById("resumo-data"); if(rd) rd.onchange=async function(){state.resumoData=rd.value;state.resumoDia=await Store.getDia(state.resumoData);state.mapZoomUF=null;render();};
+    var rm=document.getElementById("resumo-merc-select"); if(rm) rm.onchange=function(){state._pracaMercadoriaId=rm.value;state.mapZoomUF=null;render();};
     document.querySelectorAll("[data-resumo-view]").forEach(function(el){el.onclick=function(){state.resumoView=el.getAttribute("data-resumo-view");state.mapZoomUF=null;render();};});
     document.querySelectorAll("[data-lista-modo]").forEach(function(el){el.onclick=function(){state.resumoListaModo=el.getAttribute("data-lista-modo");render();};});
     document.querySelectorAll("[data-zoom-uf]").forEach(function(el){el.onclick=function(){var uf=el.getAttribute("data-zoom-uf");state.mapZoomUF=uf||null;render();};});
@@ -2412,7 +2484,8 @@ function attachHandlers(){
         var relX=(ev.clientX-rect.left)/rect.width, relY=(ev.clientY-rect.top)/rect.height;
         var x=mc.minX+relX*(mc.maxX-mc.minX), y=mc.minY+relY*(mc.maxY-mc.minY);
         var uf=ufAtProjXY(mc,x,y);
-        var agg=precosAgregados(state.resumoDia||{precos:[]});
+        var pf=pracaMercadoriaFiltrada(state.resumoDia||{precos:[]});
+        var agg=precosAgregados(pf.dia);
         if(uf && agg.porEstado[uf]){ state.mapZoomUF=uf; render(); }
       };
     }
@@ -2463,19 +2536,35 @@ function closeModal(node){ if(node&&node.remove) node.remove(); }
 
 function hookEntidadeModal(ent){
   var node=document.getElementById("form-ent");
+  var somenteLeitura=!!(ent&&ent.id&&!possoEditar(ent));
+  var dis=somenteLeitura?" disabled":"";
+  var tipoSel=document.getElementById("ent-tipo-sel");
+  var fieldsArea=document.getElementById("ent-fields-area");
+  if(tipoSel && fieldsArea) tipoSel.onchange=function(){ fieldsArea.innerHTML=entFieldsHtml(tipoSel.value,null,dis); };
   var save=document.getElementById("ent-save");
   if(!save) return; // modal em modo somente-leitura (sem permissão de editar) — nada a conectar
   save.onclick=guarded(async function(){
     if(ent&&ent.id&&!possoEditar(ent)){ toast("Você só pode editar cadastros feitos por você.",true); return; }
     var get=function(name){ var el=node.querySelector('[name="'+name+'"]'); return el?el.value:""; };
-    var nome=get("nome").trim(), cidade=get("cidade").trim(), estado=get("estado");
-    if(!nome||!cidade||!estado){ toast("Preencha nome, cidade e estado.",true); return; }
-    var entObj={
-      id:node.getAttribute("data-ent-id")||undefined,
-      tipo:get("tipo"),nome:nome,razaoSocial:get("razaoSocial"),cnpj:get("cnpj"),
-      endereco:get("endereco"),cidade:cidade,estado:estado,observacoes:get("observacoes"),
-      criadoPor:(ent&&ent.criadoPor)||meuUid(),criadoEm:(ent&&ent.criadoEm)||new Date().toISOString()
-    };
+    var tipo=get("tipo"), nome=get("nome").trim();
+    var entObj;
+    if(tipo==="mercadoria"){
+      if(!nome){ toast("Preencha o nome da mercadoria.",true); return; }
+      entObj={
+        id:node.getAttribute("data-ent-id")||undefined,
+        tipo:tipo,nome:nome,cor:get("cor"),tamanho:get("tamanho"),observacoes:get("observacoes"),
+        criadoPor:(ent&&ent.criadoPor)||meuUid(),criadoEm:(ent&&ent.criadoEm)||new Date().toISOString()
+      };
+    }else{
+      var cidade=get("cidade").trim(), estado=get("estado");
+      if(!nome||!cidade||!estado){ toast("Preencha nome, cidade e estado.",true); return; }
+      entObj={
+        id:node.getAttribute("data-ent-id")||undefined,
+        tipo:tipo,nome:nome,razaoSocial:get("razaoSocial"),cnpj:get("cnpj"),
+        endereco:get("endereco"),cidade:cidade,estado:estado,observacoes:get("observacoes"),
+        criadoPor:(ent&&ent.criadoPor)||meuUid(),criadoEm:(ent&&ent.criadoEm)||new Date().toISOString()
+      };
+    }
     if(!entObj.id) delete entObj.id;
     await Store.saveEntidade(entObj);
     state.entidades=await Store.listEntidades();
@@ -2543,8 +2632,12 @@ async function onAddPreco(){
   var preco=parseFloat(document.getElementById("preco-valor").value);
   if(!preco&&preco!==0){toast("Informe o preço por caixa.",true);return;}
   var obs=document.getElementById("preco-obs").value.trim();
+  var mercSel=document.getElementById("preco-merc-select");
+  var mercadoriaId=mercSel&&mercSel.value?mercSel.value:null;
+  var mercEnt=mercadoriaId?state.entidades.filter(function(e){return e.id===mercadoriaId;})[0]:null;
+  var mercadoriaNome=mercEnt?mercEnt.nome:null;
 
-  var entry={id:uid(),entidadeId:entidadeId||null,nome:nome,cidade:cidade,estado:estado,preco:preco,obs:obs,fotoId:null,criadoEm:new Date().toISOString(),criadoPor:meuUid()};
+  var entry={id:uid(),entidadeId:entidadeId||null,nome:nome,cidade:cidade,estado:estado,preco:preco,obs:obs,fotoId:null,mercadoriaId:mercadoriaId,mercadoriaNome:mercadoriaNome,criadoEm:new Date().toISOString(),criadoPor:meuUid()};
 
   if(novoModo){
     var newEnt={tipo:"fornecedor",nome:nome,razaoSocial:"",cnpj:"",endereco:"",cidade:cidade,estado:estado,observacoes:"Cadastrado automaticamente via Preços do Dia.",criadoPor:meuUid()};
@@ -2708,7 +2801,11 @@ function hookCargaModal(carga){
     if(modalFotoNota){ fotoId=uid(); await Store.saveFoto(dataIso,fotoId,modalFotoNota,tipo==="compra"?"notaFiscalEntrada":(tipo==="venda"?"notaFiscalSaida":"notaFiscalCasada")); photoCache[dataIso+"/"+fotoId]=modalFotoNota; }
     if(modalFotoQual){ fotoQualidadeId=uid(); await Store.saveFoto(dataIso,fotoQualidadeId,modalFotoQual,"qualidade"); photoCache[dataIso+"/"+fotoQualidadeId]=modalFotoQual; }
 
-    var carga={id:editId||uid(),tipo:tipo,entidadeId:entId,nome:nome,preco:preco,quantidadeCaixas:qtd,placa:get("placa"),status:get("status"),numeroSequencial:seq,fotoId:fotoId,fotoQualidadeId:fotoQualidadeId,criadoEm:existing?existing.criadoEm:new Date().toISOString(),criadoPor:existing?existing.criadoPor:meuUid()};
+    var mercadoriaId=get("mercadoriaId")||null;
+    var mercEnt=mercadoriaId?state.entidades.filter(function(e){return e.id===mercadoriaId;})[0]:null;
+    var mercadoriaNome=mercEnt?mercEnt.nome:null;
+
+    var carga={id:editId||uid(),tipo:tipo,entidadeId:entId,nome:nome,preco:preco,quantidadeCaixas:qtd,placa:get("placa"),status:get("status"),numeroSequencial:seq,fotoId:fotoId,fotoQualidadeId:fotoQualidadeId,mercadoriaId:mercadoriaId,mercadoriaNome:mercadoriaNome,criadoEm:existing?existing.criadoEm:new Date().toISOString(),criadoPor:existing?existing.criadoPor:meuUid()};
     if(tipo==="casada"){
       carga.precoVenda=precoVenda;
       carga.clienteEntidadeId=clienteEntId;
@@ -2740,6 +2837,34 @@ document.addEventListener("click",function(e){
     var node=openModal(modalUsuarios());
     var sairBtn=node.querySelector('[data-action="logout"]');
     if(sairBtn) sairBtn.onclick=logout;
+
+    var editarEmpresaEl=node.querySelector('[data-action="editar-empresa"]');
+    if(editarEmpresaEl) editarEmpresaEl.onclick=guarded(function(){
+      if(!souAdminReal()){ toast("Só um administrador pode editar os dados da empresa.",true); return; }
+      var empNode=openModal(modalEmpresa(state.empresa));
+      var save=empNode.querySelector("#empresa-save");
+      save.onclick=guarded(async function(){
+        var form=empNode.querySelector("#form-empresa");
+        var get=function(name){ var el=form.querySelector('[name="'+name+'"]'); return el?el.value:""; };
+        var nomeFantasia=get("nomeFantasia").trim();
+        if(!nomeFantasia){ toast("Informe o nome fantasia da empresa.",true); return; }
+        var empAtual=state.empresa||{};
+        var empObj=Object.assign({},empAtual,{
+          id:empAtual.id||minhaEmpresaId(),
+          nomeFantasia:nomeFantasia,
+          razaoSocial:get("razaoSocial").trim(),
+          cnpj:get("cnpj").trim()
+        });
+        await Store.saveEmpresa(empObj);
+        state.empresa=await Store.getEmpresa(minhaEmpresaId());
+        var nmEl=editarEmpresaEl.querySelector(".nm");
+        var locEl=editarEmpresaEl.querySelector(".loc");
+        if(nmEl) nmEl.textContent=state.empresa.nomeFantasia||"—";
+        if(locEl) locEl.textContent=(state.empresa.razaoSocial||"")+(state.empresa.cnpj?" · "+state.empresa.cnpj:"");
+        toast("Dados da empresa atualizados.");
+        closeModal(empNode);
+      });
+    });
 
     function wireRowButtons(){
       node.querySelectorAll("[data-admin-toggle]").forEach(function(el){
