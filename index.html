@@ -16,27 +16,28 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <style>
 :root{
-  --bg:#0a0a0b;
-  --bg-1:#131315;
-  --bg-2:#18181b;
-  --bg-3:#202023;
-  --border:rgba(255,255,255,.08);
-  --border-2:rgba(255,255,255,.14);
-  --text:#f2efe8;
-  --text-dim:#a8a196;
-  --text-faint:#6d685f;
+  --bg:#0b0c0d;
+  --bg-1:#17181b;
+  --bg-2:#212226;
+  --bg-3:#2c2e33;
+  --bg-4:#393b41;
+  --border:rgba(255,255,255,.11);
+  --border-2:rgba(255,255,255,.20);
+  --text:#f7f5f0;
+  --text-dim:#b9b3a7;
+  --text-faint:#89837a;
   --gold:#c9a24e;
   --gold-bright:#e9c877;
   --gold-dim:#8a6c33;
   --gold-ink:#241c0d;
-  --green:#4caf6e;
-  --green-bg:rgba(76,175,110,.14);
-  --amber:#e0b429;
-  --amber-bg:rgba(224,180,41,.16);
-  --orange:#e0872f;
-  --orange-bg:rgba(224,135,47,.16);
-  --red:#d9594a;
-  --red-bg:rgba(217,89,74,.14);
+  --green:#57bd7b;
+  --green-bg:rgba(87,189,123,.16);
+  --amber:#eec242;
+  --amber-bg:rgba(238,194,66,.18);
+  --orange:#eb9a44;
+  --orange-bg:rgba(235,154,68,.18);
+  --red:#e2685c;
+  --red-bg:rgba(226,104,92,.16);
   --font-display:'Fraunces',serif;
   --font-body:'Manrope',ui-sans-serif,sans-serif;
   --font-mono:'IBM Plex Mono',ui-monospace,monospace;
@@ -45,8 +46,8 @@
   --radius-l:16px;
   --safe-b:env(safe-area-inset-bottom,0px);
   --safe-t:env(safe-area-inset-top,0px);
-  --overlay-1:rgba(255,255,255,.02);
-  --overlay-2:rgba(255,255,255,.015);
+  --overlay-1:rgba(255,255,255,.035);
+  --overlay-2:rgba(255,255,255,.025);
   --map-outline:rgba(255,255,255,.4);
   --selection-text:#fff;
   color-scheme: dark;
@@ -331,37 +332,51 @@ tr:hover td{background:var(--overlay-2);}
 .list-toggle{display:flex;gap:8px;margin-bottom:14px;}
 
 /* ---------- Cargas ---------- */
-.carga-card{border:1px solid var(--border);border-left-width:3px;border-left-style:solid;border-left-color:var(--border-2);border-radius:var(--radius-m);padding:14px 16px;margin-bottom:10px;background:var(--bg-1);}
+.carga-card{border:1px solid var(--border);border-left-width:4px;border-left-style:solid;border-left-color:var(--border-2);border-radius:var(--radius-m);padding:16px 18px;margin-bottom:12px;background:var(--bg-1);}
 .carga-card.tipo-compra{border-left-color:var(--text-faint);}
 .carga-card.tipo-venda{border-left-color:var(--green);}
 .carga-card.tipo-casada{border-left-color:var(--gold);}
-.carga-result{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:12px;padding:10px 14px;background:var(--bg-2);border-radius:var(--radius-s);}
-.carga-result .rpart{display:flex;flex-direction:column;gap:2px;}
-.carga-result .rlabel{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-faint);}
-.carga-result .rvalue{font-family:var(--font-mono);font-size:19px;font-weight:600;}
-.carga-result .rvalue.gold{color:var(--gold-bright);}
-.carga-result .rvalue.pos{color:var(--green);}
-.carga-result .rvalue.neg{color:var(--red);}
-.carga-result .rsep{color:var(--text-faint);font-size:15px;}
-.carga-result.casada .rpart.lucro{padding-left:14px;border-left:1px solid var(--border-2);}
-.carga-details{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-top:12px;}
-.carga-details .k{font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.05em;}
-.carga-details .v{font-family:var(--font-mono);font-size:13.5px;margin-top:2px;}
-.carga-docs{display:flex;gap:18px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px dashed var(--border);}
+.carga-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+.carga-top .left{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.carga-top strong{font-size:14.5px;}
+.carga-num{font-family:var(--font-mono);font-size:11px;color:var(--text-dim);background:var(--bg-3);padding:2px 7px;border-radius:5px;}
+.carga-top-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+
+.carga-details{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:14px;}
+.carga-details .item{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-s);padding:8px 10px;}
+.carga-details .k{font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.05em;font-weight:700;}
+.carga-details .v{font-family:var(--font-mono);font-size:14px;margin-top:3px;color:var(--text);}
+
+.carga-resumo{margin-top:14px;border:1px solid var(--border);border-radius:var(--radius-m);overflow:hidden;}
+.carga-resumo .linha{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 14px;background:var(--bg-2);}
+.carga-resumo .linha+.linha{border-top:1px solid var(--border);}
+.carga-resumo .linha.despesa{background:var(--bg-1);}
+.carga-resumo .linha.despesa .rlabel{color:var(--text-dim);text-transform:none;letter-spacing:0;font-weight:500;font-size:12.5px;}
+.carga-resumo .linha.final{background:var(--bg-4);padding:13px 14px;}
+.carga-resumo .rlabel{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-faint);font-weight:700;}
+.carga-resumo .linha.final .rlabel{color:var(--text-dim);font-size:11px;}
+.carga-resumo .rvalue{font-family:var(--font-mono);font-size:15px;font-weight:600;color:var(--text);}
+.carga-resumo .linha.final .rvalue{font-size:21px;font-weight:700;}
+.carga-resumo .rvalue.gold{color:var(--gold-bright);}
+.carga-resumo .rvalue.pos{color:var(--green);}
+.carga-resumo .rvalue.neg{color:var(--red);}
+
+.despesas-list{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;}
+.despesa-row{display:grid;grid-template-columns:1fr 150px auto;gap:8px;align-items:center;}
+.despesas-empty{font-size:12px;color:var(--text-faint);padding:2px 2px 10px;}
+.btn.sm{padding:7px 12px;font-size:12px;}
+
+.carga-docs{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px dashed var(--border);}
 .doc-chip{display:flex;align-items:center;gap:8px;}
 .doc-chip .doc-label{font-size:11px;color:var(--text-faint);}
 .thumb-empty{display:flex;align-items:center;justify-content:center;color:var(--text-faint);background:var(--bg-2);border-style:dashed;}
 .thumb-empty svg{width:16px;height:16px;}
-.carga-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
-.carga-top .left{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.carga-num{font-family:var(--font-mono);font-size:11px;color:var(--text-faint);background:var(--bg-3);padding:2px 7px;border-radius:5px;}
 .carga-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-top:12px;}
 .carga-grid .k{font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.05em;}
 .carga-grid .v{font-family:var(--font-mono);font-size:13.5px;margin-top:2px;}
 .carga-grid .v.gold{color:var(--gold-bright);}
 .carga-grid .v.pos{color:var(--green);}
 .carga-grid .v.neg{color:var(--red);}
-.carga-top-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .iconbtn.sm{width:30px;height:30px;border-radius:7px;}
 .iconbtn.sm svg{width:13px;height:13px;}
 .op-row .r .valor.pos{color:var(--green);}
@@ -404,6 +419,7 @@ tr:hover td{background:var(--overlay-2);}
   .precos-modo-field{align-items:stretch;}
   .precos-modo-seg{display:flex;width:100%;flex-wrap:nowrap;}
   .precos-modo-seg button{flex:1;text-align:center;white-space:nowrap;padding:8px 6px;}
+  .despesa-row{grid-template-columns:1fr;}
 }
 @media(max-width:340px){
   .cal-grid{gap:3px;}
@@ -2249,8 +2265,11 @@ function viewCargas(){
     var qtd=c.quantidadeCaixas||0;
     var valorTotal=(c.preco||0)*qtd;
     var valorTotalVenda=c.tipo==="casada"?(c.precoVenda||0)*qtd:valorTotal;
-    var lucroLiquido=c.tipo==="casada"?(valorTotalVenda-valorTotal):undefined;
-    return Object.assign({},c,{valorTotal:valorTotal,valorTotalVenda:valorTotalVenda,lucroLiquido:lucroLiquido});
+    var despesasExtras=c.tipo==="casada"?(c.despesasExtras||[]):[];
+    var despesasTotal=despesasExtras.reduce(function(s,d){return s+(d.valor||0);},0);
+    var lucroBruto=c.tipo==="casada"?(valorTotalVenda-valorTotal):undefined;
+    var lucroLiquido=c.tipo==="casada"?(lucroBruto-despesasTotal):undefined;
+    return Object.assign({},c,{valorTotal:valorTotal,valorTotalVenda:valorTotalVenda,despesasExtras:despesasExtras,despesasTotal:despesasTotal,lucroBruto:lucroBruto,lucroLiquido:lucroLiquido});
   });
 
   var head='<div class="page-head"><div><h1>Cargas</h1><p class="lede">'+(opView?"Tipo, status, quantidade, placa e foto das cargas da data selecionada.":"Todas as cargas de compra, venda e compra casada da data selecionada.")+'</p></div>'+
@@ -2279,8 +2298,8 @@ function viewCargas(){
         '<span class="carga-num">carga nº '+(c.numeroSequencial||"—")+'</span>'+
         '<strong>'+(c.tipo==="casada"?(esc(c.nome)+" &rarr; "+esc(c.clienteNome||"—")):esc(c.nome))+"</strong></div></div>";
       var detailsOp='<div class="carga-details">'+
-        '<div><div class="k">Quantidade</div><div class="v">'+fmtNum(c.quantidadeCaixas||0)+" cx</div></div>"+
-        '<div><div class="k">Placa</div><div class="v">'+esc(c.placa||"—")+"</div></div>"+
+        '<div class="item"><div class="k">Quantidade</div><div class="v">'+fmtNum(c.quantidadeCaixas||0)+" cx</div></div>"+
+        '<div class="item"><div class="k">Placa</div><div class="v">'+esc(c.placa||"—")+"</div></div>"+
       "</div>";
       var docsOp='<div class="carga-docs">'+docChip("Foto da mercadoria",c.fotoId)+"</div>";
       return '<div class="carga-card tipo-'+c.tipo+'">'+topOp+detailsOp+docsOp+"</div>";
@@ -2303,28 +2322,27 @@ function viewCargas(){
 
     var result, details, docs;
     if(c.tipo==="casada"){
-      var lucro=c.lucroLiquido||0;
-      result='<div class="carga-result casada">'+
-        '<div class="rpart"><div class="rlabel">Total compra</div><div class="rvalue">'+fmtMoney(c.valorTotal)+"</div></div>"+
-        '<div class="rsep">&rarr;</div>'+
-        '<div class="rpart"><div class="rlabel">Total venda</div><div class="rvalue">'+fmtMoney(c.valorTotalVenda)+"</div></div>"+
-        '<div class="rpart lucro"><div class="rlabel">Lucro líquido</div><div class="rvalue '+(lucro>=0?"pos":"neg")+'">'+fmtMoney(lucro)+"</div></div>"+
+      var lucroBruto=c.lucroBruto||0, lucroLiquido=c.lucroLiquido||0;
+      result='<div class="carga-resumo">'+
+        '<div class="linha"><span class="rlabel">Total compra</span><span class="rvalue">'+fmtMoney(c.valorTotal)+"</span></div>"+
+        '<div class="linha"><span class="rlabel">Total venda</span><span class="rvalue">'+fmtMoney(c.valorTotalVenda)+"</span></div>"+
+        '<div class="linha"><span class="rlabel">Lucro bruto</span><span class="rvalue '+(lucroBruto>=0?"pos":"neg")+'">'+fmtMoney(lucroBruto)+"</span></div>"+
+        (c.despesasExtras&&c.despesasExtras.length?c.despesasExtras.map(function(d){return '<div class="linha despesa"><span class="rlabel">'+esc(d.nome||"Despesa extra")+'</span><span class="rvalue neg">&minus; '+fmtMoney(d.valor||0)+"</span></div>";}).join(""):"")+
+        '<div class="linha final"><span class="rlabel">Lucro líquido</span><span class="rvalue '+(lucroLiquido>=0?"pos":"neg")+'">'+fmtMoney(lucroLiquido)+"</span></div>"+
       "</div>";
       details='<div class="carga-details">'+
-        '<div><div class="k">Quantidade</div><div class="v">'+fmtNum(c.quantidadeCaixas||0)+" cx</div></div>"+
-        '<div><div class="k">Preço de compra / cx</div><div class="v">'+fmtMoney(c.preco)+"</div></div>"+
-        '<div><div class="k">Preço de venda / cx</div><div class="v">'+fmtMoney(c.precoVenda)+"</div></div>"+
-        '<div><div class="k">Placa</div><div class="v">'+esc(c.placa||"—")+"</div></div>"+
+        '<div class="item"><div class="k">Quantidade</div><div class="v">'+fmtNum(c.quantidadeCaixas||0)+" cx</div></div>"+
+        '<div class="item"><div class="k">Preço de compra / cx</div><div class="v">'+fmtMoney(c.preco)+"</div></div>"+
+        '<div class="item"><div class="k">Preço de venda / cx</div><div class="v">'+fmtMoney(c.precoVenda)+"</div></div>"+
+        '<div class="item"><div class="k">Placa</div><div class="v">'+esc(c.placa||"—")+"</div></div>"+
       "</div>";
       docs='<div class="carga-docs">'+docChip("Nota fiscal",c.fotoId)+docChip("Qualidade",c.fotoQualidadeId)+"</div>";
     } else {
-      result='<div class="carga-result">'+
-        '<div class="rpart"><div class="rlabel">Valor total</div><div class="rvalue gold">'+fmtMoney(c.valorTotal)+"</div></div>"+
-      "</div>";
+      result='<div class="carga-resumo"><div class="linha final"><span class="rlabel">Valor total</span><span class="rvalue gold">'+fmtMoney(c.valorTotal)+"</span></div></div>";
       details='<div class="carga-details">'+
-        '<div><div class="k">Preço / caixa</div><div class="v">'+fmtMoney(c.preco)+"</div></div>"+
-        '<div><div class="k">Quantidade</div><div class="v">'+fmtNum(c.quantidadeCaixas||0)+" cx</div></div>"+
-        '<div><div class="k">Placa</div><div class="v">'+esc(c.placa||"—")+"</div></div>"+
+        '<div class="item"><div class="k">Preço / caixa</div><div class="v">'+fmtMoney(c.preco)+"</div></div>"+
+        '<div class="item"><div class="k">Quantidade</div><div class="v">'+fmtNum(c.quantidadeCaixas||0)+" cx</div></div>"+
+        '<div class="item"><div class="k">Placa</div><div class="v">'+esc(c.placa||"—")+"</div></div>"+
       "</div>";
       docs='<div class="carga-docs">'+docChip(c.tipo==="compra"?"Nota fiscal (entrada)":"Nota fiscal (saída)",c.fotoId)+docChip("Qualidade",c.fotoQualidadeId)+"</div>";
     }
@@ -2335,9 +2353,8 @@ function viewCargas(){
   return head+seg+cards;
 }
 
-function cargaEntBloco(label,listaOpts,selectName,selectedId,avulsoName,avulsoValue){
-  return '<label class="field">'+label+'<select name="'+selectName+'"><option value="">selecione ou digite abaixo…</option>'+listaOpts.map(function(f){return '<option value="'+f.id+'"'+(selectedId===f.id?" selected":"")+'>'+esc(f.nome)+"</option>";}).join("")+'</select></label>'+
-    '<label class="field" style="margin-top:8px">Ou nome novo/avulso<input type="text" name="'+avulsoName+'" placeholder="Nome de quem não está cadastrado" value="'+esc(avulsoValue||"")+'"></label>';
+function cargaEntBloco(label,listaOpts,selectName,selectedId){
+  return '<label class="field">'+label+'<select name="'+selectName+'" required><option value="">selecione um cadastro…</option>'+listaOpts.map(function(f){return '<option value="'+f.id+'"'+(selectedId===f.id?" selected":"")+'>'+esc(f.nome)+"</option>";}).join("")+"</select></label>";
 }
 
 function cargaEntAreaHtml(tipo,carga){
@@ -2345,20 +2362,30 @@ function cargaEntAreaHtml(tipo,carga){
   var clientes=state.entidades.filter(function(e){return e.tipo==="cliente"||e.tipo==="ambos";});
   if(tipo==="venda"){
     var selId=(carga&&carga.entidadeId)||"";
-    var avulso=(carga&&!carga.entidadeId)?(carga.nome||""):"";
-    return '<div class="field-row">'+cargaEntBloco("Cliente",clientes,"entidadeId",selId,"nomeAvulso",avulso)+"</div>";
+    return '<div class="field-row">'+cargaEntBloco("Cliente",clientes,"entidadeId",selId)+"</div>";
   }
   if(tipo==="casada"){
     var selIdF=(carga&&carga.entidadeId)||"";
-    var avulsoF=(carga&&!carga.entidadeId)?(carga.nome||""):"";
     var selIdC=(carga&&carga.clienteEntidadeId)||"";
-    var avulsoC=(carga&&!carga.clienteEntidadeId)?(carga.clienteNome||""):"";
-    return '<div class="field-row" style="margin-bottom:14px"><div class="section-title" style="margin-bottom:8px">Vendedor (quem vende a carga pro seu pai)</div>'+cargaEntBloco("Fornecedor",fornecedores,"entidadeId",selIdF,"nomeAvulso",avulsoF)+"</div>"+
-      '<div class="field-row"><div class="section-title" style="margin-bottom:8px">Comprador (quem já vai comprar essa carga)</div>'+cargaEntBloco("Cliente",clientes,"clienteEntidadeId",selIdC,"clienteNomeAvulso",avulsoC)+"</div>";
+    return '<div class="field-row" style="margin-bottom:14px"><div class="section-title" style="margin-bottom:8px">Vendedor (quem vende a carga pro seu pai)</div>'+cargaEntBloco("Fornecedor",fornecedores,"entidadeId",selIdF)+"</div>"+
+      '<div class="field-row"><div class="section-title" style="margin-bottom:8px">Comprador (quem já vai comprar essa carga)</div>'+cargaEntBloco("Cliente",clientes,"clienteEntidadeId",selIdC)+"</div>";
   }
   var selIdCompra=(carga&&carga.entidadeId)||"";
-  var avulsoCompra=(carga&&!carga.entidadeId)?(carga.nome||""):"";
-  return '<div class="field-row">'+cargaEntBloco("Fornecedor",fornecedores,"entidadeId",selIdCompra,"nomeAvulso",avulsoCompra)+"</div>";
+  return '<div class="field-row">'+cargaEntBloco("Fornecedor",fornecedores,"entidadeId",selIdCompra)+"</div>";
+}
+
+function despesasExtrasEditorHtml(){
+  var rows=modalDespesasExtras.length?modalDespesasExtras.map(function(d,i){
+    return '<div class="despesa-row" data-despesa-idx="'+i+'">'+
+      '<input type="text" class="despesa-nome" placeholder="Nome da despesa (frete, pedágio…)" value="'+esc(d.nome||"")+'">'+
+      '<input type="number" step="0.01" min="0" class="despesa-valor" placeholder="Valor (R$)" value="'+(d.valor!=null?d.valor:"")+'">'+
+      '<button type="button" class="iconbtn sm despesa-remove" aria-label="Remover despesa">'+ICONS.trash+"</button>"+
+    "</div>";
+  }).join(""):'<div class="despesas-empty">Nenhuma despesa extra adicionada.</div>';
+  return '<div class="section-title" style="margin-bottom:8px">Despesas extras (opcional)</div>'+
+    '<div class="despesas-list" id="carga-despesas-rows">'+rows+"</div>"+
+    '<button type="button" class="btn ghost sm" id="carga-despesa-add" style="margin-bottom:14px">'+ICONS.plus+" Adicionar despesa</button>"+
+    '<div class="carga-resumo" id="carga-resumo-live" style="margin-bottom:14px"></div>';
 }
 
 function cargaPrecoAreaHtml(tipo,carga){
@@ -2366,20 +2393,18 @@ function cargaPrecoAreaHtml(tipo,carga){
   var qtd=carga&&carga.quantidadeCaixas!=null?carga.quantidadeCaixas:"";
   if(tipo==="casada"){
     var precoVenda=carga&&carga.precoVenda!=null?carga.precoVenda:"";
-    var valorCompra=(preco||0)*(qtd||0), valorVenda=(precoVenda||0)*(qtd||0), lucro=valorVenda-valorCompra;
     return '<div class="field-row grid-2" style="margin-bottom:6px">'+
         '<label class="field">Preço de compra / caixa (R$)<input type="number" step="0.01" name="preco" id="carga-preco" value="'+preco+'" required></label>'+
         '<label class="field">Preço de venda / caixa (R$)<input type="number" step="0.01" name="precoVenda" id="carga-preco-venda" value="'+precoVenda+'" required></label>'+
       "</div>"+
-      '<label class="field" style="margin-bottom:6px;max-width:220px">Quantidade (caixas)<input type="number" step="1" min="1" name="quantidadeCaixas" id="carga-qtd" value="'+qtd+'" required></label>'+
-      '<div style="text-align:right;margin-bottom:12px;font-size:11.5px;color:var(--text-faint)">Valor compra: <span class="valor-live" id="carga-valor-compra">'+fmtMoney(valorCompra)+'</span> &nbsp;·&nbsp; Valor venda: <span class="valor-live" id="carga-valor-venda">'+fmtMoney(valorVenda)+'</span><br>Lucro líquido: <span class="valor-live" id="carga-lucro-liquido" style="color:'+(lucro>=0?"var(--green)":"var(--red)")+'">'+fmtMoney(lucro)+"</span></div>";
+      '<label class="field" style="margin-bottom:16px;max-width:220px">Quantidade (caixas)<input type="number" step="1" min="1" name="quantidadeCaixas" id="carga-qtd" value="'+qtd+'" required></label>'+
+      '<div id="carga-despesas-area">'+despesasExtrasEditorHtml()+"</div>";
   }
-  var valorTotal=(preco||0)*(qtd||0);
   return '<div class="field-row grid-2" style="margin-bottom:6px">'+
       '<label class="field">Preço por caixa (R$)<input type="number" step="0.01" name="preco" id="carga-preco" value="'+preco+'" required></label>'+
       '<label class="field">Quantidade (caixas)<input type="number" step="1" min="1" name="quantidadeCaixas" id="carga-qtd" value="'+qtd+'" required></label>'+
     "</div>"+
-    '<div style="text-align:right;margin-bottom:12px;font-size:11.5px;color:var(--text-faint)">Valor total da carga: <span class="valor-live" id="carga-valor-total">'+fmtMoney(valorTotal)+"</span></div>";
+    '<div class="carga-resumo" id="carga-resumo-live" style="margin-bottom:14px"></div>';
 }
 
 function modalCarga(carga){
@@ -2413,7 +2438,7 @@ function modalCarga(carga){
 }
 
 /* ============ handlers ============ */
-var modalFotoNota=null, modalFotoQual=null;
+var modalFotoNota=null, modalFotoQual=null, modalDespesasExtras=[];
 
 function attachHandlers(){
   document.querySelectorAll("[data-goto]").forEach(function(el){el.onclick=function(){goto(el.getAttribute("data-goto"));};});
@@ -2494,7 +2519,7 @@ function attachHandlers(){
   if(state.tab==="cargas"){
     var cd=document.getElementById("carga-data"); if(cd) cd.onchange=async function(){state.cargaData=cd.value;state.cargaDia=await Store.getDia(state.cargaData);render();};
     document.querySelectorAll("[data-carga-filtro]").forEach(function(el){el.onclick=function(){state.cargaFiltroTipo=el.getAttribute("data-carga-filtro");render();};});
-    var nc=document.querySelector('[data-action="nova-carga"]'); if(nc) nc.onclick=function(){ if(!souAdmin()){toast("Somente administradores podem registrar cargas.",true);return;} modalFotoNota=null;modalFotoQual=null;openModal(modalCarga());hookCargaModal();};
+    var nc=document.querySelector('[data-action="nova-carga"]'); if(nc) nc.onclick=function(){ if(!souAdmin()){toast("Somente administradores podem registrar cargas.",true);return;} modalFotoNota=null;modalFotoQual=null;modalDespesasExtras=[];openModal(modalCarga());hookCargaModal();};
     document.querySelectorAll("[data-status-carga]").forEach(function(el){el.onchange=async function(){
       if(!souAdmin()){ toast("Somente administradores podem alterar o status.",true); render(); return; }
       var id=el.getAttribute("data-status-carga");
@@ -2508,6 +2533,7 @@ function attachHandlers(){
       var carga=(state.cargaDia.cargas||[]).filter(function(c){return c.id===id;})[0];
       if(!carga) return;
       modalFotoNota=null; modalFotoQual=null;
+      modalDespesasExtras=(carga.despesasExtras||[]).map(function(d){return {nome:d.nome,valor:d.valor};});
       openModal(modalCarga(carga)); hookCargaModal(carga);
     };});
     document.querySelectorAll('[data-action="apagar-carga"]').forEach(function(el){el.onclick=guarded(async function(){
@@ -2666,27 +2692,57 @@ function hookCargaModal(carga){
   var entArea=document.getElementById("carga-ent-area");
   var precoArea=document.getElementById("carga-preco-area");
 
+  function updateValorTotal(){
+    var preco=parseFloat((document.getElementById("carga-preco")||{}).value)||0;
+    var qtd=parseFloat((document.getElementById("carga-qtd")||{}).value)||0;
+    var resumo=document.getElementById("carga-resumo-live");
+    if(!resumo) return;
+    if(tipoSel.value==="casada"){
+      var precoVenda=parseFloat((document.getElementById("carga-preco-venda")||{}).value)||0;
+      var valorCompra=preco*qtd, valorVenda=precoVenda*qtd, lucroBruto=valorVenda-valorCompra;
+      var despesasTotal=modalDespesasExtras.reduce(function(s,d){return s+(parseFloat(d.valor)||0);},0);
+      var lucroLiquido=lucroBruto-despesasTotal;
+      resumo.innerHTML=
+        '<div class="linha"><span class="rlabel">Valor compra</span><span class="rvalue">'+fmtMoney(valorCompra)+"</span></div>"+
+        '<div class="linha"><span class="rlabel">Valor venda</span><span class="rvalue">'+fmtMoney(valorVenda)+"</span></div>"+
+        '<div class="linha"><span class="rlabel">Lucro bruto</span><span class="rvalue '+(lucroBruto>=0?"pos":"neg")+'">'+fmtMoney(lucroBruto)+"</span></div>"+
+        (modalDespesasExtras.length?'<div class="linha despesa"><span class="rlabel">Despesas extras</span><span class="rvalue neg">&minus; '+fmtMoney(despesasTotal)+"</span></div>":"")+
+        '<div class="linha final"><span class="rlabel">Lucro líquido</span><span class="rvalue '+(lucroLiquido>=0?"pos":"neg")+'">'+fmtMoney(lucroLiquido)+"</span></div>";
+    } else {
+      resumo.innerHTML='<div class="linha final"><span class="rlabel">Valor total da carga</span><span class="rvalue gold">'+fmtMoney(preco*qtd)+"</span></div>";
+    }
+  }
+  function wireDespesasRows(){
+    document.querySelectorAll(".despesa-row").forEach(function(row){
+      var idx=parseInt(row.getAttribute("data-despesa-idx"),10);
+      var nomeEl=row.querySelector(".despesa-nome");
+      var valorEl=row.querySelector(".despesa-valor");
+      var rmBtn=row.querySelector(".despesa-remove");
+      if(nomeEl) nomeEl.oninput=function(){ modalDespesasExtras[idx].nome=nomeEl.value; };
+      if(valorEl) valorEl.oninput=function(){ modalDespesasExtras[idx].valor=parseFloat(valorEl.value)||0; updateValorTotal(); };
+      if(rmBtn) rmBtn.onclick=function(){ modalDespesasExtras.splice(idx,1); renderDespesasArea(); };
+    });
+    var addBtn=document.getElementById("carga-despesa-add");
+    if(addBtn) addBtn.onclick=function(){ modalDespesasExtras.push({nome:"",valor:0}); renderDespesasArea(); };
+  }
+  function renderDespesasArea(){
+    var area=document.getElementById("carga-despesas-area");
+    if(!area) return;
+    area.innerHTML=despesasExtrasEditorHtml();
+    wireDespesasRows();
+    updateValorTotal();
+  }
   function wirePrecoInputs(){
     var pEl=document.getElementById("carga-preco"); if(pEl) pEl.oninput=updateValorTotal;
     var qEl=document.getElementById("carga-qtd"); if(qEl) qEl.oninput=updateValorTotal;
     var pvEl=document.getElementById("carga-preco-venda"); if(pvEl) pvEl.oninput=updateValorTotal;
-  }
-  function updateValorTotal(){
-    var preco=parseFloat((document.getElementById("carga-preco")||{}).value)||0;
-    var qtd=parseFloat((document.getElementById("carga-qtd")||{}).value)||0;
-    if(tipoSel.value==="casada"){
-      var precoVenda=parseFloat((document.getElementById("carga-preco-venda")||{}).value)||0;
-      var valorCompra=preco*qtd, valorVenda=precoVenda*qtd, lucro=valorVenda-valorCompra;
-      var elC=document.getElementById("carga-valor-compra"); if(elC) elC.textContent=fmtMoney(valorCompra);
-      var elV=document.getElementById("carga-valor-venda"); if(elV) elV.textContent=fmtMoney(valorVenda);
-      var elL=document.getElementById("carga-lucro-liquido"); if(elL){ elL.textContent=fmtMoney(lucro); elL.style.color=lucro>=0?"var(--green)":"var(--red)"; }
-    } else {
-      var elT=document.getElementById("carga-valor-total"); if(elT) elT.textContent=fmtMoney(preco*qtd);
-    }
+    if(tipoSel.value==="casada") wireDespesasRows();
+    updateValorTotal();
   }
   wirePrecoInputs();
 
   tipoSel.onchange=function(){
+    modalDespesasExtras=[];
     entArea.innerHTML=cargaEntAreaHtml(tipoSel.value,null);
     precoArea.innerHTML=cargaPrecoAreaHtml(tipoSel.value,null);
     wirePrecoInputs();
@@ -2748,39 +2804,26 @@ function hookCargaModal(carga){
     }
 
     var entidadeId=get("entidadeId");
-    var nomeAvulso=(get("nomeAvulso")||"").trim();
-    if(!entidadeId && !nomeAvulso){toast(tipo==="venda"?"Selecione ou digite o nome do cliente.":"Selecione ou digite o nome do fornecedor.",true);return;}
+    if(!entidadeId){toast(tipo==="venda"?"Selecione o cliente cadastrado.":"Selecione o fornecedor cadastrado.",true);return;}
 
-    var clienteEntidadeId="", clienteNomeAvulso="";
+    var clienteEntidadeId="";
     if(tipo==="casada"){
       clienteEntidadeId=get("clienteEntidadeId");
-      clienteNomeAvulso=(get("clienteNomeAvulso")||"").trim();
-      if(!clienteEntidadeId && !clienteNomeAvulso){toast("Selecione ou digite o nome do comprador.",true);return;}
+      if(!clienteEntidadeId){toast("Selecione o comprador cadastrado.",true);return;}
     }
 
-    var nome,entId=entidadeId||null;
-    if(entidadeId){
-      var ent=state.entidades.filter(function(e){return e.id===entidadeId;})[0];
-      nome=ent.nome;
-    } else {
-      var novoEnt={tipo:tipo==="venda"?"cliente":"fornecedor",nome:nomeAvulso,razaoSocial:"",cnpj:"",endereco:"",cidade:"",estado:"",observacoes:"Cadastrado automaticamente via Cargas.",criadoPor:meuUid()};
-      novoEnt=await Store.saveEntidade(novoEnt);
-      entId=novoEnt.id; nome=novoEnt.nome;
-      state.entidades=await Store.listEntidades();
-    }
+    var ent=state.entidades.filter(function(e){return e.id===entidadeId;})[0];
+    if(!ent){toast("Cadastro selecionado não encontrado. Atualize a página e tente novamente.",true);return;}
+    var nome=ent.nome, entId=entidadeId;
 
     var clienteNome=null, clienteEntId=null;
     if(tipo==="casada"){
-      if(clienteEntidadeId){
-        var clEnt=state.entidades.filter(function(e){return e.id===clienteEntidadeId;})[0];
-        clienteEntId=clienteEntidadeId; clienteNome=clEnt.nome;
-      } else {
-        var novoCli={tipo:"cliente",nome:clienteNomeAvulso,razaoSocial:"",cnpj:"",endereco:"",cidade:"",estado:"",observacoes:"Cadastrado automaticamente via Cargas.",criadoPor:meuUid()};
-        novoCli=await Store.saveEntidade(novoCli);
-        clienteEntId=novoCli.id; clienteNome=novoCli.nome;
-        state.entidades=await Store.listEntidades();
-      }
+      var clEnt=state.entidades.filter(function(e){return e.id===clienteEntidadeId;})[0];
+      if(!clEnt){toast("Cadastro do comprador não encontrado. Atualize a página e tente novamente.",true);return;}
+      clienteEntId=clienteEntidadeId; clienteNome=clEnt.nome;
     }
+
+    var despesasExtras=tipo==="casada"?modalDespesasExtras.filter(function(d){return (d.nome&&d.nome.trim())||(d.valor&&d.valor>0);}).map(function(d){return {nome:(d.nome||"").trim(),valor:parseFloat(d.valor)||0};}):[];
 
     var dataIso=get("data")||state.cargaData;
     var diaAlvo = dataIso===state.cargaData ? state.cargaDia : await Store.getDia(dataIso);
@@ -2810,6 +2853,7 @@ function hookCargaModal(carga){
       carga.precoVenda=precoVenda;
       carga.clienteEntidadeId=clienteEntId;
       carga.clienteNome=clienteNome;
+      carga.despesasExtras=despesasExtras;
     }
 
     if(existing){
@@ -2819,7 +2863,7 @@ function hookCargaModal(carga){
     }
     await Store.saveDia(dataIso,diaAlvo);
     if(dataIso===state.cargaData) state.cargaDia=diaAlvo;
-    modalFotoNota=null; modalFotoQual=null;
+    modalFotoNota=null; modalFotoQual=null; modalDespesasExtras=[];
     toast(isEdit?"Carga atualizada.":"Carga registrada.");
     closeModal(document.querySelector(".modal-back"));
     render();
