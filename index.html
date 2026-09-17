@@ -442,16 +442,22 @@ tr:hover td{background:var(--overlay-2);}
    ou o app) estiver pronta. */
 #boot-loading{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:var(--bg);}
 #boot-loading[hidden]{display:none;}
-#boot-loading img{width:72px;height:auto;border-radius:14px;}
+#boot-loading img{width:72px;height:auto;}
 #boot-loading .t{font-family:var(--font-body);font-size:13px;color:var(--text-faint);}
+/* mostra a logo certa pro tema já salvo, sem esperar JS nenhum rodar —
+   o script inline no topo do documento já cravou data-theme antes disso
+   renderizar, então não há nem flash da logo errada. */
+#boot-loading .bl-light{display:none;}
+:root[data-theme="light"] #boot-loading .bl-dark{display:none;}
+:root[data-theme="light"] #boot-loading .bl-light{display:block;}
 </style>
 
-<div id="boot-loading"><img src="logo.jpg" alt=""><div class="t">carregando…</div></div>
+<div id="boot-loading"><img class="bl-logo bl-dark" src="logo-dark.webp" alt=""><img class="bl-logo bl-light" src="logo-light.webp" alt=""><div class="t">carregando…</div></div>
 <div id="auth-screen" hidden></div>
 <div id="shell" hidden>
   <aside id="sidebar">
     <div class="brand">
-      <img class="brand-logo" src="logo.jpg" alt="Ariel Tomateiro">
+      <img class="brand-logo" id="sidebar-logo" alt="Ariel Tomateiro">
       <div class="brand-sub">Compra &amp; venda de tomate</div>
     </div>
     <nav class="tabs" id="tabs"></nav>
@@ -754,6 +760,11 @@ function applyThemeIcons(){
   var b2=document.getElementById("theme-toggle-btn-m");
   if(b1) b1.innerHTML=svg;
   if(b2) b2.innerHTML=svg;
+  // logo também troca com o tema: dourada no escuro, preta no claro
+  var src=logoSrc();
+  var lg1=document.getElementById("sidebar-logo"); if(lg1) lg1.src=src;
+  var lg2=document.getElementById("mtb-logo"); if(lg2) lg2.src=src;
+  var lg3=document.querySelector(".auth-brand .logo"); if(lg3) lg3.src=src;
 }
 function setTheme(t){
   try{ localStorage.setItem(THEME_KEY,t); }catch(e){}
@@ -1186,8 +1197,12 @@ var state={
 var photoCache={};
 var _catBuscaTimer=null;
 var SESSION_KEY="praca_session_v1";
-var LOGO_DATAURI="logo.jpg";
-var _mtbLogoImg=document.getElementById("mtb-logo"); if(_mtbLogoImg) _mtbLogoImg.src=LOGO_DATAURI;
+// logo dourada no modo escuro, logo preta no modo claro (cada uma já vem
+// pronta com fundo transparente) — logoSrc() é reavaliada sempre que o tema
+// muda, então nunca fica hardcoded pra um tema só.
+function logoSrc(){ return getTheme()==="light" ? "logo-light.webp" : "logo-dark.webp"; }
+// os <img> de logo (sidebar, topo mobile, tela de login) recebem o src certo
+// via applyThemeIcons(), chamada no boot e em toda troca de tema.
 var _authTransition=null; // "pending" enquanto um cadastro está gravando o doc do usuário no Firestore
 
 var TABS=[
@@ -1271,7 +1286,7 @@ function renderAuth(){
   var modo=state._authModo || (temUsuarios?"login":"cadastro");
   var err=state._authErr||"";
   el.innerHTML='<div class="auth-card">'+
-    '<div class="auth-brand"><img class="logo" src="'+LOGO_DATAURI+'" alt="Ariel Tomateiro"><div class="s">Compra &amp; venda de tomate</div></div>'+
+    '<div class="auth-brand"><img class="logo" src="'+logoSrc()+'" alt="Ariel Tomateiro"><div class="s">Compra &amp; venda de tomate</div></div>'+
     (modo==="cadastro"?
       (state._convite?
         '<div class="auth-title">Bem-vindo(a)!</div><div class="auth-lede">Você recebeu um convite para acessar o Ariel Tomateiro. Crie seu nome, e-mail e senha para entrar.</div>'
@@ -1313,7 +1328,7 @@ function renderSemEmpresa(){
   var migrar=elegivelMigracao();
   var err=state._empresaErr||"";
   el.innerHTML='<div class="auth-card">'+
-    '<div class="auth-brand"><img class="logo" src="'+LOGO_DATAURI+'" alt="Ariel Tomateiro"><div class="s">Compra &amp; venda de tomate</div></div>'+
+    '<div class="auth-brand"><img class="logo" src="'+logoSrc()+'" alt="Ariel Tomateiro"><div class="s">Compra &amp; venda de tomate</div></div>'+
     '<div class="auth-title">Cadastre sua empresa</div>'+
     '<div class="auth-lede">'+(migrar?
       "Detectamos dados já existentes do app. Confirme os dados da empresa abaixo — ao confirmar, todo o histórico atual (cadastros, preços, cargas e usuários) é migrado automaticamente pra ela."

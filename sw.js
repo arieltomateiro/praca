@@ -24,14 +24,15 @@
  * do CACHE_NAME abaixo. Isso garante que o service worker antigo é
  * substituído e o app não fica "preso" numa versão velha em cache.
  */
-var CACHE_VERSION = "v3";
+var CACHE_VERSION = "v4";
 var CACHE_NAME = "ariel-tomateiro-" + CACHE_VERSION;
 
 var PRECACHE_URLS = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./logo.jpg",
+  "./logo-dark.webp",
+  "./logo-light.webp",
   "https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js",
   "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js",
   "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"
