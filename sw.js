@@ -24,7 +24,7 @@
  * do CACHE_NAME abaixo. Isso garante que o service worker antigo é
  * substituído e o app não fica "preso" numa versão velha em cache.
  */
-var CACHE_VERSION = "v4";
+var CACHE_VERSION = "v5";
 var CACHE_NAME = "ariel-tomateiro-" + CACHE_VERSION;
 
 var PRECACHE_URLS = [

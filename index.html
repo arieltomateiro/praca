@@ -337,6 +337,67 @@ tr:hover td{background:var(--overlay-2);}
 .list-toggle{display:flex;gap:8px;margin-bottom:14px;}
 
 /* ---------- Cargas ---------- */
+/* ---- Financeiro ---- */
+.fin-filtros{display:flex;flex-direction:column;gap:10px;margin-bottom:18px;}
+.fin-filtro{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.fin-filtro .fl{font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;min-width:126px;}
+.fin-row{border:1px solid var(--border);border-left:4px solid var(--border-2);border-radius:var(--radius-m);margin-bottom:10px;background:var(--bg-1);overflow:hidden;}
+.fin-row.atrasada{border-left-color:var(--red);}
+.fin-row.aberta{border-color:var(--border-2);}
+.fin-row-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px 10px;cursor:pointer;flex-wrap:wrap;}
+.fin-row-head:hover{background:var(--overlay-2);}
+.fin-row-head .l{display:flex;align-items:center;gap:9px;min-width:0;flex-wrap:wrap;}
+.fin-row-head .l .meta{min-width:0;}
+.fin-row-head .l .nm{font-weight:600;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fin-row-head .l .loc{font-size:11.5px;color:var(--text-faint);}
+.fin-row-head .r{display:flex;align-items:center;gap:12px;flex:none;}
+.fin-val{text-align:right;}
+.fin-val .v{font-family:var(--font-mono);font-weight:600;font-size:14px;}
+.fin-val .u{font-size:10.5px;color:var(--text-faint);}
+.fin-venc{padding:0 16px 12px;font-size:11.5px;color:var(--text-faint);}
+.fin-row.atrasada .fin-venc{color:var(--red);}
+.fin-detail{border-top:1px solid var(--border);padding:16px;background:var(--overlay-2);}
+.fin-detail-tit{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-dim);margin-bottom:12px;}
+.fin-money{margin-bottom:10px;}
+.fin-money .linha{display:flex;justify-content:space-between;gap:12px;padding:6px 0;font-size:13px;}
+.fin-money .linha.final{border-top:1px solid var(--border);margin-top:4px;padding-top:9px;font-weight:600;}
+.fin-money .rlabel{color:var(--text-dim);}
+.fin-money .rvalue{font-family:var(--font-mono);}
+.fin-money .rvalue.pos{color:var(--green);}
+.fin-money .rvalue.neg{color:var(--red);}
+.fin-bar{height:6px;border-radius:999px;background:var(--bg-3);overflow:hidden;}
+.fin-bar i{display:block;height:100%;background:var(--green);}
+.fin-bar-lbl{font-size:10.5px;color:var(--text-faint);margin-top:5px;margin-bottom:12px;}
+.fin-aviso{font-size:12px;color:var(--orange);background:var(--orange-bg);border-radius:var(--radius-s);padding:9px 11px;margin-bottom:12px;}
+.fin-prazo-field{margin-bottom:6px;max-width:340px;}
+.fin-venc-nota{font-size:11.5px;color:var(--text-faint);margin-bottom:14px;}
+.fin-sub{font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;}
+.fin-pags{margin-bottom:12px;}
+.fin-pag{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 11px;border:1px solid var(--border);border-radius:var(--radius-s);margin-bottom:6px;background:var(--bg-1);}
+.fin-pag .l{display:flex;align-items:center;gap:10px;min-width:0;}
+.fin-pag .nm{font-family:var(--font-mono);font-weight:600;font-size:13px;}
+.fin-pag .loc{font-size:11px;color:var(--text-faint);}
+.fin-sem-pag{font-size:12.5px;color:var(--text-faint);padding:10px 0 14px;}
+.fin-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.fin-form{margin-top:14px;border-top:1px solid var(--border);padding-top:14px;}
+.fin-form-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;}
+.fin-resumo-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;}
+.fin-resumo-sub{font-size:11.5px;color:var(--text-faint);margin-bottom:14px;}
+.fin-resumo-lado{border:1px solid var(--border);border-radius:var(--radius-s);padding:11px 13px;margin-top:10px;}
+.fin-resumo-lado-tit{font-size:12px;font-weight:600;margin-bottom:7px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.fin-resumo-lado .linha{display:flex;justify-content:space-between;gap:12px;font-size:12.5px;padding:3px 0;}
+.fin-resumo-lado .rlabel{color:var(--text-dim);}
+.fin-prazos-lista{display:flex;flex-direction:column;gap:6px;}
+.fin-prazo-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 11px;border:1px solid var(--border);border-radius:var(--radius-s);}
+.fin-prazo-row .l{display:flex;flex-direction:column;gap:2px;min-width:0;}
+.fin-prazo-row .loc{font-size:11px;color:var(--text-faint);}
+.modal-back.centro{align-items:center;padding-top:16px;padding-bottom:calc(16px + var(--safe-b));}
+/* bloco financeiro dentro do formulário de carga */
+.carga-fin-bloco{border:1px solid var(--border);border-radius:var(--radius-m);padding:13px 14px;margin-bottom:14px;background:var(--overlay-2);}
+.carga-fin-tit{font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
+.carga-fin-grid{display:grid;gap:12px;}
+.carga-fin-status{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:9px;font-size:11.5px;color:var(--text-faint);}
+
 .carga-card{border:1px solid var(--border);border-left-width:4px;border-left-style:solid;border-left-color:var(--border-2);border-radius:var(--radius-m);padding:16px 18px;margin-bottom:12px;background:var(--bg-1);}
 .carga-card.tipo-compra{border-left-color:var(--text-faint);}
 .carga-card.tipo-venda{border-left-color:var(--green);}
@@ -414,6 +475,9 @@ tr:hover td{background:var(--overlay-2);}
   #who-email-m{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   #mobiletopbar .iconbtn{flex:none;justify-self:end;}
   .kpi-row{grid-template-columns:repeat(2,1fr);}
+  /* valor em fonte mono a 22px não cabe em meia tela de celular e quebrava
+     "R$" numa linha e o número na outra */
+  .kpi .value{font-size:18px;}
   #bottomnav{
     display:flex;flex-direction:row;position:fixed;left:0;right:0;bottom:0;z-index:40;
     background:var(--bg-1);border-top:1px solid var(--border);
@@ -429,6 +493,19 @@ tr:hover td{background:var(--overlay-2);}
   .precos-modo-seg{display:flex;width:100%;flex-wrap:nowrap;}
   .precos-modo-seg button{flex:1;text-align:center;white-space:nowrap;padding:8px 6px;}
   .despesa-row{grid-template-columns:1fr;}
+  /* no celular os filtros do Financeiro empilham: rótulo em cima, botões embaixo */
+  .fin-filtro{align-items:stretch;flex-direction:column;gap:6px;}
+  .fin-filtro .fl{min-width:0;}
+  .fin-row-head{align-items:flex-start;}
+  .fin-row-head .r{width:100%;justify-content:space-between;}
+  .fin-actions .btn{flex:1;justify-content:center;}
+}
+@media(max-width:520px){
+  /* com a aba Financeiro são 6 itens na barra de baixo — aperta um pouco
+     a tipografia pra caber sem cortar ícone */
+  #bottomnav .tab-btn{font-size:9px;padding:6px 1px;}
+  #bottomnav .tab-btn span{max-width:54px;}
+  #bottomnav .tab-btn svg{width:18px;height:18px;}
 }
 @media(max-width:340px){
   .cal-grid{gap:3px;}
@@ -727,7 +804,10 @@ var ICONS = {
   trash:'<svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2m-8 0 1 13a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2l1-13"/></svg>',
   box:'<svg viewBox="0 0 24 24"><path d="m3 8 9-5 9 5-9 5-9-5Z"/><path d="M3 8v9l9 5 9-5V8M12 13v9"/></svg>',
   lock:'<svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>',
-  send:'<svg viewBox="0 0 24 24"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/></svg>'
+  send:'<svg viewBox="0 0 24 24"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/></svg>',
+  cash:'<svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 12h.01M18 12h.01"/></svg>',
+  check:'<svg viewBox="0 0 24 24"><path d="M4 12.5 9 17.5 20 6.5"/></svg>',
+  clock:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5.2l3.2 2"/></svg>'
 };
 
 /* ============ utils ============ */
@@ -1118,6 +1198,26 @@ var Store={
     _mesCache[key]=cloneDeep(list);
     return list;
   },
+  // varredura por período — usada pelo modo "Pendentes" do Financeiro, que
+  // precisa olhar para trás (uma compra de 30 dias lançada há 2 meses ainda
+  // está em aberto hoje). É UMA consulta de intervalo só, não uma por mês.
+  async getDiasNoPeriodo(primeiroIso,ultimoIso){
+    var empId=minhaEmpresaId(); if(!empId) return [];
+    var key=empId+"|per|"+primeiroIso+"|"+ultimoIso;
+    if(_mesCache[key]) return cloneDeep(_mesCache[key]);
+    var list;
+    if(db){
+      var s=await db.collection("empresas").doc(empId).collection("dias")
+        .where("data",">=",primeiroIso).where("data","<=",ultimoIso).limit(200).get();
+      list=s.docs.map(function(d){return d.data();});
+    } else {
+      list=Object.keys(mem.dias).filter(function(k){return k.indexOf(empId+"|")===0;})
+        .map(function(k){return mem.dias[k];})
+        .filter(function(d){return d.data>=primeiroIso&&d.data<=ultimoIso;});
+    }
+    _mesCache[key]=cloneDeep(list);
+    return list;
+  },
   async saveFoto(diaIso,fotoId,dataUrl,tipo){
     var empId=minhaEmpresaId(); if(!empId) return;
     var body={dataUrl:dataUrl,tipo:tipo,criadoEm:new Date().toISOString()};
@@ -1190,6 +1290,14 @@ var state={
   resumoView:"mapa",
   resumoListaModo:"brasil",
   mapZoomUF:null,
+  finData:todayIso(),
+  finDia:null,
+  finModo:"dia",        // "dia" (data selecionada) | "pendentes" (varre o período, ignora a data)
+  finTipo:"todas",      // todas | compra | venda | casada
+  finStatus:"todos",    // todos | paga | pendente_pag | recebida | pendente_rec | definir
+  finPendentes:null,    // cache da varredura do modo Pendentes
+  finAberta:null,       // "cargaId|ladoKey|dataIso" da operação com a caixa aberta
+  finFormPag:null,      // mesma chave, enquanto o formulário de lançar pagamento está aberto
   seedBannerDia:null,
   empresa:null,
   _devViewAs:null
@@ -1210,8 +1318,14 @@ var TABS=[
   {id:"precos",label:"Cotações",mobileLabel:"Cotações",icon:"tag"},
   {id:"praca",label:"Praça (resumo)",mobileLabel:"Praça",icon:"map"},
   {id:"cargas",label:"Cargas",mobileLabel:"Cargas",icon:"truck"},
+  {id:"financeiro",label:"Financeiro",mobileLabel:"Financeiro",icon:"cash",soAdmin:true},
   {id:"calendario",label:"Fechamentos",mobileLabel:"Fechamentos",icon:"cal"}
 ];
+// o Financeiro mostra valores, pagamentos e quem deve o quê — mesma régua que
+// já vale pro resto do app: operacional não vê dinheiro. As regras do Firestore
+// também já impedem um operacional de gravar qualquer alteração em cargas,
+// então isso não é só esconder botão na tela.
+function tabsVisiveis(){ return TABS.filter(function(t){ return !t.soAdmin || souAdmin(); }); }
 
 /* ============ boot / auth ============ */
 async function boot(){
@@ -1669,10 +1783,11 @@ function calcDia(dia){
 
 /* ============ render raiz ============ */
 function renderTabsNav(){
-  var html=TABS.map(function(t){
+  var lista=tabsVisiveis();
+  var html=lista.map(function(t){
     return '<button class="tab-btn'+(state.tab===t.id?" active":"")+'" data-goto="'+t.id+'">'+ICONS[t.icon]+"<span>"+t.label+"</span></button>";
   }).join("");
-  var htmlMobile=TABS.map(function(t){
+  var htmlMobile=lista.map(function(t){
     return '<button class="tab-btn'+(state.tab===t.id?" active":"")+'" data-goto="'+t.id+'">'+ICONS[t.icon]+"<span>"+(t.mobileLabel||t.label)+"</span></button>";
   }).join("");
   document.getElementById("tabs").innerHTML=html;
@@ -1680,6 +1795,8 @@ function renderTabsNav(){
 }
 
 async function goto(tab){
+  // um operacional nunca entra numa aba só de administrador, nem por link/estado antigo
+  if(!tabsVisiveis().some(function(t){return t.id===tab;})) tab="cargas";
   state.tab=tab;
   await refreshCurrentTabData();
   render();
@@ -1694,6 +1811,61 @@ async function refreshCurrentTabData(){
   else if(state.tab==="precos"){ state.precoDia=await Store.getDia(state.precoData); }
   else if(state.tab==="cargas"){ state.cargaDia=await Store.getDia(state.cargaData); }
   else if(state.tab==="praca"){ state.resumoDia=await Store.getDia(state.resumoData); }
+  else if(state.tab==="financeiro"){ await carregarFinanceiro(); }
+}
+
+// janela que o modo Pendentes varre pra trás. 90 dias cobre com folga os prazos
+// praticados (o maior padrão é 30) sem puxar o histórico inteiro da empresa.
+var FIN_JANELA_DIAS=90;
+
+async function carregarFinanceiro(){
+  if(state.finModo==="pendentes"){
+    var ate=todayIso();
+    var de=addDias(ate,-FIN_JANELA_DIAS);
+    var dias=await Store.getDiasNoPeriodo(de,ate);
+    // o recorte do período também é aplicado aqui, e não só na consulta: assim
+    // a tela mostra a mesma janela independente do que o banco devolver
+    state.finPendentes=dias
+      .filter(function(d){ return d && d.data && d.data>=de && d.data<=ate; })
+      .sort(function(a,b){return a.data<b.data?-1:1;});
+  } else {
+    state.finDia=await Store.getDia(state.finData);
+  }
+}
+
+// todos os lados financeiros visíveis no modo atual, já com filtro de tipo e
+// de status aplicados. É a única fonte de dados da aba — lista, totais e
+// caixa de detalhe saem todos daqui.
+function ladosDoModo(){
+  var dias;
+  if(state.finModo==="pendentes") dias=state.finPendentes||[];
+  else dias=[state.finDia||{data:state.finData,cargas:[]}];
+
+  var out=[];
+  dias.forEach(function(d){
+    (d.cargas||[]).forEach(function(c){
+      if(state.finTipo!=="todas" && c.tipo!==state.finTipo) return;
+      ladosFin(c,d.data||state.finData).forEach(function(l){ out.push(l); });
+    });
+  });
+
+  if(state.finModo==="pendentes"){
+    // pendentes = tudo que ainda tem saldo em aberto (inclui "À Definir",
+    // que também é dinheiro não resolvido), nunca o que já foi quitado
+    out=out.filter(function(l){ return l.status.key!=="paga" && l.status.key!=="recebida"; });
+  }
+  if(state.finStatus!=="todos") out=out.filter(function(l){ return l.status.key===state.finStatus; });
+
+  out.sort(function(a,b){
+    if(state.finModo==="pendentes"){
+      // atrasado primeiro, depois por vencimento mais próximo; sem prazo vai pro fim
+      if(a.status.atrasado!==b.status.atrasado) return a.status.atrasado?-1:1;
+      var av=a.vencimento||"9999-12-31", bv=b.vencimento||"9999-12-31";
+      if(av!==bv) return av<bv?-1:1;
+    }
+    return (a.carga.numeroSequencial||0)-(b.carga.numeroSequencial||0);
+  });
+  return out;
 }
 
 async function loadCalMonth(){
@@ -1715,6 +1887,7 @@ function render(){
   else if(state.tab==="precos") main.innerHTML=viewPrecos();
   else if(state.tab==="praca") main.innerHTML=viewPraca();
   else if(state.tab==="cargas") main.innerHTML=viewCargas();
+  else if(state.tab==="financeiro") main.innerHTML=viewFinanceiro();
   attachHandlers();
 }
 
@@ -2338,6 +2511,124 @@ function statusInfo(s){
   return {acarregar:{label:"A carregar",cls:"st-a"},transporte:{label:"Em transporte",cls:"st-t"},entregue:{label:"Entregue",cls:"st-e"}}[s]||{label:s,cls:"st-a"};
 }
 
+/* ============ núcleo financeiro ============ */
+/* Regra central desta parte do app: o status financeiro NUNCA é um campo solto
+   que alguém marca na mão. Ele é sempre calculado pela soma dos pagamentos
+   lançados contra o valor total da operação. Assim é impossível existir uma
+   operação marcada como "Paga" que ainda tenha saldo em aberto na lista de
+   pagamentos — que é o erro clássico de controle financeiro em planilha. */
+
+var MEIOS_PAGAMENTO=[
+  {id:"dinheiro",label:"Dinheiro"},
+  {id:"pix",label:"Pix"},
+  {id:"ted",label:"TED"},
+  {id:"cheque",label:"Cheque"}
+];
+function meioLabel(id){ var m=MEIOS_PAGAMENTO.filter(function(x){return x.id===id;})[0]; return m?m.label:(id||"—"); }
+
+// prazos que já vêm prontos numa empresa nova; a empresa pode trocar essa
+// lista inteira pelos prazos que ela realmente pratica (fica em empresa.prazos)
+var PRAZOS_PADRAO=[
+  {id:"avista",nome:"À vista",dias:0},
+  {id:"p7",nome:"7 dias",dias:7},
+  {id:"p14",nome:"14 dias",dias:14},
+  {id:"p21",nome:"21 dias",dias:21},
+  {id:"p30",nome:"30 dias",dias:30}
+];
+function prazosEmpresa(){
+  var p=state.empresa&&state.empresa.prazos;
+  return (p&&p.length)?p.slice():PRAZOS_PADRAO.slice();
+}
+function prazoPorId(id){ return prazosEmpresa().filter(function(p){return p.id===id;})[0]||null; }
+
+function addDias(iso,dias){
+  var d=isoToDate(iso); d.setDate(d.getDate()+(+dias||0));
+  return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+}
+function diasEntre(isoDe,isoAte){ return Math.round((isoToDate(isoAte)-isoToDate(isoDe))/86400000); }
+
+function finVazio(){ return {prazoId:null,prazoNome:null,prazoDias:null,pagamentos:[]}; }
+function finDoLado(c,key){ var f=c&&c[key]; return (f&&typeof f==="object")?f:finVazio(); }
+function somaPagos(fin){ return (fin.pagamentos||[]).reduce(function(s,p){return s+(+p.valor||0);},0); }
+
+function totalCompra(c){ return c.preco==null?null:(c.preco||0)*(c.quantidadeCaixas||0); }
+function totalVenda(c){
+  if(c.tipo==="casada") return c.precoVenda==null?null:(c.precoVenda||0)*(c.quantidadeCaixas||0);
+  return totalCompra(c);
+}
+
+function statusFin(total,pagos,fin,dir,venc,hoje){
+  var quitado=dir==="pagar"?{key:"paga",label:"Paga"}:{key:"recebida",label:"Recebida"};
+  var pend=dir==="pagar"?{key:"pendente_pag",label:"Pendente de Pagamento"}:{key:"pendente_rec",label:"Pendente de Recebimento"};
+  var indef={key:"definir",label:"À Definir",cls:"gray",pct:0,atrasado:false,diasAtraso:0};
+  // carga ainda sem valores preenchidos pelo administrador
+  if(total==null||total<=0) return Object.assign({},indef,{falta:null});
+  var falta=total-pagos;
+  if(falta<=0.005) return Object.assign({},quitado,{cls:"green",falta:0,pct:100,atrasado:false,diasAtraso:0});
+  // sem prazo escolhido e sem nenhum pagamento lançado: ninguém definiu como paga ainda
+  if(!fin.prazoId && pagos===0) return Object.assign({},indef,{falta:falta});
+  var atrasado=!!(venc&&venc<hoje);
+  return Object.assign({},pend,{
+    cls:atrasado?"red":"orange",
+    falta:falta,
+    pct:total>0?Math.floor(pagos/total*100):0,
+    atrasado:atrasado,
+    diasAtraso:atrasado?diasEntre(venc,hoje):0
+  });
+}
+
+/* Uma operação tem 1 lado financeiro (compra OU venda) ou 2 (venda casada:
+   paga o fornecedor E recebe do cliente). Toda a aba Financeiro roda em cima
+   desta lista, o que evita espalhar "if casada" por toda parte. */
+function ladosFin(c,dataIso){
+  var hoje=todayIso();
+  function monta(key,dir,total,contraparte,rotulo){
+    var fin=finDoLado(c,key);
+    var pagos=somaPagos(fin);
+    var venc=fin.prazoDias==null?null:addDias(dataIso,fin.prazoDias);
+    return {
+      chave:c.id+"|"+key+"|"+dataIso,
+      cargaId:c.id, carga:c, dataIso:dataIso, key:key, dir:dir, rotulo:rotulo,
+      contraparte:contraparte||"—", total:total, fin:fin, pagos:pagos,
+      falta:total==null?null:Math.max(0,total-pagos),
+      vencimento:venc,
+      status:statusFin(total,pagos,fin,dir,venc,hoje)
+    };
+  }
+  if(c.tipo==="compra") return [monta("fin","pagar",totalCompra(c),c.nome,"Pagamento ao fornecedor")];
+  if(c.tipo==="venda")  return [monta("fin","receber",totalVenda(c),c.nome,"Recebimento do cliente")];
+  return [
+    monta("finCompra","pagar",totalCompra(c),c.nome,"Pagamento ao fornecedor"),
+    monta("finVenda","receber",totalVenda(c),c.clienteNome,"Recebimento do cliente")
+  ];
+}
+
+function totaisFin(lados){
+  var t={aPagar:0,aReceber:0,pago:0,recebido:0,atrasados:0};
+  lados.forEach(function(l){
+    if(l.total==null) return;
+    if(l.dir==="pagar"){ t.aPagar+=l.falta||0; t.pago+=l.pagos; }
+    else { t.aReceber+=l.falta||0; t.recebido+=l.pagos; }
+    if(l.status.atrasado) t.atrasados++;
+  });
+  return t;
+}
+
+// rótulo curto do vencimento, já dizendo se está atrasado / vence hoje
+function vencTexto(lado){
+  if(lado.status.key==="paga"||lado.status.key==="recebida"){
+    var pags=(lado.fin.pagamentos||[]).slice().sort(function(a,b){return a.data<b.data?-1:1;});
+    var ult=pags.length?pags[pags.length-1].data:null;
+    return (lado.dir==="pagar"?"pago":"recebido")+(ult?" em "+fmtDateBR(ult):" integralmente");
+  }
+  if(!lado.vencimento) return "sem prazo definido";
+  var d=diasEntre(todayIso(),lado.vencimento);
+  if(d<0) return "venceu em "+fmtDateBR(lado.vencimento)+" · atrasado "+Math.abs(d)+(Math.abs(d)===1?" dia":" dias");
+  if(d===0) return "vence hoje · "+fmtDateBR(lado.vencimento);
+  if(d===1) return "vence amanhã · "+fmtDateBR(lado.vencimento);
+  return "vence em "+d+" dias · "+fmtDateBR(lado.vencimento);
+}
+
 function viewCargas(){
   var dia=state.cargaDia||{cargas:[]};
   var filtro=state.cargaFiltroTipo;
@@ -2435,6 +2726,203 @@ function viewCargas(){
   return head+seg+cards;
 }
 
+/* ============ VIEW: Financeiro ============ */
+
+var FIN_STATUS_FILTROS=[
+  {id:"todos",label:"Todos"},
+  {id:"paga",label:"Pagas"},
+  {id:"pendente_pag",label:"Pendente de Pagamento"},
+  {id:"recebida",label:"Recebidas"},
+  {id:"pendente_rec",label:"Pendente de Recebimento"},
+  {id:"definir",label:"À Definir"}
+];
+var FIN_TIPO_FILTROS=[
+  {id:"todas",label:"Todas"},
+  {id:"compra",label:"Compra"},
+  {id:"venda",label:"Venda"},
+  {id:"casada",label:"Venda Casada"}
+];
+var TIPO_PILL={compra:"gray",venda:"green",casada:"gold"};
+function tipoLabelFin(t){ return t==="casada"?"venda casada":t; }
+
+// um cheque com "bom para" no futuro já está lançado como pagamento, mas o
+// dinheiro ainda não caiu — a tela avisa isso em vez de deixar o valor
+// parecer caixa disponível.
+function chequeACompensar(p){
+  return !!(p && p.meio==="cheque" && p.cheque && p.cheque.bomPara && p.cheque.bomPara>todayIso());
+}
+function pagamentoDescr(p){
+  var base=fmtDateBR(p.data)+" · "+meioLabel(p.meio);
+  if(p.meio==="cheque" && p.cheque){
+    var ch=[];
+    if(p.cheque.numero) ch.push("nº "+p.cheque.numero);
+    if(p.cheque.banco) ch.push(p.cheque.banco);
+    if(p.cheque.bomPara) ch.push("bom para "+fmtDateBR(p.cheque.bomPara));
+    if(ch.length) base+=" ("+ch.join(" · ")+")";
+  }
+  if(p.obs) base+=" · "+p.obs;
+  return base;
+}
+
+function finPagamentoRow(lado,p){
+  return '<div class="fin-pag">'+
+    '<div class="l"><span class="pill '+(p.meio==="cheque"?"amber":"gray")+'">'+esc(meioLabel(p.meio))+"</span>"+
+      '<div class="meta"><div class="nm">'+fmtMoney(p.valor)+(chequeACompensar(p)?' <span class="pill orange">a compensar</span>':"")+"</div>"+
+      '<div class="loc">'+esc(pagamentoDescr(p))+"</div></div></div>"+
+    '<button class="iconbtn sm" data-fin-del-pag="'+lado.chave+"|"+p.id+'" aria-label="Remover pagamento">'+ICONS.trash+"</button>"+
+  "</div>";
+}
+
+function finFormPagamentoHtml(lado){
+  var sugerido=lado.falta!=null&&lado.falta>0?lado.falta.toFixed(2):"";
+  return '<div class="fin-form" id="fin-form-pag">'+
+    '<div class="field-row grid-2" style="margin-bottom:10px">'+
+      '<label class="field">Valor (R$)<input type="number" step="0.01" min="0.01" id="fin-pag-valor" value="'+sugerido+'"></label>'+
+      '<label class="field">Data do pagamento<input type="date" id="fin-pag-data" value="'+todayIso()+'"></label>'+
+    "</div>"+
+    '<label class="field" style="margin-bottom:10px">Meio de pagamento<select id="fin-pag-meio">'+
+      MEIOS_PAGAMENTO.map(function(m){return '<option value="'+m.id+'">'+esc(m.label)+"</option>";}).join("")+
+    "</select></label>"+
+    '<div id="fin-pag-cheque-area" hidden><div class="field-row grid-3" style="margin-bottom:10px">'+
+      '<label class="field">Nº do cheque<input type="text" id="fin-pag-cheque-num" placeholder="000123"></label>'+
+      '<label class="field">Banco<input type="text" id="fin-pag-cheque-banco" placeholder="Banco do Brasil"></label>'+
+      '<label class="field">Bom para<input type="date" id="fin-pag-cheque-bom"></label>'+
+    "</div></div>"+
+    '<label class="field" style="margin-bottom:12px">Observação (opcional)<input type="text" id="fin-pag-obs" placeholder="ex.: 1ª parcela"></label>'+
+    '<div class="fin-form-actions">'+
+      '<button type="button" class="btn ghost" data-fin-cancelar-pag="1">Cancelar</button>'+
+      '<button type="button" class="btn primary" data-fin-salvar-pag="'+lado.chave+'">Lançar pagamento</button>'+
+    "</div>"+
+  "</div>";
+}
+
+function finDetalheHtml(lado){
+  var st=lado.status;
+  var pags=(lado.fin.pagamentos||[]).slice().sort(function(a,b){return a.data<b.data?-1:1;});
+  var semValor=lado.total==null;
+
+  var money='<div class="fin-money">'+
+    '<div class="linha"><span class="rlabel">Valor total da '+(lado.dir==="pagar"?"compra":"venda")+'</span><span class="rvalue">'+fmtMoney(lado.total)+"</span></div>"+
+    '<div class="linha"><span class="rlabel">'+(lado.dir==="pagar"?"Já pago":"Já recebido")+'</span><span class="rvalue pos">'+fmtMoney(lado.pagos)+"</span></div>"+
+    '<div class="linha final"><span class="rlabel">Em aberto</span><span class="rvalue '+(lado.falta>0?"neg":"pos")+'">'+fmtMoney(lado.falta)+"</span></div>"+
+  "</div>";
+
+  var barra=semValor?"":'<div class="fin-bar" title="'+st.pct+'% quitado"><i style="width:'+Math.min(100,st.pct)+'%"></i></div>'+
+    '<div class="fin-bar-lbl">'+st.pct+"% quitado</div>";
+
+  var listaPrazos=prazosEmpresa();
+  // se o prazo usado nesta operação foi apagado do cadastro depois, ele continua
+  // valendo aqui (o nome e os dias ficam gravados na própria carga) — senão a
+  // operação apareceria como "À Definir" por engano
+  if(lado.fin.prazoId && !listaPrazos.some(function(p){return p.id===lado.fin.prazoId;})){
+    listaPrazos=listaPrazos.concat([{id:lado.fin.prazoId,nome:(lado.fin.prazoNome||"prazo removido")+" (fora do cadastro)",dias:lado.fin.prazoDias||0}]);
+  }
+  var prazoSel='<label class="field fin-prazo-field">Condição de pagamento'+
+    '<select data-fin-prazo="'+lado.chave+'">'+
+      '<option value=""'+(!lado.fin.prazoId?" selected":"")+">À Definir</option>"+
+      listaPrazos.map(function(p){
+        return '<option value="'+p.id+'"'+(lado.fin.prazoId===p.id?" selected":"")+">"+esc(p.nome)+" (vence "+fmtDateBR(addDias(lado.dataIso,p.dias))+")</option>";
+      }).join("")+
+      (semValor||lado.falta<=0?"":'<option value="__pago">Pago — lançar o valor que falta</option>')+
+    "</select></label>"+
+    // o vencimento já aparece na linha da operação e dentro de cada opção do
+    // seletor — repetir aqui seria só ruído
+    '<div class="fin-venc-nota">O vencimento é contado a partir da data da carga ('+fmtDateBR(lado.dataIso)+").</div>";
+
+  var listaPags=pags.length
+    ? '<div class="fin-pags">'+pags.map(function(p){return finPagamentoRow(lado,p);}).join("")+"</div>"
+    : '<div class="fin-sem-pag">Nenhum pagamento lançado ainda.</div>';
+
+  var acoes='<div class="fin-actions">'+
+    (semValor?"":'<button class="btn" data-fin-novo-pag="'+lado.chave+'">'+ICONS.plus+" Lançar pagamento</button>")+
+    (semValor||lado.falta<=0?"":'<button class="btn" data-fin-quitar="'+lado.chave+'">'+ICONS.check+" Quitar tudo</button>")+
+    '<button class="btn ghost" data-fin-resumo="'+lado.cargaId+"|"+lado.dataIso+'">Ver resumo da carga</button>'+
+  "</div>";
+
+  var aviso=semValor?'<div class="fin-aviso">Esta carga ainda está sem valores. Um administrador precisa preencher o preço na aba Cargas antes de lançar pagamentos.</div>':"";
+  var form=(state.finFormPag===lado.chave)?finFormPagamentoHtml(lado):"";
+
+  return '<div class="fin-detail">'+
+    '<div class="fin-detail-tit">'+esc(lado.rotulo)+" · "+esc(lado.contraparte)+"</div>"+
+    money+barra+aviso+prazoSel+
+    '<div class="fin-sub">Pagamentos lançados</div>'+listaPags+acoes+form+
+  "</div>";
+}
+
+function finLinhaHtml(lado){
+  var c=lado.carga, st=lado.status;
+  var aberta=state.finAberta===lado.chave;
+  var sufixo=c.tipo==="casada"?(lado.dir==="pagar"?" · pagamento":" · recebimento"):"";
+  var sub=["op. nº "+(c.numeroSequencial||"—"),fmtNum(c.quantidadeCaixas||0)+" cx",fmtDateBR(lado.dataIso)];
+  return '<div class="fin-row'+(aberta?" aberta":"")+(st.atrasado?" atrasada":"")+'">'+
+    '<div class="fin-row-head" data-fin-toggle="'+lado.chave+'">'+
+      '<div class="l">'+
+        '<span class="pill '+(TIPO_PILL[c.tipo]||"gray")+'">'+esc(tipoLabelFin(c.tipo))+esc(sufixo)+"</span>"+
+        (c.mercadoriaNome?'<span class="pill amber">'+esc(c.mercadoriaNome)+"</span>":"")+
+        '<div class="meta"><div class="nm">'+esc(lado.contraparte)+"</div>"+
+          '<div class="loc">'+esc(sub.join(" · "))+"</div></div>"+
+      "</div>"+
+      '<div class="r">'+
+        '<div class="fin-val"><div class="v">'+fmtMoney(lado.total)+"</div>"+
+          (lado.pagos>0&&lado.falta>0?'<div class="u">falta '+fmtMoney(lado.falta)+"</div>":"")+"</div>"+
+        '<span class="pill '+st.cls+'">'+esc(st.label)+"</span>"+
+      "</div>"+
+    "</div>"+
+    '<div class="fin-venc">'+esc(vencTexto(lado))+(st.atrasado?"":"")+"</div>"+
+    (aberta?finDetalheHtml(lado):"")+
+  "</div>";
+}
+
+function viewFinanceiro(){
+  if(!souAdmin()){
+    return '<div class="empty">'+ICONS.lock+'<div class="t">Área restrita</div>O Financeiro é visível apenas para administradores.</div>';
+  }
+  var modo=state.finModo;
+  var lados=ladosDoModo();
+  var tot=totaisFin(lados);
+  var saldo=tot.aReceber-tot.aPagar;
+
+  var lede=modo==="pendentes"
+    ? "Tudo que ainda está em aberto nos últimos "+FIN_JANELA_DIAS+" dias, do mais atrasado para o que vence depois."
+    : "Operações lançadas na data selecionada, com a situação de pagamento de cada uma.";
+
+  var head='<div class="page-head"><div><h1>Financeiro</h1><p class="lede">'+lede+'</p></div>'+
+    '<div class="toolbar">'+
+      (modo==="dia"?'<input type="date" id="fin-data" value="'+state.finData+'" style="width:auto">':"")+
+      '<button class="btn" data-action="fin-prazos">'+ICONS.clock+" Prazos</button>"+
+    "</div></div>";
+
+  var segModo='<div class="seg" style="margin-bottom:16px">'+
+    '<button class="'+(modo==="dia"?"active":"")+'" data-fin-modo="dia">Dia</button>'+
+    '<button class="'+(modo==="pendentes"?"active":"")+'" data-fin-modo="pendentes">Pendentes'+(tot.atrasados?" ("+tot.atrasados+" atrasado"+(tot.atrasados>1?"s":"")+")":"")+"</button>"+
+  "</div>";
+
+  var kpis='<div class="kpi-row">'+
+    '<div class="kpi"><div class="label">A pagar</div><div class="value neg">'+fmtMoney(tot.aPagar)+"</div></div>"+
+    '<div class="kpi"><div class="label">A receber</div><div class="value pos">'+fmtMoney(tot.aReceber)+"</div></div>"+
+    '<div class="kpi"><div class="label">Saldo previsto</div><div class="value '+(saldo>=0?"pos":"neg")+'">'+fmtMoney(saldo)+"</div></div>"+
+  "</div>";
+
+  var filtros='<div class="fin-filtros">'+
+    '<div class="fin-filtro"><span class="fl">Tipo de operação</span><div class="seg">'+
+      FIN_TIPO_FILTROS.map(function(f){return '<button class="'+(state.finTipo===f.id?"active":"")+'" data-fin-tipo="'+f.id+'">'+esc(f.label)+"</button>";}).join("")+
+    "</div></div>"+
+    '<div class="fin-filtro"><span class="fl">Status</span><div class="seg">'+
+      FIN_STATUS_FILTROS.filter(function(f){
+        // no modo Pendentes não faz sentido oferecer "Pagas"/"Recebidas":
+        // por definição elas não estão pendentes
+        return !(modo==="pendentes"&&(f.id==="paga"||f.id==="recebida"));
+      }).map(function(f){return '<button class="'+(state.finStatus===f.id?"active":"")+'" data-fin-status="'+f.id+'">'+esc(f.label)+"</button>";}).join("")+
+    "</div></div>"+
+  "</div>";
+
+  var lista=lados.map(finLinhaHtml).join("") || '<div class="empty">'+ICONS.cash+'<div class="t">'+
+    (modo==="pendentes"?"Nada em aberto":"Nenhuma operação nesta data")+"</div>"+
+    (modo==="pendentes"?"Todas as operações do período estão quitadas.":"Lance cargas na aba Cargas para acompanhá-las aqui.")+"</div>";
+
+  return head+segModo+kpis+filtros+lista;
+}
+
 function cargaEntBloco(label,listaOpts,selectName,selectedId){
   return '<label class="field">'+label+'<select name="'+selectName+'" required><option value="">selecione um cadastro…</option>'+listaOpts.map(function(f){return '<option value="'+f.id+'"'+(selectedId===f.id?" selected":"")+'>'+esc(f.nome)+"</option>";}).join("")+"</select></label>";
 }
@@ -2493,6 +2981,127 @@ function cargaPrecoAreaHtml(tipo,carga,restrito){
     '<div class="carga-resumo" id="carga-resumo-live" style="margin-bottom:14px"></div>';
 }
 
+/* bloco de situação financeira dentro do formulário de carga (fica logo acima
+   das fotos). Na venda casada aparecem os DOIS lados: o que se paga ao
+   fornecedor e o que se recebe do comprador. */
+function cargaFinAreaHtml(tipo,carga){
+  if(!souAdmin()) return ""; // operacional não vê nem define nada financeiro
+  var lados=carga?ladosFin(carga,state.cargaData):null;
+
+  function bloco(key,rotulo){
+    var fin=finDoLado(carga||{},key);
+    var lado=lados?lados.filter(function(l){return l.key===key;})[0]:null;
+    var lista=prazosEmpresa();
+    if(fin.prazoId && !lista.some(function(p){return p.id===fin.prazoId;})){
+      lista=lista.concat([{id:fin.prazoId,nome:(fin.prazoNome||"prazo removido")+" (fora do cadastro)",dias:fin.prazoDias||0}]);
+    }
+    var sel='<label class="field">'+rotulo+'<select name="'+key+'Prazo">'+
+      '<option value=""'+(!fin.prazoId?" selected":"")+">À Definir</option>"+
+      lista.map(function(p){
+        return '<option value="'+p.id+'"'+(fin.prazoId===p.id?" selected":"")+">"+esc(p.nome)+
+          (p.dias===0?"":" · vence "+fmtDateBR(addDias(state.cargaData,p.dias)))+"</option>";
+      }).join("")+
+      "</select></label>";
+    var st="";
+    if(lado){
+      st='<div class="carga-fin-status"><span class="pill '+lado.status.cls+'">'+esc(lado.status.label)+"</span>"+
+        (lado.pagos>0?"<span>"+esc(fmtMoney(lado.pagos))+" de "+esc(fmtMoney(lado.total))+" já lançado</span>":"")+
+      "</div>";
+    }
+    return "<div>"+sel+st+"</div>";
+  }
+
+  var inner;
+  if(tipo==="casada"){
+    inner='<div class="carga-fin-grid grid-2">'+bloco("finCompra","Pagamento ao fornecedor")+bloco("finVenda","Recebimento do comprador")+"</div>";
+  } else if(tipo==="venda"){
+    inner='<div class="carga-fin-grid">'+bloco("fin","Recebimento do cliente")+"</div>";
+  } else {
+    inner='<div class="carga-fin-grid">'+bloco("fin","Pagamento ao fornecedor")+"</div>";
+  }
+
+  return '<div class="carga-fin-bloco" id="carga-fin-area-inner"><div class="carga-fin-tit">Situação financeira</div>'+inner+
+    '<p style="font-size:11.5px;color:var(--text-faint);margin-top:10px;margin-bottom:0">'+
+    'Os pagamentos (inclusive parciais) são lançados na aba Financeiro. O status aqui é sempre o resultado da soma deles.</p></div>';
+}
+
+/* popup central com o resumo completo da negociação — serve pra conferir a
+   carga sem sair do Financeiro e sem risco de editar nada por engano */
+function modalResumoCarga(c,dataIso){
+  var qtd=c.quantidadeCaixas||0;
+  var tC=totalCompra(c), tV=totalVenda(c);
+  var st=statusInfo(c.status);
+  var linhas=[];
+  function ln(k,v,cls){ linhas.push('<div class="linha'+(cls?" "+cls:"")+'"><span class="rlabel">'+esc(k)+'</span><span class="rvalue">'+v+"</span></div>"); }
+
+  if(c.tipo==="casada"){
+    var desp=(c.despesasExtras||[]);
+    var despTotal=desp.reduce(function(s,d){return s+(d.valor||0);},0);
+    var lucroBruto=(tV||0)-(tC||0);
+    ln("Fornecedor",esc(c.nome));
+    ln("Comprador",esc(c.clienteNome||"—"));
+    ln("Quantidade",fmtNum(qtd)+" cx");
+    ln("Preço de compra / cx",fmtMoney(c.preco));
+    ln("Total da compra",fmtMoney(tC));
+    ln("Preço de venda / cx",fmtMoney(c.precoVenda));
+    ln("Total da venda",fmtMoney(tV));
+    desp.forEach(function(d){ ln(d.nome||"Despesa extra","&minus; "+fmtMoney(d.valor||0),"despesa"); });
+    ln("Lucro bruto",'<span class="'+(lucroBruto>=0?"pos":"neg")+'">'+fmtMoney(lucroBruto)+"</span>");
+    ln("Lucro líquido",'<span class="'+((lucroBruto-despTotal)>=0?"pos":"neg")+'">'+fmtMoney(lucroBruto-despTotal)+"</span>","final");
+  } else {
+    ln(c.tipo==="compra"?"Fornecedor":"Cliente",esc(c.nome));
+    ln("Quantidade",fmtNum(qtd)+" cx");
+    ln("Preço / caixa",fmtMoney(c.preco));
+    ln("Valor total",fmtMoney(tC),"final");
+  }
+
+  var finBlocos=ladosFin(c,dataIso).map(function(l){
+    return '<div class="fin-resumo-lado">'+
+      '<div class="fin-resumo-lado-tit">'+esc(l.rotulo)+' <span class="pill '+l.status.cls+'">'+esc(l.status.label)+"</span></div>"+
+      '<div class="linha"><span class="rlabel">'+(l.dir==="pagar"?"Pago":"Recebido")+'</span><span class="rvalue">'+fmtMoney(l.pagos)+" de "+fmtMoney(l.total)+"</span></div>"+
+      '<div class="linha"><span class="rlabel">Vencimento</span><span class="rvalue">'+esc(vencTexto(l))+"</span></div>"+
+    "</div>";
+  }).join("");
+
+  return '<div class="modal-back centro" data-close-modal="1"><div class="modal" style="max-width:520px" onclick="event.stopPropagation()">'+
+    "<h3>Resumo da operação</h3>"+
+    '<div class="fin-resumo-top">'+
+      '<span class="pill '+(TIPO_PILL[c.tipo]||"gray")+'">'+esc(tipoLabelFin(c.tipo))+"</span>"+
+      (c.mercadoriaNome?'<span class="pill amber">'+esc(c.mercadoriaNome)+"</span>":"")+
+      '<span class="pill '+st.cls+'">'+esc(st.label)+"</span>"+
+      '<span class="carga-num">op. nº '+(c.numeroSequencial||"—")+"</span>"+
+    "</div>"+
+    '<div class="fin-resumo-sub">'+fmtDateBR(dataIso)+" · placa "+esc(c.placa||"—")+"</div>"+
+    '<div class="carga-resumo">'+linhas.join("")+"</div>"+
+    finBlocos+
+    '<div class="modal-actions"><button type="button" class="btn primary" data-close-modal="1">Fechar</button></div>'+
+  "</div></div>";
+}
+
+/* cadastro dos prazos de pagamento praticados pela empresa */
+function modalPrazos(){
+  var lista=prazosEmpresa();
+  var usandoPadrao=!(state.empresa&&state.empresa.prazos&&state.empresa.prazos.length);
+  var rows=lista.map(function(p){
+    return '<div class="fin-prazo-row"><div class="l"><strong>'+esc(p.nome)+"</strong>"+
+      '<span class="loc">'+(p.dias===0?"no mesmo dia":p.dias+(p.dias===1?" dia":" dias")+" após a data da carga")+"</span></div>"+
+      '<button class="iconbtn sm" data-del-prazo="'+p.id+'" aria-label="Remover prazo">'+ICONS.trash+"</button></div>";
+  }).join("") || '<div class="fin-sem-pag">Nenhum prazo cadastrado.</div>';
+
+  return '<div class="modal-back centro" data-close-modal="1"><div class="modal" style="max-width:460px" onclick="event.stopPropagation()">'+
+    "<h3>Prazos de pagamento</h3>"+
+    '<p class="lede" style="margin-bottom:14px">O vencimento é calculado somando os dias do prazo à data em que a carga foi lançada.'+
+      (usandoPadrao?" Esta é a lista padrão — ao alterar qualquer item ela passa a ser a lista da sua empresa.":"")+"</p>"+
+    '<div class="fin-prazos-lista">'+rows+"</div>"+
+    '<div class="field-row grid-2" style="margin-top:14px;margin-bottom:10px">'+
+      '<label class="field">Nome<input type="text" id="prazo-nome" placeholder="ex.: 45 dias"></label>'+
+      '<label class="field">Dias<input type="number" step="1" min="0" id="prazo-dias" placeholder="45"></label>'+
+    "</div>"+
+    '<div class="modal-actions"><button type="button" class="btn ghost" data-close-modal="1">Fechar</button>'+
+      '<button type="button" class="btn primary" id="prazo-add">'+ICONS.plus+" Adicionar prazo</button></div>"+
+  "</div></div>";
+}
+
 function modalCarga(carga){
   var tipo=carga?carga.tipo:"compra";
   var titulo=carga?"Editar carga":"Nova carga";
@@ -2516,6 +3125,7 @@ function modalCarga(carga){
       '<label class="field">Placa do caminhão<input type="text" name="placa" placeholder="ABC-1D23" value="'+esc((carga&&carga.placa)||"")+'"></label>'+
       '<label class="field">Status inicial<select name="status">'+["acarregar","transporte","entregue"].map(function(s){var si=statusInfo(s);return '<option value="'+s+'"'+((carga?carga.status:"acarregar")===s?" selected":"")+">"+si.label+"</option>";}).join("")+"</select></label>"+
     "</div>"+
+    '<div id="carga-fin-area">'+cargaFinAreaHtml(tipo,carga)+"</div>"+
     '<div class="field-row grid-3">'+
       '<div class="photo-slot"><span class="lbl">Foto da nota fiscal (opcional)</span><div class="row"><div class="thumb-add" id="carga-foto-nota-add">'+(carga&&carga.fotoId?'<img class="thumb" id="carga-foto-nota-preview" src="">':ICONS.cam)+'</div><input type="file" accept="image/*" id="carga-foto-nota-input" style="display:none"></div></div>'+
       '<div class="photo-slot"><span class="lbl">Foto da nota de romaneio (opcional)</span><div class="row"><div class="thumb-add" id="carga-foto-romaneio-add">'+(carga&&carga.fotoRomaneioId?'<img class="thumb" id="carga-foto-romaneio-preview" src="">':ICONS.cam)+'</div><input type="file" accept="image/*" id="carga-foto-romaneio-input" style="display:none"></div></div>'+
@@ -2642,6 +3252,154 @@ function attachHandlers(){
     });});
     document.querySelectorAll("[data-view-foto]").forEach(hookFotoThumb);
   }
+
+  if(state.tab==="financeiro"){
+    var fd=document.getElementById("fin-data"); if(fd) fd.onchange=guarded(async function(){
+      state.finData=fd.value; state.finAberta=null; state.finFormPag=null;
+      await carregarFinanceiro(); render();
+    });
+    document.querySelectorAll("[data-fin-modo]").forEach(function(el){ el.onclick=guarded(async function(){
+      state.finModo=el.getAttribute("data-fin-modo");
+      state.finAberta=null; state.finFormPag=null;
+      // "Pagas"/"Recebidas" não existem no modo Pendentes — volta pro neutro
+      if(state.finModo==="pendentes"&&(state.finStatus==="paga"||state.finStatus==="recebida")) state.finStatus="todos";
+      await carregarFinanceiro(); render();
+    });});
+    document.querySelectorAll("[data-fin-tipo]").forEach(function(el){ el.onclick=function(){
+      state.finTipo=el.getAttribute("data-fin-tipo"); state.finFormPag=null; render();
+    };});
+    document.querySelectorAll("[data-fin-status]").forEach(function(el){ el.onclick=function(){
+      state.finStatus=el.getAttribute("data-fin-status"); state.finFormPag=null; render();
+    };});
+    document.querySelectorAll("[data-fin-toggle]").forEach(function(el){ el.onclick=function(){
+      var ch=el.getAttribute("data-fin-toggle");
+      state.finAberta=(state.finAberta===ch)?null:ch;
+      state.finFormPag=null;
+      render();
+    };});
+    document.querySelectorAll("[data-fin-resumo]").forEach(function(el){ el.onclick=guarded(async function(){
+      var p=el.getAttribute("data-fin-resumo").split("|");
+      var dia=await Store.getDia(p[1]);
+      var c=(dia.cargas||[]).filter(function(x){return x.id===p[0];})[0];
+      if(!c){ toast("Operação não encontrada.",true); return; }
+      openModal(modalResumoCarga(c,p[1]));
+    });});
+    document.querySelectorAll("[data-fin-prazo]").forEach(function(el){ el.onchange=guarded(async function(){
+      var ch=el.getAttribute("data-fin-prazo"), v=el.value;
+      if(v==="__pago"){
+        // "Pago" não vira um campo marcado na mão: abre o lançamento já com o
+        // valor que falta, pra registrar COMO foi pago. O status vira "Paga"
+        // sozinho quando a soma dos pagamentos fecha o total.
+        state.finFormPag=ch; render(); finFocoValor(); return;
+      }
+      await finMutar(ch,function(fin){
+        var p=v?prazoPorId(v):null;
+        fin.prazoId=p?p.id:null;
+        fin.prazoNome=p?p.nome:null;
+        fin.prazoDias=p?p.dias:null;
+      });
+    });});
+    document.querySelectorAll("[data-fin-novo-pag],[data-fin-quitar]").forEach(function(el){ el.onclick=function(){
+      state.finFormPag=el.getAttribute("data-fin-novo-pag")||el.getAttribute("data-fin-quitar");
+      render(); finFocoValor();
+    };});
+    var cancelar=document.querySelector("[data-fin-cancelar-pag]");
+    if(cancelar) cancelar.onclick=function(){ state.finFormPag=null; render(); };
+    var meioSel=document.getElementById("fin-pag-meio");
+    if(meioSel) meioSel.onchange=function(){
+      var area=document.getElementById("fin-pag-cheque-area");
+      if(area) area.hidden=(meioSel.value!=="cheque");
+    };
+    var salvarPag=document.querySelector("[data-fin-salvar-pag]");
+    if(salvarPag) salvarPag.onclick=guarded(async function(){
+      var ch=salvarPag.getAttribute("data-fin-salvar-pag");
+      var valor=parseFloat((document.getElementById("fin-pag-valor")||{}).value);
+      var data=(document.getElementById("fin-pag-data")||{}).value||todayIso();
+      var meio=(document.getElementById("fin-pag-meio")||{}).value||"dinheiro";
+      var obs=((document.getElementById("fin-pag-obs")||{}).value||"").trim();
+      if(!valor||valor<=0){ toast("Informe o valor do pagamento.",true); return; }
+      var pag={id:uid(),data:data,valor:valor,meio:meio,obs:obs,criadoEm:new Date().toISOString(),criadoPor:meuUid()};
+      if(meio==="cheque"){
+        pag.cheque={
+          numero:((document.getElementById("fin-pag-cheque-num")||{}).value||"").trim(),
+          banco:((document.getElementById("fin-pag-cheque-banco")||{}).value||"").trim(),
+          bomPara:((document.getElementById("fin-pag-cheque-bom")||{}).value||"")||null
+        };
+      }
+      state.finFormPag=null;
+      await finMutar(ch,function(fin){ fin.pagamentos=(fin.pagamentos||[]).concat([pag]); });
+      toast("Pagamento lançado.");
+    });
+    document.querySelectorAll("[data-fin-del-pag]").forEach(function(el){ el.onclick=guarded(async function(){
+      var raw=el.getAttribute("data-fin-del-pag");
+      var i=raw.lastIndexOf("|");
+      var ch=raw.slice(0,i), pagId=raw.slice(i+1);
+      if(!confirm("Remover este pagamento? O status da operação será recalculado.")) return;
+      await finMutar(ch,function(fin){ fin.pagamentos=(fin.pagamentos||[]).filter(function(p){return p.id!==pagId;}); });
+      toast("Pagamento removido.");
+    });});
+    var bp=document.querySelector('[data-action="fin-prazos"]');
+    if(bp) bp.onclick=function(){ openModal(modalPrazos()); hookPrazosModal(); };
+  }
+}
+
+function finFocoValor(){
+  var v=document.getElementById("fin-pag-valor");
+  if(v){ v.focus(); try{ v.select(); }catch(e){} }
+}
+
+function chaveFin(ch){ var p=String(ch).split("|"); return {cargaId:p[0],key:p[1],dataIso:p[2]}; }
+
+/* Toda alteração financeira passa por aqui: recarrega o dia do banco, aplica a
+   mudança no lado certo da carga, grava e recalcula a tela. Centralizar isso
+   evita que a tela e o banco fiquem contando histórias diferentes. */
+async function finMutar(chave,fn){
+  if(!souAdmin()){ toast("Somente administradores podem lançar pagamentos.",true); return; }
+  var k=chaveFin(chave);
+  var dia=await Store.getDia(k.dataIso);
+  var carga=(dia.cargas||[]).filter(function(c){return c.id===k.cargaId;})[0];
+  if(!carga){ toast("Operação não encontrada.",true); return; }
+  if(!carga[k.key]||typeof carga[k.key]!=="object") carga[k.key]=finVazio();
+  fn(carga[k.key],carga);
+  await Store.saveDia(k.dataIso,dia);
+  await carregarFinanceiro();
+  render();
+}
+
+async function salvarPrazos(lista){
+  if(!state.empresa){ toast("Empresa não carregada. Atualize a página.",true); return false; }
+  state.empresa.prazos=lista;
+  await Store.saveEmpresa(state.empresa);
+  return true;
+}
+
+function hookPrazosModal(){
+  var add=document.getElementById("prazo-add");
+  if(add) add.onclick=guarded(async function(){
+    var nome=((document.getElementById("prazo-nome")||{}).value||"").trim();
+    var dias=parseInt((document.getElementById("prazo-dias")||{}).value,10);
+    if(!nome){ toast("Dê um nome ao prazo.",true); return; }
+    if(isNaN(dias)||dias<0){ toast("Informe em quantos dias vence.",true); return; }
+    var lista=prazosEmpresa();
+    if(lista.some(function(p){return normalize(p.nome)===normalize(nome);})){ toast("Já existe um prazo com esse nome.",true); return; }
+    lista.push({id:uid(),nome:nome,dias:dias});
+    lista.sort(function(a,b){return a.dias-b.dias;});
+    if(!await salvarPrazos(lista)) return;
+    toast("Prazo adicionado.");
+    closeModal(document.querySelector(".modal-back"));
+    openModal(modalPrazos()); hookPrazosModal();
+    if(state.tab==="financeiro") render();
+  });
+  document.querySelectorAll("[data-del-prazo]").forEach(function(el){ el.onclick=guarded(async function(){
+    var id=el.getAttribute("data-del-prazo");
+    var lista=prazosEmpresa().filter(function(p){return p.id!==id;});
+    if(!lista.length){ toast("Mantenha pelo menos um prazo cadastrado.",true); return; }
+    if(!await salvarPrazos(lista)) return;
+    toast("Prazo removido.");
+    closeModal(document.querySelector(".modal-back"));
+    openModal(modalPrazos()); hookPrazosModal();
+    if(state.tab==="financeiro") render();
+  });});
 }
 
 function busca_focus(){var b=document.getElementById("cat-busca");if(b){b.focus();var v=b.value;b.value="";b.value=v;}}
@@ -2851,6 +3609,10 @@ function hookCargaModal(carga){
     modalDespesasExtras=[];
     entArea.innerHTML=cargaEntAreaHtml(tipoSel.value,null);
     precoArea.innerHTML=cargaPrecoAreaHtml(tipoSel.value,null,restrito);
+    // a venda casada tem dois lados financeiros; compra e venda têm um só —
+    // então o bloco de situação financeira é remontado junto com o resto
+    var finArea=document.getElementById("carga-fin-area");
+    if(finArea) finArea.innerHTML=cargaFinAreaHtml(tipoSel.value,null);
     wirePrecoInputs();
   };
 
@@ -2985,6 +3747,48 @@ function hookCargaModal(carga){
       carga.clienteEntidadeId=clienteEntId;
       carga.clienteNome=clienteNome;
       carga.despesasExtras=despesasExtras;
+    }
+
+    /* ---- lados financeiros ----
+       O formulário só define a CONDIÇÃO de pagamento (o prazo). Os pagamentos
+       já lançados nunca são tocados aqui — são a fonte do status, e perder um
+       deles faria uma operação quitada voltar a aparecer como em aberto. */
+    // acha o lado financeiro anterior, inclusive quando o tipo da operação
+    // mudou: o lado de compra continua sendo o lado de compra (uma compra que
+    // virou venda casada leva junto os pagamentos já feitos ao fornecedor)
+    function anteriorDe(alvoKey){
+      if(!existing) return finVazio();
+      var direto=existing[alvoKey];
+      if(direto&&typeof direto==="object") return direto;
+      var velho=existing.tipo;
+      if(alvoKey==="fin"){
+        if(tipo==="compra"&&velho==="casada") return finDoLado(existing,"finCompra");
+        if(tipo==="venda" &&velho==="casada") return finDoLado(existing,"finVenda");
+      }
+      if(alvoKey==="finCompra"&&velho==="compra") return finDoLado(existing,"fin");
+      if(alvoKey==="finVenda" &&velho==="venda")  return finDoLado(existing,"fin");
+      return finVazio();
+    }
+    function aplicaPrazo(alvoKey,prazoId){
+      var anterior=anteriorDe(alvoKey);
+      if(restritoSave) return anterior; // operacional não mexe em nada financeiro
+      var p=prazoId?prazoPorId(prazoId):null;
+      // prazo apagado do cadastro depois de usado: mantém nome/dias gravados na carga
+      var manterAntigo=(prazoId && !p && anterior.prazoId===prazoId);
+      return {
+        prazoId:prazoId||null,
+        prazoNome:p?p.nome:(manterAntigo?anterior.prazoNome:null),
+        prazoDias:p?p.dias:(manterAntigo?anterior.prazoDias:null),
+        pagamentos:anterior.pagamentos||[]
+      };
+    }
+    if(tipo==="casada"){
+      carga.finCompra=aplicaPrazo("finCompra",get("finCompraPrazo"));
+      carga.finVenda=aplicaPrazo("finVenda",get("finVendaPrazo"));
+      delete carga.fin;
+    } else {
+      carga.fin=aplicaPrazo("fin",get("finPrazo"));
+      delete carga.finCompra; delete carga.finVenda;
     }
 
     if(existing){
