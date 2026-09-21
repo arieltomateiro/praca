@@ -14,9 +14,10 @@
  *    próxima abertura. Antes o documento era "network-first" (esperava a rede
  *    responder pra mostrar qualquer coisa), o que deixava a abertura lenta
  *    toda vez que o sinal estava ruim — exatamente o cenário de uso deste app.
- *  - Se uma versão nova do app for baixada em segundo plano, avisa a página
- *    (postMessage) pra ela poder oferecer "atualizar agora" sem precisar
- *    travar a abertura esperando essa checagem.
+ *  - Quando uma versão nova é baixada em segundo plano, ela simplesmente passa
+ *    a valer na próxima abertura do app. A página NUNCA é avisada e nenhuma
+ *    faixa de "atualizar agora" aparece — a pessoa não é interrompida no meio
+ *    de um lançamento.
  *  - Nunca intercepta chamadas do Firebase (Firestore/Auth) — essas sempre
  *    vão direto pra rede, do jeitinho que o SDK já sabe fazer offline.
  *
@@ -24,7 +25,7 @@
  * do CACHE_NAME abaixo. Isso garante que o service worker antigo é
  * substituído e o app não fica "preso" numa versão velha em cache.
  */
-var CACHE_VERSION = "v5";
+var CACHE_VERSION = "v7";
 var CACHE_NAME = "ariel-tomateiro-" + CACHE_VERSION;
 
 var PRECACHE_URLS = [
@@ -85,15 +86,9 @@ self.addEventListener("activate", function (event) {
   );
 });
 
-// avisa as abas abertas que uma versão mais nova do app já foi baixada e
-// está pronta (só passa a valer na próxima abertura/recarregamento).
-function avisarNovaVersao() {
-  self.clients.matchAll({ type: "window" }).then(function (clients) {
-    clients.forEach(function (client) {
-      client.postMessage({ type: "nova-versao-disponivel" });
-    });
-  });
-}
+// A versão nova é baixada em segundo plano e passa a valer sozinha na próxima
+// abertura do app. Nenhum aviso é enviado para a tela — a pessoa nunca é
+// interrompida por uma faixa de "atualizar agora".
 
 self.addEventListener("fetch", function (event) {
   var req = event.request;
@@ -120,7 +115,6 @@ self.addEventListener("fetch", function (event) {
             var copy = resp.clone();
             caches.open(CACHE_NAME).then(function (cache) {
               cache.put(req, copy);
-              if (isDocument && cached) avisarNovaVersao();
             });
           }
           return resp;

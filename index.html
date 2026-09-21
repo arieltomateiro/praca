@@ -150,7 +150,10 @@ nav.tabs{display:flex;flex-direction:column;gap:2px;}
 .page-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap;}
 .page-head h1{font-size:26px;}
 .page-head .lede{color:var(--text-dim);font-size:13px;margin-top:4px;}
-.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0;}
+/* nenhum item de uma barra de ferramentas pode ser mais largo que ela — é o que
+   impedia um rótulo com <select> de nome comprido de vazar alguns pixels */
+.toolbar > *{max-width:100%;min-width:0;}
 
 .btn{
   display:inline-flex;align-items:center;gap:6px;
@@ -168,10 +171,19 @@ nav.tabs{display:flex;flex-direction:column;gap:2px;}
 .btn:disabled{opacity:.45;cursor:default;}
 .btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;}
 
-input[type=text],input[type=email],input[type=password],input[type=number],input[type=date],select,textarea{
+/* lista aberta em vez de tipo a tipo: o campo de whatsapp (type="tel") ficava
+   de fora e renderizava sem estilo nenhum, com 21px de altura, no meio de um
+   formulário estilizado. Assim qualquer tipo novo já nasce com o visual certo. */
+input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]),select,textarea{
   background:var(--bg-2);border:1px solid var(--border-2);color:var(--text);
   border-radius:var(--radius-s);padding:10px 11px;font-size:15.5px;width:100%;
 }
+/* um <select> cresce sozinho até caber a opção mais comprida. Com nomes longos
+   de mercadoria isso empurrava a largura da página inteira no celular — estes
+   dois limites impedem qualquer campo de ultrapassar o container. */
+input,select,textarea{max-width:100%;min-width:0;}
+/* linha de etiquetas abaixo do nome numa op-row (ex.: mercadoria da cotação) */
+.row-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px;min-width:0;}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,162,78,.18);}
 #preco-data{text-align:center;width:170px;max-width:100%;min-width:0;margin:0 auto;}
 #preco-data::-webkit-datetime-edit{text-align:center;}
@@ -187,6 +199,7 @@ label.field span.hint{font-weight:400;color:var(--text-faint);font-size:11px;}
 .section-title{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-faint);font-weight:700;margin-bottom:12px;}
 
 .kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px;}
+.kpi-row.poucos{grid-template-columns:repeat(auto-fit,minmax(200px,280px));justify-content:start;}
 .kpi{background:var(--bg-1);border:1px solid var(--border);border-radius:var(--radius-m);padding:16px 16px;}
 .kpi .label{font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;}
 .kpi .value{font-family:var(--font-mono);font-size:22px;font-weight:600;margin-top:6px;}
@@ -194,7 +207,12 @@ label.field span.hint{font-weight:400;color:var(--text-faint);font-size:11px;}
 .kpi .value.pos{color:var(--green);}
 .kpi .value.neg{color:var(--red);}
 
-.pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;}
+/* inline-block (e não inline-flex) porque uma pill sempre carrega só texto e,
+   quando esse texto é um nome digitado pelo usuário, precisa poder ser cortado
+   com reticências — um nome longo de mercadoria chegava a empurrar a página
+   inteira para o lado no celular. */
+.pill{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;line-height:1.55;vertical-align:middle;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pill.nome{max-width:200px;}
 .pill.amber{background:var(--amber-bg);color:var(--amber);}
 .pill.orange{background:var(--orange-bg);color:var(--orange);}
 .pill.green{background:var(--green-bg);color:var(--green);}
@@ -213,7 +231,7 @@ tr:hover td{background:var(--overlay-2);}
 .empty svg{width:26px;height:26px;stroke:var(--text-faint);margin-bottom:10px;}
 .empty .t{color:var(--text-dim);font-weight:600;font-size:13.5px;margin-bottom:4px;}
 
-.modal-back{position:fixed;inset:0;background:rgba(4,4,5,.68);backdrop-filter:blur(2px);display:flex;align-items:flex-start;justify-content:center;padding:5vh 16px calc(5vh + var(--safe-b));z-index:50;overflow-y:auto;}
+.modal-back{position:fixed;inset:0;background:rgba(4,4,5,.78);display:flex;align-items:flex-start;justify-content:center;padding:5vh 16px calc(5vh + var(--safe-b));z-index:50;overflow-y:auto;}
 .modal{background:var(--bg-1);border:1px solid var(--border-2);border-radius:var(--radius-l);width:100%;max-width:560px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.5);}
 .modal h3{font-size:19px;margin-bottom:16px;}
 .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;flex-wrap:wrap;}
@@ -221,7 +239,6 @@ tr:hover td{background:var(--overlay-2);}
 #toasts{position:fixed;bottom:calc(20px + var(--safe-b));right:20px;left:20px;display:flex;flex-direction:column;align-items:flex-end;gap:8px;z-index:80;}
 .toast{background:var(--bg-3);border:1px solid var(--border-2);border-left:3px solid var(--gold);padding:11px 16px;border-radius:var(--radius-s);font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.4);max-width:360px;}
 .toast.err{border-left-color:var(--red);}
-.update-banner{position:fixed;top:0;left:0;right:0;z-index:90;background:var(--gold);color:var(--gold-ink);font-size:13px;font-weight:600;padding:10px 16px;padding-top:calc(10px + var(--safe-t));text-align:center;cursor:pointer;}
 
 /* thumbs */
 .thumb{width:44px;height:44px;border-radius:8px;object-fit:cover;border:1px solid var(--border-2);cursor:zoom-in;flex:none;}
@@ -341,21 +358,26 @@ tr:hover td{background:var(--overlay-2);}
 .fin-filtros{display:flex;flex-direction:column;gap:10px;margin-bottom:18px;}
 .fin-filtro{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
 .fin-filtro .fl{font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;min-width:126px;}
+.fin-status-sel{width:auto;min-width:210px;}
 .fin-row{border:1px solid var(--border);border-left:4px solid var(--border-2);border-radius:var(--radius-m);margin-bottom:10px;background:var(--bg-1);overflow:hidden;}
 .fin-row.atrasada{border-left-color:var(--red);}
 .fin-row.aberta{border-color:var(--border-2);}
-.fin-row-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px 10px;cursor:pointer;flex-wrap:wrap;}
+.fin-row-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;flex-wrap:wrap;cursor:pointer;}
 .fin-row-head:hover{background:var(--overlay-2);}
-.fin-row-head .l{display:flex;align-items:center;gap:9px;min-width:0;flex-wrap:wrap;}
+.fin-row-head .l{display:flex;align-items:center;gap:9px;min-width:0;flex-wrap:wrap;flex:1 1 220px;}
 .fin-row-head .l .meta{min-width:0;}
 .fin-row-head .l .nm{font-weight:600;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .fin-row-head .l .loc{font-size:11.5px;color:var(--text-faint);}
-.fin-row-head .r{display:flex;align-items:center;gap:12px;flex:none;}
-.fin-val{text-align:right;}
-.fin-val .v{font-family:var(--font-mono);font-weight:600;font-size:14px;}
-.fin-val .u{font-size:10.5px;color:var(--text-faint);}
-.fin-venc{padding:0 16px 12px;font-size:11.5px;color:var(--text-faint);}
-.fin-row.atrasada .fin-venc{color:var(--red);}
+.fin-row-head .l .loc .venc.atrasado{color:var(--red);font-weight:600;}
+.fin-row-head .r{display:flex;align-items:center;gap:10px;flex:none;}
+.fin-val{text-align:right;flex:none;}
+/* o valor nunca quebra entre o "R$" e o número */
+.fin-val .v{font-family:var(--font-mono);font-weight:600;font-size:14px;white-space:nowrap;}
+.fin-val .u{font-size:10.5px;color:var(--text-faint);white-space:nowrap;}
+.fin-row-head .r .pill{flex:0 1 auto;}
+.fin-row-head .r .btn{flex:none;}
+.btn.sm{padding:6px 11px;font-size:12px;}
+.btn.sm svg{width:13px;height:13px;}
 .fin-detail{border-top:1px solid var(--border);padding:16px;background:var(--overlay-2);}
 .fin-detail-tit{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-dim);margin-bottom:12px;}
 .fin-money{margin-bottom:10px;}
@@ -387,11 +409,9 @@ tr:hover td{background:var(--overlay-2);}
 .fin-resumo-lado-tit{font-size:12px;font-weight:600;margin-bottom:7px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .fin-resumo-lado .linha{display:flex;justify-content:space-between;gap:12px;font-size:12.5px;padding:3px 0;}
 .fin-resumo-lado .rlabel{color:var(--text-dim);}
-.fin-prazos-lista{display:flex;flex-direction:column;gap:6px;}
-.fin-prazo-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 11px;border:1px solid var(--border);border-radius:var(--radius-s);}
-.fin-prazo-row .l{display:flex;flex-direction:column;gap:2px;min-width:0;}
-.fin-prazo-row .loc{font-size:11px;color:var(--text-faint);}
 .modal-back.centro{align-items:center;padding-top:16px;padding-bottom:calc(16px + var(--safe-b));}
+/* o calendário precisa ficar acima de um modal já aberto (ex.: formulário de carga) */
+.modal-back.datepick{z-index:60;}
 /* bloco financeiro dentro do formulário de carga */
 .carga-fin-bloco{border:1px solid var(--border);border-radius:var(--radius-m);padding:13px 14px;margin-bottom:14px;background:var(--overlay-2);}
 .carga-fin-tit{font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
@@ -465,16 +485,21 @@ tr:hover td{background:var(--overlay-2);}
     display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;
     position:fixed;top:0;left:0;right:0;z-index:40;
     background:var(--bg-1);border-bottom:1px solid var(--border);
-    padding:calc(10px + var(--safe-t)) 14px 10px;
+    /* o espaçamento vertical encolhe na mesma medida em que a logo cresce,
+       então a barra continua com exatamente a mesma altura de antes (60px) */
+    padding:calc(5px + var(--safe-t)) 14px 5px;
   }
   .mtb-status{display:flex;align-items:center;gap:8px;min-width:0;font-size:12.5px;color:var(--text-dim);justify-self:start;}
-  .mtb-logo{justify-self:center;height:38px;width:auto;object-fit:contain;border-radius:6px;}
+  .mtb-logo{justify-self:center;height:50px;width:auto;object-fit:contain;border-radius:6px;}
   #mobiletopbar .status-dot{flex:none;display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);}
   #mobiletopbar .status-dot.off{background:var(--red);}
   #mobiletopbar .status-dot.syncing{background:var(--amber);}
   #who-email-m{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   #mobiletopbar .iconbtn{flex:none;justify-self:end;}
   .kpi-row{grid-template-columns:repeat(2,1fr);}
+  /* no celular o limite de largura do desktop atrapalha: deixa os poucos
+     cartões ocuparem a linha normalmente (2 lado a lado, 1 sozinho cheio) */
+  .kpi-row.poucos{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));}
   /* valor em fonte mono a 22px não cabe em meia tela de celular e quebrava
      "R$" numa linha e o número na outra */
   .kpi .value{font-size:18px;}
@@ -487,6 +512,11 @@ tr:hover td{background:var(--overlay-2);}
   #bottomnav .tab-btn svg{width:20px;height:20px;}
   #bottomnav .tab-btn span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:64px;}
   .btn,.iconbtn,.seg button,.status-select{min-height:40px;}
+  /* "sair" e "gerenciar acesso" tinham 14px de altura — pequeno demais pra
+     acertar com o dedo. O sublinhado e o tamanho da fonte continuam iguais. */
+  .linklike{padding:11px 6px !important;}
+  /* em telas bem estreitas o valor do dia não cabe na célula do calendário */
+  .cal-cell .tag{max-width:100%;overflow:hidden;text-overflow:ellipsis;}
   .thumb,.thumb-add{width:52px;height:52px;}
   .precos-toprow{grid-template-columns:minmax(0,1fr);}
   .precos-modo-field{align-items:stretch;}
@@ -519,7 +549,7 @@ tr:hover td{background:var(--overlay-2);}
    ou o app) estiver pronta. */
 #boot-loading{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:var(--bg);}
 #boot-loading[hidden]{display:none;}
-#boot-loading img{width:72px;height:auto;}
+#boot-loading img{width:132px;height:auto;max-width:56vw;}
 #boot-loading .t{font-family:var(--font-body);font-size:13px;color:var(--text-faint);}
 /* mostra a logo certa pro tema já salvo, sem esperar JS nenhum rodar —
    o script inline no topo do documento já cravou data-theme antes disso
@@ -1814,7 +1844,35 @@ async function refreshCurrentTabData(){
   else if(state.tab==="financeiro"){ await carregarFinanceiro(); }
 }
 
-// janela que o modo Pendentes varre pra trás. 90 dias cobre com folga os prazos
+/* O filtro de tipo trabalha sobre o LADO da operação, não sobre o tipo da
+   carga: "Compra" é tudo que se paga (compras + o lado de compra das vendas
+   casadas) e "Venda" é tudo que se recebe (vendas + o lado de venda das
+   casadas). É o que faz o dinheiro de uma venda casada aparecer nos dois
+   lugares certos em vez de ficar escondido só sob "Venda Casada". */
+function ladoBateTipo(lado,tipo){
+  if(tipo==="todas") return true;
+  if(tipo==="compra") return lado.dir==="pagar";
+  if(tipo==="venda")  return lado.dir==="receber";
+  if(tipo==="casada") return lado.carga.tipo==="casada";
+  return true;
+}
+
+/* Quais status fazem sentido mostrar para o tipo selecionado. Não adianta
+   oferecer "Recebidas" quando a lista só tem contas a pagar. */
+function statusDisponiveis(tipo,modo){
+  var temPagar   = (tipo==="todas"||tipo==="compra"||tipo==="casada");
+  var temReceber = (tipo==="todas"||tipo==="venda" ||tipo==="casada");
+  return FIN_STATUS_FILTROS.filter(function(f){
+    if(f.id==="todos"||f.id==="definir") return true;
+    // no modo Pendentes Futuros nada quitado aparece, então esses dois somem
+    if(modo==="pendentes"&&(f.id==="paga"||f.id==="recebida")) return false;
+    if(f.id==="paga"||f.id==="pendente_pag") return temPagar;
+    if(f.id==="recebida"||f.id==="pendente_rec") return temReceber;
+    return true;
+  });
+}
+
+// janela que o modo Pendentes Futuros varre pra trás. 90 dias cobre com folga os prazos
 // praticados (o maior padrão é 30) sem puxar o histórico inteiro da empresa.
 var FIN_JANELA_DIAS=90;
 
@@ -1844,8 +1902,10 @@ function ladosDoModo(){
   var out=[];
   dias.forEach(function(d){
     (d.cargas||[]).forEach(function(c){
-      if(state.finTipo!=="todas" && c.tipo!==state.finTipo) return;
-      ladosFin(c,d.data||state.finData).forEach(function(l){ out.push(l); });
+      ladosFin(c,d.data||state.finData).forEach(function(l){
+        if(!ladoBateTipo(l,state.finTipo)) return;
+        out.push(l);
+      });
     });
   });
 
@@ -1971,6 +2031,39 @@ function viewCalendario(){
 function viewCatalogo(){
   var filtro=state._catFiltro||"todos";
   var busca=(state._catBusca||"").toLowerCase();
+
+  // prazos de pagamento são configuração financeira, não um cadastro de
+  // pessoa/produto: só administrador vê, e de propósito NÃO entram em "Todos"
+  var podePrazos=souAdmin();
+  if(filtro==="prazo" && !podePrazos){ filtro="todos"; state._catFiltro="todos"; }
+  var filtrosCat=["todos","fornecedor","cliente","mercadoria"].concat(podePrazos?["prazo"]:[]);
+  var rotuloCat={todos:"Todos",fornecedor:"Fornecedores",cliente:"Clientes",mercadoria:"Mercadorias",prazo:"Prazos"};
+  var segCat='<div class="seg">'+filtrosCat.map(function(f){
+    return '<button class="'+(filtro===f?"active":"")+'" data-cat-filtro="'+f+'">'+rotuloCat[f]+"</button>";
+  }).join("")+"</div>";
+
+  if(filtro==="prazo"){
+    var prazos=prazosEmpresa().slice().sort(function(a,b){return a.dias-b.dias;});
+    var usandoPadrao=!(state.empresa&&state.empresa.prazos&&state.empresa.prazos.length);
+    var linhas=prazos.filter(function(p){
+      return !busca || normalize(p.nome).indexOf(normalize(busca))>=0;
+    }).map(function(p){
+      return '<div class="op-row" data-prazo-edit="'+p.id+'" style="cursor:pointer">'+
+        '<div class="l"><div class="meta"><div class="nm">'+esc(p.nome)+'</div>'+
+        '<div class="loc">'+(p.dias===0?"vence no mesmo dia da carga":"vence "+p.dias+(p.dias===1?" dia":" dias")+" depois da data da carga")+"</div></div></div>"+
+        '<div class="r"><span class="pill gray">'+p.dias+(p.dias===1?" dia":" dias")+"</span></div>"+
+      "</div>";
+    }).join("") || '<div class="empty">'+ICONS.clock+'<div class="t">Nenhum prazo encontrado.</div></div>';
+
+    return '<div class="page-head"><div><h1>Cadastros</h1><p class="lede">Condições de pagamento usadas no Financeiro. O vencimento de cada operação é a data da carga mais estes dias.</p></div>'+
+      '<div class="toolbar"><button class="btn primary" data-action="novo-prazo">'+ICONS.plus+" Novo prazo</button></div></div>"+
+      '<div class="toolbar" style="margin-bottom:14px">'+segCat+
+        '<input type="text" placeholder="Buscar prazo…" style="max-width:260px" id="cat-busca" value="'+esc(state._catBusca||"")+'">'+
+      "</div>"+
+      (usandoPadrao?'<div class="fin-aviso" style="color:var(--text-dim);background:var(--overlay-1)">Esta é a lista padrão. Ao criar ou excluir qualquer prazo, ela passa a ser a lista da sua empresa.</div>':"")+
+      linhas;
+  }
+
   var list=state.entidades.filter(function(e){
     if(filtro==="todos"){
       if(e.tipo==="mercadoria") return false;
@@ -1995,8 +2088,7 @@ function viewCatalogo(){
 
   return '<div class="page-head"><div><h1>Cadastros</h1><p class="lede">Fornecedores, clientes e mercadorias cadastrados.</p></div>'+
     '<div class="toolbar"><button class="btn primary" data-action="novo-ent">'+ICONS.plus+" Novo cadastro</button></div></div>"+
-    '<div class="toolbar" style="margin-bottom:14px">'+
-      '<div class="seg">'+["todos","fornecedor","cliente","mercadoria"].map(function(f){return '<button class="'+(filtro===f?"active":"")+'" data-cat-filtro="'+f+'">'+(f==="todos"?"Todos":f==="fornecedor"?"Fornecedores":f==="cliente"?"Clientes":"Mercadorias")+"</button>";}).join("")+'</div>'+
+    '<div class="toolbar" style="margin-bottom:14px">'+segCat+
       '<input type="text" placeholder="Buscar por nome ou cidade…" style="max-width:260px" id="cat-busca" value="'+esc(state._catBusca||"")+'">'+
     '</div>'+
     rows;
@@ -2019,7 +2111,24 @@ function entFieldsHtml(tipo,ent,dis){
     '<div class="field-row grid-2" style="margin-bottom:12px">'+
       '<label class="field">Cidade<input type="text" name="cidade" required'+dis+' value="'+esc(ent.cidade||"")+'"></label>'+
       '<label class="field">Estado<select name="estado" required'+dis+'>'+'<option value="">selecione</option>'+estadosOpts+'</select></label>'+
-    '</div>';
+    '</div>'+
+    entPrazoPadraoHtml(ent,dis);
+}
+
+/* prazo que este fornecedor/cliente costuma praticar. Serve só pra já vir
+   preenchido quando a pessoa lança uma carga nova com ele — o prazo continua
+   podendo ser trocado carga a carga, e mudar isso aqui não mexe em nada que
+   já foi lançado. */
+function entPrazoPadraoHtml(ent,dis){
+  if(!souAdmin()) return "";
+  var atual=ent.prazoPadraoId||"";
+  var lista=prazosEmpresa();
+  return '<div class="field-row" style="margin-bottom:12px"><label class="field">Prazo de pagamento habitual'+
+    '<span class="hint">preenchido automaticamente ao lançar uma carga nova com este cadastro</span>'+
+    '<select name="prazoPadraoId"'+dis+'>'+
+      '<option value=""'+(!atual?" selected":"")+">sem prazo habitual</option>"+
+      lista.map(function(p){return '<option value="'+p.id+'"'+(atual===p.id?" selected":"")+">"+esc(p.nome)+"</option>";}).join("")+
+    "</select></label></div>";
 }
 function modalEntidade(ent){
   ent=ent||{tipo:"fornecedor",nome:"",razaoSocial:"",cnpj:"",endereco:"",cidade:"",estado:"",observacoes:"",cor:"",tamanho:""};
@@ -2094,10 +2203,13 @@ function viewPrecos(){
   var precosFiltrados=filtroLista==="todas"?precosDoDia:precosDoDia.filter(function(p){return (p.mercadoriaId||"")===filtroLista;});
   var lista=precosFiltrados.slice().reverse().map(function(p){
     var delBtn=possoEditar(p)?('<button class="iconbtn" data-del-preco="'+p.id+'">'+ICONS.x+"</button>"):"";
-    var mercLabel=p.mercadoriaNome?'<span class="pill amber" style="margin-left:6px">'+esc(p.mercadoriaNome)+"</span>":"";
+    // a pill da mercadoria fica FORA do nome: dentro dele ela era um bloco
+    // atômico no meio de um texto de uma linha só com reticências, e um nome
+    // comprido empurrava a largura da página inteira no celular
+    var mercLabel=p.mercadoriaNome?'<div class="row-tags"><span class="pill amber nome">'+esc(p.mercadoriaNome)+"</span></div>":"";
     return '<div class="op-row"><div class="l">'+
       (p.fotoId?'<img class="thumb" data-view-foto="'+state.precoData+"|"+p.fotoId+'" src="">':"")+
-      '<div class="meta"><div class="nm">'+esc(p.nome)+mercLabel+'</div><div class="loc">'+esc(p.cidade)+"/"+esc(p.estado)+(p.obs?" · "+esc(p.obs):"")+'</div></div></div>'+
+      '<div class="meta"><div class="nm">'+esc(p.nome)+'</div><div class="loc">'+esc(p.cidade)+"/"+esc(p.estado)+(p.obs?" · "+esc(p.obs):"")+"</div>"+mercLabel+'</div></div>'+
       '<div class="r"><span class="valor num">'+fmtMoney(p.preco)+'/cx</span>'+delBtn+"</div></div>";
   }).join("") || '<div class="empty">Nenhum preço lançado nesta data ainda.</div>';
 
@@ -2547,7 +2659,10 @@ function addDias(iso,dias){
 }
 function diasEntre(isoDe,isoAte){ return Math.round((isoToDate(isoAte)-isoToDate(isoDe))/86400000); }
 
-function finVazio(){ return {prazoId:null,prazoNome:null,prazoDias:null,pagamentos:[]}; }
+// prazoId especial: em vez de "data da carga + N dias", o vencimento é um dia
+// escolhido a dedo no calendário e guardado em vencimentoManual
+var PRAZO_DATA="__data";
+function finVazio(){ return {prazoId:null,prazoNome:null,prazoDias:null,vencimentoManual:null,pagamentos:[]}; }
 function finDoLado(c,key){ var f=c&&c[key]; return (f&&typeof f==="object")?f:finVazio(); }
 function somaPagos(fin){ return (fin.pagamentos||[]).reduce(function(s,p){return s+(+p.valor||0);},0); }
 
@@ -2557,16 +2672,20 @@ function totalVenda(c){
   return totalCompra(c);
 }
 
+/* label = nome completo (usado no filtro, no detalhe e no resumo).
+   curto  = o que aparece na etiqueta da linha, onde a própria linha já diz se
+            é compra ou venda — "Pendente de Pagamento" ali só repetia a
+            informação e ainda era cortado no celular. */
 function statusFin(total,pagos,fin,dir,venc,hoje){
-  var quitado=dir==="pagar"?{key:"paga",label:"Paga"}:{key:"recebida",label:"Recebida"};
-  var pend=dir==="pagar"?{key:"pendente_pag",label:"Pendente de Pagamento"}:{key:"pendente_rec",label:"Pendente de Recebimento"};
-  var indef={key:"definir",label:"À Definir",cls:"gray",pct:0,atrasado:false,diasAtraso:0};
+  var quitado=dir==="pagar"?{key:"paga",label:"Paga",curto:"Paga"}:{key:"recebida",label:"Recebida",curto:"Recebida"};
+  var pend=dir==="pagar"?{key:"pendente_pag",label:"Pendente de Pagamento",curto:"Pendente"}:{key:"pendente_rec",label:"Pendente de Recebimento",curto:"Pendente"};
+  var indef={key:"definir",label:"À Definir",curto:"A definir",cls:"gray",pct:0,atrasado:false,diasAtraso:0};
   // carga ainda sem valores preenchidos pelo administrador
   if(total==null||total<=0) return Object.assign({},indef,{falta:null});
   var falta=total-pagos;
   if(falta<=0.005) return Object.assign({},quitado,{cls:"green",falta:0,pct:100,atrasado:false,diasAtraso:0});
-  // sem prazo escolhido e sem nenhum pagamento lançado: ninguém definiu como paga ainda
-  if(!fin.prazoId && pagos===0) return Object.assign({},indef,{falta:falta});
+  // sem prazo nem data escolhida, e sem nenhum pagamento lançado: ninguém definiu ainda
+  if(!fin.prazoId && !fin.vencimentoManual && pagos===0) return Object.assign({},indef,{falta:falta});
   var atrasado=!!(venc&&venc<hoje);
   return Object.assign({},pend,{
     cls:atrasado?"red":"orange",
@@ -2585,7 +2704,8 @@ function ladosFin(c,dataIso){
   function monta(key,dir,total,contraparte,rotulo){
     var fin=finDoLado(c,key);
     var pagos=somaPagos(fin);
-    var venc=fin.prazoDias==null?null:addDias(dataIso,fin.prazoDias);
+    // data escolhida a dedo tem prioridade sobre o cálculo por dias
+    var venc=fin.vencimentoManual||(fin.prazoDias==null?null:addDias(dataIso,fin.prazoDias));
     return {
       chave:c.id+"|"+key+"|"+dataIso,
       cargaId:c.id, carga:c, dataIso:dataIso, key:key, dir:dir, rotulo:rotulo,
@@ -2665,7 +2785,7 @@ function viewCargas(){
       // carga — sem qualquer valor financeiro (preço, valor total, lucro) e sem ações
       var topOp='<div class="carga-top"><div class="left">'+
         '<span class="pill '+(tipoPill[c.tipo]||"gray")+'">'+(c.tipo==="casada"?"compra casada":c.tipo)+'</span>'+
-        (c.mercadoriaNome?'<span class="pill amber">'+esc(c.mercadoriaNome)+"</span>":"")+
+        (c.mercadoriaNome?'<span class="pill amber nome">'+esc(c.mercadoriaNome)+"</span>":"")+
         '<span class="pill '+st.cls+'">'+esc(st.label)+"</span>"+
         '<span class="carga-num">carga nº '+(c.numeroSequencial||"—")+'</span>'+
         '<strong>'+(c.tipo==="casada"?(esc(c.nome)+" &rarr; "+esc(c.clienteNome||"—")):esc(c.nome))+"</strong></div></div>";
@@ -2687,7 +2807,7 @@ function viewCargas(){
 
     var top='<div class="carga-top"><div class="left">'+
       '<span class="pill '+(tipoPill[c.tipo]||"gray")+'">'+(c.tipo==="casada"?"compra casada":c.tipo)+'</span>'+
-      (c.mercadoriaNome?'<span class="pill amber">'+esc(c.mercadoriaNome)+"</span>":"")+
+      (c.mercadoriaNome?'<span class="pill amber nome">'+esc(c.mercadoriaNome)+"</span>":"")+
       (c.preco==null?'<span class="pill orange">aguardando valores</span>':"")+
       '<span class="carga-num">carga nº '+(c.numeroSequencial||"—")+'</span>'+
       '<strong>'+(c.tipo==="casada"?(esc(c.nome)+" &rarr; "+esc(c.clienteNome||"—")):esc(c.nome))+"</strong></div>"+
@@ -2810,11 +2930,12 @@ function finDetalheHtml(lado){
   var barra=semValor?"":'<div class="fin-bar" title="'+st.pct+'% quitado"><i style="width:'+Math.min(100,st.pct)+'%"></i></div>'+
     '<div class="fin-bar-lbl">'+st.pct+"% quitado</div>";
 
+  var manual=lado.fin.prazoId===PRAZO_DATA;
   var listaPrazos=prazosEmpresa();
   // se o prazo usado nesta operação foi apagado do cadastro depois, ele continua
   // valendo aqui (o nome e os dias ficam gravados na própria carga) — senão a
   // operação apareceria como "À Definir" por engano
-  if(lado.fin.prazoId && !listaPrazos.some(function(p){return p.id===lado.fin.prazoId;})){
+  if(lado.fin.prazoId && !manual && !listaPrazos.some(function(p){return p.id===lado.fin.prazoId;})){
     listaPrazos=listaPrazos.concat([{id:lado.fin.prazoId,nome:(lado.fin.prazoNome||"prazo removido")+" (fora do cadastro)",dias:lado.fin.prazoDias||0}]);
   }
   var prazoSel='<label class="field fin-prazo-field">Condição de pagamento'+
@@ -2823,11 +2944,13 @@ function finDetalheHtml(lado){
       listaPrazos.map(function(p){
         return '<option value="'+p.id+'"'+(lado.fin.prazoId===p.id?" selected":"")+">"+esc(p.nome)+" (vence "+fmtDateBR(addDias(lado.dataIso,p.dias))+")</option>";
       }).join("")+
+      '<option value="'+PRAZO_DATA+'"'+(manual?" selected":"")+">"+
+        (manual?"Data escolhida: "+fmtDateBR(lado.fin.vencimentoManual):"Selecionar data…")+"</option>"+
       (semValor||lado.falta<=0?"":'<option value="__pago">Pago — lançar o valor que falta</option>')+
     "</select></label>"+
-    // o vencimento já aparece na linha da operação e dentro de cada opção do
-    // seletor — repetir aqui seria só ruído
-    '<div class="fin-venc-nota">O vencimento é contado a partir da data da carga ('+fmtDateBR(lado.dataIso)+").</div>";
+    (manual
+      ? '<div class="fin-venc-nota">Vencimento escolhido no calendário. <button type="button" class="linklike" data-fin-trocar-data="'+lado.chave+'">escolher outra data</button></div>'
+      : '<div class="fin-venc-nota">O vencimento é contado a partir da data da carga ('+fmtDateBR(lado.dataIso)+").</div>");
 
   var listaPags=pags.length
     ? '<div class="fin-pags">'+pags.map(function(p){return finPagamentoRow(lado,p);}).join("")+"</div>"
@@ -2852,23 +2975,31 @@ function finDetalheHtml(lado){
 function finLinhaHtml(lado){
   var c=lado.carga, st=lado.status;
   var aberta=state.finAberta===lado.chave;
+  // na venda casada a pill já diz de que lado é; encurtar pra "casada" evita
+  // que a etiqueta empurre o nome da contraparte pra uma segunda linha
   var sufixo=c.tipo==="casada"?(lado.dir==="pagar"?" · pagamento":" · recebimento"):"";
-  var sub=["op. nº "+(c.numeroSequencial||"—"),fmtNum(c.quantidadeCaixas||0)+" cx",fmtDateBR(lado.dataIso)];
+  var rotuloTipo=c.tipo==="casada"?"casada":tipoLabelFin(c.tipo);
+  // tudo numa linha só: número, quantidade, data da carga e vencimento juntos
+  var sub=["nº "+(c.numeroSequencial||"—"),fmtNum(c.quantidadeCaixas||0)+" cx",fmtDateBR(lado.dataIso)].join(" · ");
+  var podeQuitar=lado.total!=null && lado.falta>0;
   return '<div class="fin-row'+(aberta?" aberta":"")+(st.atrasado?" atrasada":"")+'">'+
+    // a linha inteira abre a operação; o botão de quitar cancela a propagação
     '<div class="fin-row-head" data-fin-toggle="'+lado.chave+'">'+
       '<div class="l">'+
-        '<span class="pill '+(TIPO_PILL[c.tipo]||"gray")+'">'+esc(tipoLabelFin(c.tipo))+esc(sufixo)+"</span>"+
-        (c.mercadoriaNome?'<span class="pill amber">'+esc(c.mercadoriaNome)+"</span>":"")+
+        '<span class="pill '+(TIPO_PILL[c.tipo]||"gray")+'">'+esc(rotuloTipo)+esc(sufixo)+"</span>"+
+        (c.mercadoriaNome?'<span class="pill amber nome">'+esc(c.mercadoriaNome)+"</span>":"")+
         '<div class="meta"><div class="nm">'+esc(lado.contraparte)+"</div>"+
-          '<div class="loc">'+esc(sub.join(" · "))+"</div></div>"+
+          '<div class="loc">'+esc(sub)+' · <span class="venc'+(st.atrasado?" atrasado":"")+'">'+esc(vencTexto(lado))+"</span></div></div>"+
       "</div>"+
       '<div class="r">'+
         '<div class="fin-val"><div class="v">'+fmtMoney(lado.total)+"</div>"+
           (lado.pagos>0&&lado.falta>0?'<div class="u">falta '+fmtMoney(lado.falta)+"</div>":"")+"</div>"+
-        '<span class="pill '+st.cls+'">'+esc(st.label)+"</span>"+
+        '<span class="pill '+st.cls+'" data-status="'+st.key+'" title="'+esc(st.label)+'">'+esc(st.curto||st.label)+"</span>"+
+        // atalho do caso mais comum: quitar tudo sem abrir nada, perguntando
+        // só como o dinheiro entrou/saiu
+        (podeQuitar?'<button class="btn sm" data-fin-quitar-rapido="'+lado.chave+'">'+ICONS.check+" "+(lado.dir==="pagar"?"Pagar":"Receber")+"</button>":"")+
       "</div>"+
     "</div>"+
-    '<div class="fin-venc">'+esc(vencTexto(lado))+(st.atrasado?"":"")+"</div>"+
     (aberta?finDetalheHtml(lado):"")+
   "</div>";
 }
@@ -2889,31 +3020,40 @@ function viewFinanceiro(){
   var head='<div class="page-head"><div><h1>Financeiro</h1><p class="lede">'+lede+'</p></div>'+
     '<div class="toolbar">'+
       (modo==="dia"?'<input type="date" id="fin-data" value="'+state.finData+'" style="width:auto">':"")+
-      '<button class="btn" data-action="fin-prazos">'+ICONS.clock+" Prazos</button>"+
     "</div></div>";
 
   var segModo='<div class="seg" style="margin-bottom:16px">'+
     '<button class="'+(modo==="dia"?"active":"")+'" data-fin-modo="dia">Dia</button>'+
-    '<button class="'+(modo==="pendentes"?"active":"")+'" data-fin-modo="pendentes">Pendentes'+(tot.atrasados?" ("+tot.atrasados+" atrasado"+(tot.atrasados>1?"s":"")+")":"")+"</button>"+
+    '<button class="'+(modo==="pendentes"?"active":"")+'" data-fin-modo="pendentes">Pendentes Futuros'+(tot.atrasados?" ("+tot.atrasados+" atrasado"+(tot.atrasados>1?"s":"")+")":"")+"</button>"+
   "</div>";
 
-  var kpis='<div class="kpi-row">'+
-    '<div class="kpi"><div class="label">A pagar</div><div class="value neg">'+fmtMoney(tot.aPagar)+"</div></div>"+
-    '<div class="kpi"><div class="label">A receber</div><div class="value pos">'+fmtMoney(tot.aReceber)+"</div></div>"+
-    '<div class="kpi"><div class="label">Saldo previsto</div><div class="value '+(saldo>=0?"pos":"neg")+'">'+fmtMoney(saldo)+"</div></div>"+
-  "</div>";
+  // os totais acompanham o filtro: filtrando só Compra, não faz sentido
+  // ocupar meia tela com um "A receber R$ 0,00"
+  var temPagar=(state.finTipo==="todas"||state.finTipo==="compra"||state.finTipo==="casada");
+  var temReceber=(state.finTipo==="todas"||state.finTipo==="venda"||state.finTipo==="casada");
+  function kpiCard(label,valor,cls){
+    return '<div class="kpi"><div class="label">'+label+'</div><div class="value '+cls+'">'+fmtMoney(valor)+"</div></div>";
+  }
+  var cards=[];
+  if(temPagar) cards.push(kpiCard("A pagar",tot.aPagar,"neg"));
+  if(temReceber) cards.push(kpiCard("A receber",tot.aReceber,"pos"));
+  if(temPagar&&temReceber) cards.push(kpiCard("Saldo previsto",saldo,saldo>=0?"pos":"neg"));
+  // com um ou dois cartões, não esticar cada um pela largura inteira da tela
+  var kpis='<div class="kpi-row'+(cards.length<3?" poucos":"")+'">'+cards.join("")+"</div>";
 
   var filtros='<div class="fin-filtros">'+
     '<div class="fin-filtro"><span class="fl">Tipo de operação</span><div class="seg">'+
       FIN_TIPO_FILTROS.map(function(f){return '<button class="'+(state.finTipo===f.id?"active":"")+'" data-fin-tipo="'+f.id+'">'+esc(f.label)+"</button>";}).join("")+
     "</div></div>"+
-    '<div class="fin-filtro"><span class="fl">Status</span><div class="seg">'+
-      FIN_STATUS_FILTROS.filter(function(f){
-        // no modo Pendentes não faz sentido oferecer "Pagas"/"Recebidas":
-        // por definição elas não estão pendentes
-        return !(modo==="pendentes"&&(f.id==="paga"||f.id==="recebida"));
-      }).map(function(f){return '<button class="'+(state.finStatus===f.id?"active":"")+'" data-fin-status="'+f.id+'">'+esc(f.label)+"</button>";}).join("")+
-    "</div></div>"+
+    // status como lista suspensa: eram até seis botões ocupando duas linhas
+    // antes da primeira operação aparecer na tela
+    '<div class="fin-filtro"><span class="fl">Status</span>'+
+      '<select id="fin-status-sel" class="fin-status-sel">'+
+        statusDisponiveis(state.finTipo,modo).map(function(f){
+          return '<option value="'+f.id+'"'+(state.finStatus===f.id?" selected":"")+">"+esc(f.label)+"</option>";
+        }).join("")+
+      "</select>"+
+    "</div>"+
   "</div>";
 
   var lista=lados.map(finLinhaHtml).join("") || '<div class="empty">'+ICONS.cash+'<div class="t">'+
@@ -2991,16 +3131,23 @@ function cargaFinAreaHtml(tipo,carga){
   function bloco(key,rotulo){
     var fin=finDoLado(carga||{},key);
     var lado=lados?lados.filter(function(l){return l.key===key;})[0]:null;
+    var campo=key+"Prazo";
+    var manual=fin.prazoId===PRAZO_DATA;
+    // data já escolhida nesta sessão do formulário (ainda não salva) vence a gravada
+    var dataEscolhida=Object.prototype.hasOwnProperty.call(modalVencManual,campo)?modalVencManual[campo]:(manual?fin.vencimentoManual:null);
     var lista=prazosEmpresa();
-    if(fin.prazoId && !lista.some(function(p){return p.id===fin.prazoId;})){
+    if(fin.prazoId && !manual && !lista.some(function(p){return p.id===fin.prazoId;})){
       lista=lista.concat([{id:fin.prazoId,nome:(fin.prazoNome||"prazo removido")+" (fora do cadastro)",dias:fin.prazoDias||0}]);
     }
-    var sel='<label class="field">'+rotulo+'<select name="'+key+'Prazo">'+
-      '<option value=""'+(!fin.prazoId?" selected":"")+">À Definir</option>"+
+    var marcarData=!!dataEscolhida;
+    var sel='<label class="field">'+rotulo+'<select name="'+campo+'" data-carga-prazo="'+campo+'">'+
+      '<option value=""'+(!fin.prazoId&&!marcarData?" selected":"")+">À Definir</option>"+
       lista.map(function(p){
-        return '<option value="'+p.id+'"'+(fin.prazoId===p.id?" selected":"")+">"+esc(p.nome)+
+        return '<option value="'+p.id+'"'+(!marcarData&&fin.prazoId===p.id?" selected":"")+">"+esc(p.nome)+
           (p.dias===0?"":" · vence "+fmtDateBR(addDias(state.cargaData,p.dias)))+"</option>";
       }).join("")+
+      '<option value="'+PRAZO_DATA+'"'+(marcarData?" selected":"")+">"+
+        (marcarData?"Data escolhida: "+fmtDateBR(dataEscolhida):"Selecionar data…")+"</option>"+
       "</select></label>";
     var st="";
     if(lado){
@@ -3067,7 +3214,7 @@ function modalResumoCarga(c,dataIso){
     "<h3>Resumo da operação</h3>"+
     '<div class="fin-resumo-top">'+
       '<span class="pill '+(TIPO_PILL[c.tipo]||"gray")+'">'+esc(tipoLabelFin(c.tipo))+"</span>"+
-      (c.mercadoriaNome?'<span class="pill amber">'+esc(c.mercadoriaNome)+"</span>":"")+
+      (c.mercadoriaNome?'<span class="pill amber nome">'+esc(c.mercadoriaNome)+"</span>":"")+
       '<span class="pill '+st.cls+'">'+esc(st.label)+"</span>"+
       '<span class="carga-num">op. nº '+(c.numeroSequencial||"—")+"</span>"+
     "</div>"+
@@ -3078,28 +3225,101 @@ function modalResumoCarga(c,dataIso){
   "</div></div>";
 }
 
-/* cadastro dos prazos de pagamento praticados pela empresa */
-function modalPrazos(){
-  var lista=prazosEmpresa();
-  var usandoPadrao=!(state.empresa&&state.empresa.prazos&&state.empresa.prazos.length);
-  var rows=lista.map(function(p){
-    return '<div class="fin-prazo-row"><div class="l"><strong>'+esc(p.nome)+"</strong>"+
-      '<span class="loc">'+(p.dias===0?"no mesmo dia":p.dias+(p.dias===1?" dia":" dias")+" após a data da carga")+"</span></div>"+
-      '<button class="iconbtn sm" data-del-prazo="'+p.id+'" aria-label="Remover prazo">'+ICONS.trash+"</button></div>";
-  }).join("") || '<div class="fin-sem-pag">Nenhum prazo cadastrado.</div>';
-
-  return '<div class="modal-back centro" data-close-modal="1"><div class="modal" style="max-width:460px" onclick="event.stopPropagation()">'+
-    "<h3>Prazos de pagamento</h3>"+
-    '<p class="lede" style="margin-bottom:14px">O vencimento é calculado somando os dias do prazo à data em que a carga foi lançada.'+
-      (usandoPadrao?" Esta é a lista padrão — ao alterar qualquer item ela passa a ser a lista da sua empresa.":"")+"</p>"+
-    '<div class="fin-prazos-lista">'+rows+"</div>"+
-    '<div class="field-row grid-2" style="margin-top:14px;margin-bottom:10px">'+
-      '<label class="field">Nome<input type="text" id="prazo-nome" placeholder="ex.: 45 dias"></label>'+
-      '<label class="field">Dias<input type="number" step="1" min="0" id="prazo-dias" placeholder="45"></label>'+
+/* Quitação rápida: o caso mais comum é "recebi tudo, em dinheiro". Em vez de
+   abrir a operação, abrir o formulário, conferir o valor e salvar, aqui é um
+   clique na linha e outro pra confirmar — só o meio de pagamento é perguntado.
+   O valor é sempre o que falta, então o status fecha certinho. */
+function abrirQuitacaoRapida(lado){
+  var verbo=lado.dir==="pagar"?"Pagar":"Receber";
+  var html='<div class="modal-back centro" data-close-modal="1"><div class="modal" style="max-width:400px" onclick="event.stopPropagation()">'+
+    "<h3>"+verbo+" "+fmtMoney(lado.falta)+"</h3>"+
+    '<p class="lede" style="margin-bottom:14px">'+esc(lado.contraparte)+" · operação nº "+(lado.carga.numeroSequencial||"—")+
+      (lado.pagos>0?" · "+fmtMoney(lado.pagos)+" já lançado de "+fmtMoney(lado.total):"")+"</p>"+
+    '<div class="field-row grid-2" style="margin-bottom:12px">'+
+      '<label class="field">Meio de pagamento<select id="quit-meio">'+
+        MEIOS_PAGAMENTO.map(function(m){return '<option value="'+m.id+'">'+esc(m.label)+"</option>";}).join("")+
+      "</select></label>"+
+      '<label class="field">Data<input type="date" id="quit-data" value="'+todayIso()+'"></label>'+
     "</div>"+
-    '<div class="modal-actions"><button type="button" class="btn ghost" data-close-modal="1">Fechar</button>'+
-      '<button type="button" class="btn primary" id="prazo-add">'+ICONS.plus+" Adicionar prazo</button></div>"+
+    '<div id="quit-cheque" hidden><div class="field-row grid-3" style="margin-bottom:12px">'+
+      '<label class="field">Nº do cheque<input type="text" id="quit-cheque-num" placeholder="000123"></label>'+
+      '<label class="field">Banco<input type="text" id="quit-cheque-banco"></label>'+
+      '<label class="field">Bom para<input type="date" id="quit-cheque-bom"></label>'+
+    "</div></div>"+
+    '<div class="modal-actions"><button type="button" class="btn ghost" data-close-modal="1">Cancelar</button>'+
+      '<button type="button" class="btn primary" id="quit-ok">Confirmar '+fmtMoney(lado.falta)+"</button></div>"+
   "</div></div>";
+  var node=openModal(html);
+  var meio=node.querySelector("#quit-meio");
+  meio.onchange=function(){ node.querySelector("#quit-cheque").hidden=(meio.value!=="cheque"); };
+  node.querySelector("#quit-ok").onclick=guarded(async function(){
+    var pag={id:uid(),data:node.querySelector("#quit-data").value||todayIso(),valor:lado.falta,
+      meio:meio.value,obs:"",criadoEm:new Date().toISOString(),criadoPor:meuUid()};
+    if(meio.value==="cheque"){
+      pag.cheque={
+        numero:(node.querySelector("#quit-cheque-num").value||"").trim(),
+        banco:(node.querySelector("#quit-cheque-banco").value||"").trim(),
+        bomPara:(node.querySelector("#quit-cheque-bom").value||"")||null
+      };
+    }
+    closeModal(node);
+    await finMutar(lado.chave,function(fin){ fin.pagamentos=(fin.pagamentos||[]).concat([pag]); });
+    toast(lado.dir==="pagar"?"Pagamento lançado.":"Recebimento lançado.");
+  });
+  return node;
+}
+
+/* janela suspensa com o calendário, pra escolher um dia de vencimento
+   específico em vez de um prazo em dias. Fica acima de qualquer modal aberto
+   (por isso o z-index próprio), então funciona também dentro do formulário
+   de carga sem fechar o formulário por baixo. */
+function abrirEscolhaData(opts){
+  var html='<div class="modal-back centro datepick" data-fecha-datepick="1"><div class="modal" style="max-width:340px" onclick="event.stopPropagation()">'+
+    "<h3>"+esc(opts.titulo||"Escolher data")+"</h3>"+
+    '<p class="lede" style="margin-bottom:14px">'+esc(opts.sub||"Selecione o dia do vencimento no calendário.")+"</p>"+
+    '<label class="field" style="margin-bottom:16px">Vencimento<input type="date" id="datepick-valor" value="'+esc(opts.valor||"")+'"></label>'+
+    '<div class="modal-actions"><button type="button" class="btn ghost" data-fecha-datepick="1">Cancelar</button>'+
+    '<button type="button" class="btn primary" id="datepick-ok">Confirmar data</button></div>'+
+  "</div></div>";
+  var wrap=document.createElement("div"); wrap.innerHTML=html;
+  var node=wrap.firstChild;
+  document.body.appendChild(node);
+  function fecha(cancelado){
+    node.remove();
+    if(cancelado && opts.onCancel) opts.onCancel();
+  }
+  node.addEventListener("click",function(e){ if(e.target===node) fecha(true); });
+  node.querySelectorAll("[data-fecha-datepick]").forEach(function(el){ if(el!==node) el.onclick=function(){ fecha(true); }; });
+  var inp=node.querySelector("#datepick-valor");
+  node.querySelector("#datepick-ok").onclick=function(){
+    if(!inp.value){ toast("Escolha uma data.",true); return; }
+    var v=inp.value;
+    fecha(false);
+    opts.onOk(v);
+  };
+  // abre o calendário do próprio aparelho já de cara, quando o navegador deixa
+  setTimeout(function(){ try{ inp.focus(); if(inp.showPicker) inp.showPicker(); }catch(e){} },60);
+  return node;
+}
+
+/* um prazo de pagamento da empresa (criar / editar / excluir), na aba Cadastros */
+function modalPrazo(prazo){
+  var novo=!prazo;
+  return '<div class="modal-back centro" data-close-modal="1"><div class="modal" style="max-width:430px" onclick="event.stopPropagation()">'+
+    "<h3>"+(novo?"Novo prazo de pagamento":"Editar prazo")+"</h3>"+
+    '<p class="lede" style="margin-bottom:14px">O vencimento de uma operação é a data da carga mais os dias informados aqui. Use 0 dias para pagamento à vista.</p>'+
+    '<div id="form-prazo" data-prazo-id="'+(novo?"":esc(prazo.id))+'">'+
+    '<div class="field-row grid-2" style="margin-bottom:6px">'+
+      '<label class="field">Nome<input type="text" id="prazo-nome" placeholder="ex.: 45 dias" value="'+esc(novo?"":prazo.nome)+'"></label>'+
+      '<label class="field">Dias<input type="number" step="1" min="0" id="prazo-dias" placeholder="45" value="'+(novo?"":prazo.dias)+'"></label>'+
+    "</div>"+
+    '<div class="fin-venc-nota" id="prazo-previa"></div>'+
+    '<div class="modal-actions">'+
+      (novo?"":'<button type="button" class="btn danger" id="prazo-del">'+ICONS.trash+" Excluir</button>")+
+      '<button type="button" class="btn ghost" data-close-modal="1">Cancelar</button>'+
+      '<button type="button" class="btn primary" id="prazo-save">Salvar prazo</button>'+
+    "</div>"+
+  "</div></div></div>";
 }
 
 function modalCarga(carga){
@@ -3137,6 +3357,15 @@ function modalCarga(carga){
 
 /* ============ handlers ============ */
 var modalFotoNota=null, modalFotoQual=null, modalFotoRomaneio=null, modalDespesasExtras=[];
+// datas de vencimento escolhidas no calendário enquanto o formulário de carga
+// está aberto, por campo ("finPrazo", "finCompraPrazo", "finVendaPrazo").
+// Só viram dado salvo quando a pessoa clica em Salvar carga.
+var modalVencManual={};
+// campos de prazo em que a pessoa já mexeu: o prazo habitual do cadastro só
+// preenche o que ainda está intocado, nunca sobrescreve uma escolha dela.
+// Fica aqui fora (e não no próprio <select>) porque o bloco financeiro é
+// redesenhado quando o tipo muda ou quando uma data é escolhida.
+var modalPrazoTocado={};
 
 function attachHandlers(){
   document.querySelectorAll("[data-goto]").forEach(function(el){el.onclick=function(){goto(el.getAttribute("data-goto"));};});
@@ -3155,6 +3384,17 @@ function attachHandlers(){
 
   if(state.tab==="catalogo"){
     document.querySelectorAll("[data-cat-filtro]").forEach(function(el){el.onclick=function(){state._catFiltro=el.getAttribute("data-cat-filtro");render();};});
+    var novoPrazo=document.querySelector('[data-action="novo-prazo"]');
+    if(novoPrazo) novoPrazo.onclick=function(){
+      if(!souAdmin()){ toast("Somente administradores cadastram prazos.",true); return; }
+      openModal(modalPrazo()); hookPrazoModal(null);
+    };
+    document.querySelectorAll("[data-prazo-edit]").forEach(function(el){ el.onclick=function(){
+      if(!souAdmin()){ toast("Somente administradores cadastram prazos.",true); return; }
+      var p=prazoPorId(el.getAttribute("data-prazo-edit"));
+      if(!p) return;
+      openModal(modalPrazo(p)); hookPrazoModal(p);
+    };});
     var busca=document.getElementById("cat-busca"); if(busca){busca.oninput=function(){
       // sem debounce, cada tecla digitada reconstruía a lista inteira de
       // cadastros na hora — perceptível como "trava" ao digitar quando o
@@ -3224,7 +3464,7 @@ function attachHandlers(){
   if(state.tab==="cargas"){
     var cd=document.getElementById("carga-data"); if(cd) cd.onchange=async function(){state.cargaData=cd.value;state.cargaDia=await Store.getDia(state.cargaData);render();};
     document.querySelectorAll("[data-carga-filtro]").forEach(function(el){el.onclick=function(){state.cargaFiltroTipo=el.getAttribute("data-carga-filtro");render();};});
-    var nc=document.querySelector('[data-action="nova-carga"]'); if(nc) nc.onclick=function(){ modalFotoNota=null;modalFotoQual=null;modalFotoRomaneio=null;modalDespesasExtras=[];openModal(modalCarga());hookCargaModal();};
+    var nc=document.querySelector('[data-action="nova-carga"]'); if(nc) nc.onclick=function(){ modalFotoNota=null;modalFotoQual=null;modalFotoRomaneio=null;modalDespesasExtras=[];modalVencManual={};modalPrazoTocado={};openModal(modalCarga());hookCargaModal();};
     document.querySelectorAll("[data-status-carga]").forEach(function(el){el.onchange=async function(){
       if(!souAdmin()){ toast("Somente administradores podem alterar o status.",true); render(); return; }
       var id=el.getAttribute("data-status-carga");
@@ -3237,7 +3477,7 @@ function attachHandlers(){
       var id=el.getAttribute("data-id");
       var carga=(state.cargaDia.cargas||[]).filter(function(c){return c.id===id;})[0];
       if(!carga) return;
-      modalFotoNota=null; modalFotoQual=null; modalFotoRomaneio=null;
+      modalFotoNota=null; modalFotoQual=null; modalFotoRomaneio=null; modalVencManual={}; modalPrazoTocado={};
       modalDespesasExtras=(carga.despesasExtras||[]).map(function(d){return {nome:d.nome,valor:d.valor};});
       openModal(modalCarga(carga)); hookCargaModal(carga);
     };});
@@ -3261,21 +3501,30 @@ function attachHandlers(){
     document.querySelectorAll("[data-fin-modo]").forEach(function(el){ el.onclick=guarded(async function(){
       state.finModo=el.getAttribute("data-fin-modo");
       state.finAberta=null; state.finFormPag=null;
-      // "Pagas"/"Recebidas" não existem no modo Pendentes — volta pro neutro
-      if(state.finModo==="pendentes"&&(state.finStatus==="paga"||state.finStatus==="recebida")) state.finStatus="todos";
+      normalizaStatusFin();
       await carregarFinanceiro(); render();
     });});
     document.querySelectorAll("[data-fin-tipo]").forEach(function(el){ el.onclick=function(){
-      state.finTipo=el.getAttribute("data-fin-tipo"); state.finFormPag=null; render();
+      state.finTipo=el.getAttribute("data-fin-tipo");
+      state.finFormPag=null; state.finAberta=null;
+      normalizaStatusFin();
+      render();
     };});
-    document.querySelectorAll("[data-fin-status]").forEach(function(el){ el.onclick=function(){
-      state.finStatus=el.getAttribute("data-fin-status"); state.finFormPag=null; render();
-    };});
+    var statusSel=document.getElementById("fin-status-sel");
+    if(statusSel) statusSel.onchange=function(){
+      state.finStatus=statusSel.value; state.finFormPag=null; state.finAberta=null; render();
+    };
     document.querySelectorAll("[data-fin-toggle]").forEach(function(el){ el.onclick=function(){
       var ch=el.getAttribute("data-fin-toggle");
       state.finAberta=(state.finAberta===ch)?null:ch;
       state.finFormPag=null;
       render();
+    };});
+    document.querySelectorAll("[data-fin-quitar-rapido]").forEach(function(el){ el.onclick=function(e){
+      e.stopPropagation();
+      var ch=el.getAttribute("data-fin-quitar-rapido");
+      var lado=ladosDoModo().filter(function(l){return l.chave===ch;})[0];
+      if(lado) abrirQuitacaoRapida(lado);
     };});
     document.querySelectorAll("[data-fin-resumo]").forEach(function(el){ el.onclick=guarded(async function(){
       var p=el.getAttribute("data-fin-resumo").split("|");
@@ -3292,13 +3541,18 @@ function attachHandlers(){
         // sozinho quando a soma dos pagamentos fecha o total.
         state.finFormPag=ch; render(); finFocoValor(); return;
       }
+      if(v===PRAZO_DATA){ finEscolherData(ch); return; }
       await finMutar(ch,function(fin){
         var p=v?prazoPorId(v):null;
         fin.prazoId=p?p.id:null;
         fin.prazoNome=p?p.nome:null;
         fin.prazoDias=p?p.dias:null;
+        fin.vencimentoManual=null;
       });
     });});
+    document.querySelectorAll("[data-fin-trocar-data]").forEach(function(el){ el.onclick=function(){
+      finEscolherData(el.getAttribute("data-fin-trocar-data"));
+    };});
     document.querySelectorAll("[data-fin-novo-pag],[data-fin-quitar]").forEach(function(el){ el.onclick=function(){
       state.finFormPag=el.getAttribute("data-fin-novo-pag")||el.getAttribute("data-fin-quitar");
       render(); finFocoValor();
@@ -3338,9 +3592,35 @@ function attachHandlers(){
       await finMutar(ch,function(fin){ fin.pagamentos=(fin.pagamentos||[]).filter(function(p){return p.id!==pagId;}); });
       toast("Pagamento removido.");
     });});
-    var bp=document.querySelector('[data-action="fin-prazos"]');
-    if(bp) bp.onclick=function(){ openModal(modalPrazos()); hookPrazosModal(); };
   }
+}
+
+// se o status selecionado não existe mais para o tipo/modo atual, volta pra
+// "Todos" — senão a lista ficaria vazia sem nenhum botão marcado explicando
+function normalizaStatusFin(){
+  var ok=statusDisponiveis(state.finTipo,state.finModo).some(function(f){return f.id===state.finStatus;});
+  if(!ok) state.finStatus="todos";
+}
+
+// abre o calendário para um lado da operação e grava a data escolhida.
+// Se a pessoa cancelar, a tela é redesenhada pra o seletor voltar ao que era.
+function finEscolherData(chave){
+  var lado=ladosDoModo().filter(function(l){return l.chave===chave;})[0];
+  var atual=(lado&&lado.fin.vencimentoManual)||(lado&&lado.vencimento)||"";
+  abrirEscolhaData({
+    titulo:"Vencimento no calendário",
+    sub:lado?("Operação de "+fmtDateBR(lado.dataIso)+" · "+lado.contraparte):"",
+    valor:atual,
+    onCancel:function(){ render(); },
+    onOk:function(v){
+      finMutar(chave,function(fin){
+        fin.prazoId=PRAZO_DATA;
+        fin.prazoNome="Data escolhida";
+        fin.prazoDias=null;
+        fin.vencimentoManual=v;
+      });
+    }
+  });
 }
 
 function finFocoValor(){
@@ -3373,33 +3653,50 @@ async function salvarPrazos(lista){
   return true;
 }
 
-function hookPrazosModal(){
-  var add=document.getElementById("prazo-add");
-  if(add) add.onclick=guarded(async function(){
-    var nome=((document.getElementById("prazo-nome")||{}).value||"").trim();
-    var dias=parseInt((document.getElementById("prazo-dias")||{}).value,10);
+function hookPrazoModal(prazo){
+  var nomeEl=document.getElementById("prazo-nome");
+  var diasEl=document.getElementById("prazo-dias");
+  var previa=document.getElementById("prazo-previa");
+  function atualizaPrevia(){
+    if(!previa) return;
+    var d=parseInt(diasEl.value,10);
+    previa.textContent=(isNaN(d)||d<0)?"":
+      ("Uma carga lançada hoje ("+fmtDateBR(todayIso())+") venceria em "+fmtDateBR(addDias(todayIso(),d))+".");
+  }
+  if(diasEl) diasEl.oninput=atualizaPrevia;
+  atualizaPrevia();
+
+  var save=document.getElementById("prazo-save");
+  if(save) save.onclick=guarded(async function(){
+    var nome=((nomeEl||{}).value||"").trim();
+    var dias=parseInt((diasEl||{}).value,10);
     if(!nome){ toast("Dê um nome ao prazo.",true); return; }
     if(isNaN(dias)||dias<0){ toast("Informe em quantos dias vence.",true); return; }
     var lista=prazosEmpresa();
-    if(lista.some(function(p){return normalize(p.nome)===normalize(nome);})){ toast("Já existe um prazo com esse nome.",true); return; }
-    lista.push({id:uid(),nome:nome,dias:dias});
+    var id=prazo?prazo.id:uid();
+    if(lista.some(function(p){return p.id!==id && normalize(p.nome)===normalize(nome);})){
+      toast("Já existe um prazo com esse nome.",true); return;
+    }
+    lista=lista.filter(function(p){return p.id!==id;}).concat([{id:id,nome:nome,dias:dias}]);
     lista.sort(function(a,b){return a.dias-b.dias;});
     if(!await salvarPrazos(lista)) return;
-    toast("Prazo adicionado.");
+    toast(prazo?"Prazo atualizado.":"Prazo cadastrado.");
     closeModal(document.querySelector(".modal-back"));
-    openModal(modalPrazos()); hookPrazosModal();
-    if(state.tab==="financeiro") render();
+    render();
   });
-  document.querySelectorAll("[data-del-prazo]").forEach(function(el){ el.onclick=guarded(async function(){
-    var id=el.getAttribute("data-del-prazo");
-    var lista=prazosEmpresa().filter(function(p){return p.id!==id;});
+
+  var del=document.getElementById("prazo-del");
+  if(del) del.onclick=guarded(async function(){
+    var lista=prazosEmpresa().filter(function(p){return p.id!==prazo.id;});
     if(!lista.length){ toast("Mantenha pelo menos um prazo cadastrado.",true); return; }
+    // operações que já usam este prazo guardam o nome e os dias na própria
+    // carga, então continuam com o vencimento certo mesmo depois da exclusão
+    if(!confirm("Excluir o prazo \""+prazo.nome+"\"? As operações que já usam ele continuam com o vencimento atual.")) return;
     if(!await salvarPrazos(lista)) return;
-    toast("Prazo removido.");
+    toast("Prazo excluído.");
     closeModal(document.querySelector(".modal-back"));
-    openModal(modalPrazos()); hookPrazosModal();
-    if(state.tab==="financeiro") render();
-  });});
+    render();
+  });
 }
 
 function busca_focus(){var b=document.getElementById("cat-busca");if(b){b.focus();var v=b.value;b.value="";b.value=v;}}
@@ -3451,6 +3748,8 @@ function hookEntidadeModal(ent){
         id:node.getAttribute("data-ent-id")||undefined,
         tipo:tipo,nome:nome,razaoSocial:get("razaoSocial"),cnpj:get("cnpj"),
         endereco:get("endereco"),cidade:cidade,estado:estado,observacoes:get("observacoes"),
+        // operacional não vê o campo: preserva o que já estava gravado
+        prazoPadraoId:(souAdmin()?(get("prazoPadraoId")||null):((ent&&ent.prazoPadraoId)||null)),
         criadoPor:(ent&&ent.criadoPor)||meuUid(),criadoEm:(ent&&ent.criadoEm)||new Date().toISOString()
       };
     }
@@ -3611,10 +3910,67 @@ function hookCargaModal(carga){
     precoArea.innerHTML=cargaPrecoAreaHtml(tipoSel.value,null,restrito);
     // a venda casada tem dois lados financeiros; compra e venda têm um só —
     // então o bloco de situação financeira é remontado junto com o resto
-    var finArea=document.getElementById("carga-fin-area");
-    if(finArea) finArea.innerHTML=cargaFinAreaHtml(tipoSel.value,null);
+    modalVencManual={}; modalPrazoTocado={};
+    redesenhaFinArea(tipoSel.value,null);
     wirePrecoInputs();
+    // os seletores de cadastro foram recriados: religa o prazo habitual neles
+    wirePrazoPadrao();
   };
+
+  function redesenhaFinArea(tipo,cargaRef){
+    var finArea=document.getElementById("carga-fin-area");
+    if(!finArea) return;
+    finArea.innerHTML=cargaFinAreaHtml(tipo,cargaRef);
+    wirePrazoSelects(tipo,cargaRef);
+  }
+  // "Selecionar data…" abre o calendário por cima do formulário; a data fica
+  // guardada até o Salvar, e cancelar devolve o seletor ao estado anterior
+  function wirePrazoSelects(tipo,cargaRef){
+    document.querySelectorAll("[data-carga-prazo]").forEach(function(sel){
+      sel.onchange=function(){
+        var campo=sel.getAttribute("data-carga-prazo");
+        modalPrazoTocado[campo]=true; // escolha manual: o prazo habitual não mexe mais aqui
+        if(sel.value!==PRAZO_DATA){ delete modalVencManual[campo]; return; }
+        abrirEscolhaData({
+          titulo:"Vencimento no calendário",
+          sub:"Carga de "+fmtDateBR(state.cargaData),
+          valor:modalVencManual[campo]||"",
+          onCancel:function(){ redesenhaFinArea(tipo,cargaRef); },
+          onOk:function(v){ modalVencManual[campo]=v; redesenhaFinArea(tipo,cargaRef); }
+        });
+      };
+    });
+  }
+  wirePrazoSelects(tipoSel.value,carga);
+
+  /* Ao escolher o fornecedor/cliente numa carga NOVA, o prazo habitual daquele
+     cadastro já vem preenchido. Numa carga que está sendo editada nada é
+     mexido — o prazo dela já foi decidido. E se a pessoa trocar o prazo na
+     mão, a escolha dela manda: só sobrescrevemos enquanto o campo estiver
+     intocado. */
+  function wirePrazoPadrao(){
+    if(carga) return; // edição: não mexe no que já está lançado
+    function liga(nomeCampoEnt,nomeCampoPrazo){
+      var selEnt=document.querySelector('[name="'+nomeCampoEnt+'"]');
+      if(!selEnt) return;
+      selEnt.addEventListener("change",function(){
+        // nunca sobrescreve uma escolha da pessoa, inclusive uma data de
+        // vencimento já marcada no calendário
+        if(modalPrazoTocado[nomeCampoPrazo]) return;
+        var selPrazo=document.querySelector('[name="'+nomeCampoPrazo+'"]');
+        if(!selPrazo || selPrazo.value===PRAZO_DATA) return;
+        var e=state.entidades.filter(function(x){return x.id===selEnt.value;})[0];
+        var pid=e&&e.prazoPadraoId;
+        if(pid && prazoPorId(pid)){
+          selPrazo.value=pid;
+          toast("Prazo habitual de "+e.nome+": "+prazoPorId(pid).nome+".");
+        }
+      });
+    }
+    liga("entidadeId", tipoSel.value==="casada"?"finCompraPrazo":"finPrazo");
+    if(tipoSel.value==="casada") liga("clienteEntidadeId","finVendaPrazo");
+  }
+  wirePrazoPadrao();
 
   var faN=document.getElementById("carga-foto-nota-add");
   faN.onclick=function(){document.getElementById("carga-foto-nota-input").click();};
@@ -3772,6 +4128,15 @@ function hookCargaModal(carga){
     function aplicaPrazo(alvoKey,prazoId){
       var anterior=anteriorDe(alvoKey);
       if(restritoSave) return anterior; // operacional não mexe em nada financeiro
+      // vencimento escolhido no calendário: não tem dias, tem um dia exato
+      if(prazoId===PRAZO_DATA){
+        var campo=alvoKey+"Prazo";
+        var dia=Object.prototype.hasOwnProperty.call(modalVencManual,campo)?modalVencManual[campo]:anterior.vencimentoManual;
+        if(dia){
+          return {prazoId:PRAZO_DATA,prazoNome:"Data escolhida",prazoDias:null,vencimentoManual:dia,pagamentos:anterior.pagamentos||[]};
+        }
+        prazoId=null; // escolheu "Selecionar data…" e cancelou o calendário
+      }
       var p=prazoId?prazoPorId(prazoId):null;
       // prazo apagado do cadastro depois de usado: mantém nome/dias gravados na carga
       var manterAntigo=(prazoId && !p && anterior.prazoId===prazoId);
@@ -3779,6 +4144,7 @@ function hookCargaModal(carga){
         prazoId:prazoId||null,
         prazoNome:p?p.nome:(manterAntigo?anterior.prazoNome:null),
         prazoDias:p?p.dias:(manterAntigo?anterior.prazoDias:null),
+        vencimentoManual:null,
         pagamentos:anterior.pagamentos||[]
       };
     }
@@ -3798,7 +4164,7 @@ function hookCargaModal(carga){
     }
     await Store.saveDia(dataIso,diaAlvo);
     if(dataIso===state.cargaData) state.cargaDia=diaAlvo;
-    modalFotoNota=null; modalFotoQual=null; modalFotoRomaneio=null; modalDespesasExtras=[];
+    modalFotoNota=null; modalFotoQual=null; modalFotoRomaneio=null; modalDespesasExtras=[]; modalVencManual={}; modalPrazoTocado={};
     toast(isEdit?"Carga atualizada.":"Carga registrada.");
     closeModal(document.querySelector(".modal-back"));
     render();
@@ -3928,26 +4294,15 @@ document.addEventListener("click",function(e){
 // registra o service worker (cache do app pra abrir mesmo sem sinal nenhum) e
 // pede ao navegador pra não descartar os dados salvos localmente sob pressão
 // de espaço — nenhum dos dois bloqueia o carregamento do app se falhar.
-function mostrarAvisoAtualizacao(){
-  if(document.querySelector(".update-banner")) return; // já mostrado
-  var b=document.createElement("div");
-  b.className="update-banner";
-  b.textContent="Uma versão nova do app já foi baixada · toque para atualizar";
-  b.onclick=function(){ location.reload(); };
-  document.body.appendChild(b);
-}
 function registerPWA(){
   if("serviceWorker" in navigator){
     window.addEventListener("load",function(){
       navigator.serviceWorker.register("sw.js").catch(function(e){ console.error("service worker",e); });
     });
-    // o service worker agora responde com o app em cache na hora (abertura
-    // instantânea) e busca a versão nova por trás — quando essa versão nova
-    // já estiver pronta, avisa a pessoa em vez de trocar o app por baixo dela
-    // sem aviso no meio de um lançamento.
-    navigator.serviceWorker.addEventListener("message",function(ev){
-      if(ev.data && ev.data.type==="nova-versao-disponivel") mostrarAvisoAtualizacao();
-    });
+    // NÃO existe mais aviso de "nova versão disponível" na tela. O service
+    // worker continua baixando a versão nova por trás e ela passa a valer
+    // sozinha na próxima abertura do app — sem nenhuma faixa, pergunta ou
+    // interrupção no meio de um lançamento.
   }
   if(navigator.storage && navigator.storage.persist){
     navigator.storage.persist().catch(function(){});
