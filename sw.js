@@ -25,7 +25,7 @@
  * do CACHE_NAME abaixo. Isso garante que o service worker antigo é
  * substituído e o app não fica "preso" numa versão velha em cache.
  */
-var CACHE_VERSION = "v7";
+var CACHE_VERSION = "v8";
 var CACHE_NAME = "ariel-tomateiro-" + CACHE_VERSION;
 
 var PRECACHE_URLS = [
@@ -86,9 +86,10 @@ self.addEventListener("activate", function (event) {
   );
 });
 
-// A versão nova é baixada em segundo plano e passa a valer sozinha na próxima
-// abertura do app. Nenhum aviso é enviado para a tela — a pessoa nunca é
-// interrompida por uma faixa de "atualizar agora".
+// A versão nova é baixada em segundo plano. Nenhum aviso é enviado para a
+// tela: a própria página, se ainda estiver nos primeiros segundos de abertura
+// e sem ninguém mexendo, reabre sozinha na versão nova; senão ela vale na
+// próxima abertura.
 
 self.addEventListener("fetch", function (event) {
   var req = event.request;
@@ -104,23 +105,34 @@ self.addEventListener("fetch", function (event) {
 
   var isDocument = req.mode === "navigate" || req.destination === "document";
 
+  // a página é uma só: links com parâmetros (ex: ?convite=...) usam a mesma
+  // cópia salva, em vez de cada link virar uma cópia nova no cache
+  var cacheKey = isDocument ? new Request(url.origin + url.pathname) : req;
+
   // stale-while-revalidate pra tudo que este service worker cuida (documento
   // incluso): responde na hora com o cache quando existe, e atualiza o cache
   // em segundo plano — a próxima abertura já vem com a versão nova.
   event.respondWith(
-    caches.match(req).then(function (cached) {
+    caches.match(cacheKey).then(function (cached) {
       var networkFetch = fetch(req)
         .then(function (resp) {
-          if (resp && resp.ok) {
+          if (resp && resp.ok && resp.type !== "opaque") {
             var copy = resp.clone();
             caches.open(CACHE_NAME).then(function (cache) {
-              cache.put(req, copy);
+              cache.put(cacheKey, copy);
             });
           }
           return resp;
         })
         .catch(function () {
-          return cached || (isDocument ? caches.match("./index.html") || caches.match("./") : undefined);
+          if (cached) return cached;
+          if (!isDocument) return Response.error();
+          // sem rede e sem cópia deste endereço exato: cai na página salva
+          return caches.match("./index.html").then(function (r) {
+            return r || caches.match("./");
+          }).then(function (r) {
+            return r || Response.error();
+          });
         });
       // com cache: responde na hora e deixa a rede atualizar por trás.
       // sem cache (primeiríssima visita): precisa esperar a rede mesmo.

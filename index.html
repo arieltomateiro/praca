@@ -1,3 +1,6 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
 <script>(function(){try{var t=localStorage.getItem("ariel_tema");if(t==="light"){document.documentElement.setAttribute("data-theme","light");}}catch(e){}})();</script>
 <title>Ariel Tomateiro</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -557,6 +560,20 @@ tr:hover td{background:var(--overlay-2);}
 #boot-loading .bl-light{display:none;}
 :root[data-theme="light"] #boot-loading .bl-dark{display:none;}
 :root[data-theme="light"] #boot-loading .bl-light{display:block;}
+
+/* ---- auditoria: robustez de texto, acessibilidade e toque ---- */
+/* texto longo sem espaço (placa, observação, link colado) quebra dentro da
+   caixa em vez de empurrar a tela pro lado */
+.carga-details .item,.op-row .meta,.fin-row-head .l{min-width:0;}
+.carga-details .v,.op-row .loc,.auth-card,.carga-card .obs,.fin-detalhe{overflow-wrap:anywhere;}
+.auth-card .linklike{color:var(--text-dim);text-decoration:underline;cursor:pointer;background:none;border:none;font-size:13px;padding:6px 4px;font-family:inherit;}
+.auth-card .linklike:hover{color:var(--gold-bright);}
+.auth-info{background:var(--bg-2);border:1px solid var(--border-2);color:var(--text-dim);border-radius:8px;padding:9px 12px;font-size:12.5px;line-height:1.45;}
+/* linhas clicáveis alcançáveis pelo teclado mostram onde está o foco */
+[data-kb-click]:focus-visible,.iconbtn:focus-visible,.btn:focus-visible,.tab-btn:focus-visible{outline:2px solid var(--gold-bright);outline-offset:2px;}
+/* no celular, botão pequeno ainda precisa de um alvo de toque decente */
+@media (max-width:760px){ .iconbtn.sm{width:36px;height:36px;} }
+.fin-mais{display:flex;justify-content:center;padding:12px 0 4px;}
 </style>
 
 <div id="boot-loading"><img class="bl-logo bl-dark" src="logo-dark.webp" alt=""><img class="bl-logo bl-light" src="logo-light.webp" alt=""><div class="t">carregando…</div></div>
@@ -852,7 +869,7 @@ function fmtMoney(n){
 function fmtNum(n,d){if(n==null||isNaN(n))return "—";return Number(n).toLocaleString("pt-BR",{minimumFractionDigits:d||0,maximumFractionDigits:d||2});}
 function uid(){return (crypto.randomUUID?crypto.randomUUID():("id-"+Date.now()+"-"+Math.random().toString(16).slice(2)));}
 function esc(s){return (s==null?"":String(s)).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
-function normalize(s){return (s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").trim();}
+function normalize(s){return (s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();}
 /* ============ tema claro/escuro ============ */
 var THEME_KEY="ariel_tema";
 function getTheme(){
@@ -1136,6 +1153,78 @@ function updateConnStatus(){
 // com o banco em segundo plano — só avisamos o usuário se a sincronização
 // realmente falhar (perda de conexão etc.), nunca fazemos o clique esperar.
 var _diaCache={}, _mesCache={}, _entCache=null, _userCache=null;
+// quando cada cache foi preenchido — depois de CACHE_TTL_MS a próxima leitura
+// volta ao banco, pra o que outro aparelho lançou aparecer aqui sem precisar
+// fechar e abrir o app (o Firestore responde do cache local dele na hora
+// quando está sem sinal, então isso não deixa nada lento offline)
+var _diaCacheEm={}, _mesCacheEm={}, _entCacheEm=0;
+var CACHE_TTL_MS=20000;
+function cacheFresco(em){ return !!em && (Date.now()-em)<CACHE_TTL_MS; }
+function limparCaches(){ _diaCache={}; _diaCacheEm={}; _mesCache={}; _mesCacheEm={}; _entCache=null; _entCacheEm=0; _userCache=null; }
+
+/* ---- gravação do dia sem apagar o trabalho de outro aparelho ----
+   Cada dia é um documento só, com as listas "precos" e "cargas". Antes o app
+   regravava o documento INTEIRO a cada alteração: se o celular do campo
+   lançasse um preço enquanto o escritório lançava uma carga no mesmo dia, a
+   última gravação apagava a outra. Agora o app compara a lista atual com a
+   versão que ele leu do banco e manda só a diferença (itens removidos e
+   itens novos/alterados), que o Firestore aplica por cima do que já está lá
+   — inclusive offline, na fila de sincronização. */
+function jsonCanon(v){
+  if(Array.isArray(v)) return "["+v.map(jsonCanon).join(",")+"]";
+  if(v&&typeof v==="object") return "{"+Object.keys(v).filter(function(k){return v[k]!==undefined;}).sort().map(function(k){return JSON.stringify(k)+":"+jsonCanon(v[k]);}).join(",")+"}";
+  return JSON.stringify(v===undefined?null:v);
+}
+function semCarimbo(it){ if(!it||typeof it!=="object") return it; var c=Object.assign({},it); delete c._editadoEm; return c; }
+// se dois aparelhos editarem o MESMO item ao mesmo tempo, o banco fica com as
+// duas versões; na leitura vale a editada por último
+function dedupePorId(lista){
+  var pos={}, out=[];
+  (lista||[]).forEach(function(it){
+    if(!it||!it.id){ out.push(it); return; }
+    if(pos[it.id]===undefined){ pos[it.id]=out.length; out.push(it); return; }
+    if((it._editadoEm||"")>=(out[pos[it.id]]._editadoEm||"")) out[pos[it.id]]=it;
+  });
+  return out;
+}
+/* ---- separação do financeiro (regra fixa: operacional NUNCA vê valor) ----
+   O documento do dia (dias/{data}) é lido por todo mundo da empresa, então
+   nele a carga só tem o que não é dinheiro: quem, quantas caixas, placa,
+   status, fotos. Tudo o que é valor — preço, preço de venda, despesas,
+   prazos, pagamentos — fica em diasFin/{data}, que as regras do banco só
+   deixam administrador ler ou gravar. O app junta as duas partes na hora de
+   mostrar pro administrador; o operacional só recebe a parte sem valores. */
+var CAMPOS_CARGA_PUBLICOS=["id","tipo","entidadeId","nome","quantidadeCaixas","placa","status","numeroSequencial",
+  "fotoId","fotoQualidadeId","fotoRomaneioId","mercadoriaId","mercadoriaNome","criadoEm","criadoPor",
+  "clienteEntidadeId","clienteNome","_editadoEm"];
+function cargaPublica(c){
+  var o={}; if(!c||typeof c!=="object") return o;
+  CAMPOS_CARGA_PUBLICOS.forEach(function(k){ if(c[k]!==undefined) o[k]=c[k]; });
+  return o;
+}
+function cargaFinanceira(c){
+  var o={}; if(!c||typeof c!=="object") return o;
+  Object.keys(c).forEach(function(k){ if(CAMPOS_CARGA_PUBLICOS.indexOf(k)===-1 && c[k]!==undefined) o[k]=c[k]; });
+  return JSON.parse(JSON.stringify(o));
+}
+function temCampoFinanceiro(c){ return !!c && Object.keys(c).some(function(k){ return CAMPOS_CARGA_PUBLICOS.indexOf(k)===-1; }); }
+// quem pode receber valores do banco: o papel REAL (o modo de simulação de
+// tela do desenvolvedor só muda o que aparece, nunca o que é buscado)
+function podeLerFinanceiro(){ return isAdminUser(state.authUser); }
+// junta parte pública + parte financeira (administrador) ou limpa qualquer
+// resto de valor que ainda exista no documento público (operacional)
+function montaCargas(cargasPub,finMap){
+  if(!podeLerFinanceiro()) return (cargasPub||[]).map(cargaPublica);
+  return (cargasPub||[]).map(function(c){ return Object.assign({},c,(finMap&&c&&finMap[c.id])||{}); });
+}
+
+function normalizaDia(raw,iso){
+  var d=JSON.parse(JSON.stringify(raw||{}));
+  d.data=d.data||iso;
+  d.precos=dedupePorId(d.precos||[]);
+  d.cargas=dedupePorId(d.cargas||[]);
+  return d;
+}
 function cloneDeep(o){ return o==null?o:JSON.parse(JSON.stringify(o)); }
 
 // ---- indicador de pendências de sincronização ----
@@ -1164,6 +1253,28 @@ function bgSync(promise,label){
   });
 }
 
+// lê um intervalo de dias (documento público) e, pra administrador, junta a
+// parte financeira do mesmo intervalo — uma consulta de cada, não uma por dia
+async function lerDiasIntervalo(empId,de,ate,limite){
+  var pubs, fins={};
+  if(db){
+    var col=db.collection("empresas").doc(empId);
+    var pP=col.collection("dias").where("data",">=",de).where("data","<=",ate).limit(limite).get();
+    var fP=podeLerFinanceiro()?col.collection("diasFin").where("data",">=",de).where("data","<=",ate).limit(limite).get().catch(function(e){ console.error(e); return null; }):null;
+    var ps=await pP; pubs=ps.docs.map(function(d){ return {id:d.id,raw:d.data()}; });
+    var fsn=fP?await fP:null;
+    if(fsn) fsn.docs.forEach(function(d){ fins[d.id]=(d.data().cargas)||{}; });
+  } else {
+    pubs=Object.keys(mem.dias).filter(function(k){return k.indexOf(empId+"|")===0;}).map(function(k){ return {id:k.split("|")[1],raw:mem.dias[k]}; });
+    if(podeLerFinanceiro()&&mem.diasFin) Object.keys(mem.diasFin).forEach(function(k){ if(k.indexOf(empId+"|")===0) fins[k.split("|")[1]]=mem.diasFin[k]; });
+  }
+  return pubs.map(function(p){
+    var d=normalizaDia(p.raw,p.id);
+    d.cargas=montaCargas(d.cargas,fins[p.id]||fins[d.data]);
+    return d;
+  }).filter(function(d){ return d.data>=de&&d.data<=ate; });
+}
+
 var Store={
   // ---- empresa (tenant) ----
   async getEmpresa(empId){
@@ -1180,11 +1291,11 @@ var Store={
   // ---- dados de cada empresa (entidades/dias/fotos vivem sob empresas/{id}/...) ----
   async listEntidades(){
     var empId=minhaEmpresaId(); if(!empId) return [];
-    if(_entCache) return cloneDeep(_entCache);
+    if(_entCache && cacheFresco(_entCacheEm)) return cloneDeep(_entCache);
     var list;
     if(db){ var s=await db.collection("empresas").doc(empId).collection("entidades").get(); list=s.docs.map(function(d){return Object.assign({id:d.id},d.data());}); }
     else { list=Object.keys(mem.entidades).map(function(k){return mem.entidades[k];}).filter(function(e){return e._empresaId===empId;}); }
-    _entCache=cloneDeep(list);
+    _entCache=cloneDeep(list); _entCacheEm=Date.now();
     return cloneDeep(list);
   },
   async saveEntidade(ent){
@@ -1192,40 +1303,123 @@ var Store={
     if(!ent.id) ent.id=uid();
     var copy=cloneDeep(ent);
     if(_entCache) _entCache=_entCache.filter(function(e){return e.id!==ent.id;}).concat([copy]);
-    if(db){ bgSync(db.collection("empresas").doc(empId).collection("entidades").doc(ent.id).set(copy),"cadastro"); }
+    if(db){ bgSync(db.collection("empresas").doc(empId).collection("entidades").doc(ent.id).set(copy,{merge:true}),"cadastro"); }
     else { copy._empresaId=empId; mem.entidades[ent.id]=copy; }
     return ent;
   },
+  // grava só alguns campos do cadastro (ex: contador de cargas), sem regravar
+  // o resto com uma cópia possivelmente desatualizada
+  async updateEntidadeCampos(id,campos){
+    var empId=minhaEmpresaId(); if(!empId||!id) return;
+    if(_entCache) _entCache=_entCache.map(function(e){ return e.id===id?Object.assign({},e,campos):e; });
+    if(db){ bgSync(db.doc("empresas/"+empId+"/entidades/"+id).update(campos),"cadastro"); }
+    else if(mem.entidades[id]){ Object.assign(mem.entidades[id],campos); }
+  },
   async getDia(iso){
     var empId=minhaEmpresaId(); if(!empId) return {data:iso,precos:[],cargas:[]};
-    if(_diaCache[iso]) return cloneDeep(_diaCache[iso]);
-    var data;
+    if(_diaCache[iso] && cacheFresco(_diaCacheEm[iso])) return cloneDeep(_diaCache[iso]);
+    var raw;
     // clona o documento: snapshots do banco vêm congelados (frozen) e o resto
     // do app edita o objeto antes de salvar de volta — sem clonar, essa edição
     // lança erro (modo estrito) e a ação para silenciosamente.
-    if(db){ var s=await db.doc("empresas/"+empId+"/dias/"+iso).get(); data=s.exists?JSON.parse(JSON.stringify(s.data())):{data:iso,precos:[],cargas:[]}; }
-    else { var k=empId+"|"+iso; data=mem.dias[k]?JSON.parse(JSON.stringify(mem.dias[k])):{data:iso,precos:[],cargas:[]}; }
-    _diaCache[iso]=cloneDeep(data);
+    var finMap={};
+    if(db){
+      var pubP=db.doc("empresas/"+empId+"/dias/"+iso).get();
+      var finP=podeLerFinanceiro()?db.doc("empresas/"+empId+"/diasFin/"+iso).get().catch(function(e){ console.error(e); return null; }):null;
+      var s=await pubP; raw=s.exists?s.data():null;
+      var fs=finP?await finP:null;
+      if(fs&&fs.exists) finMap=(fs.data().cargas)||{};
+    }
+    else { raw=mem.dias[empId+"|"+iso]||null; finMap=(podeLerFinanceiro()&&mem.diasFin&&mem.diasFin[empId+"|"+iso])||{}; }
+    var data=normalizaDia(raw||{data:iso},iso);
+    data.cargas=montaCargas(data.cargas,finMap);
+    // guarda junto a versão exata que veio do banco — é contra ela que o
+    // saveDia calcula o que mudou (parte pública e parte financeira)
+    data.__base={precos:JSON.parse(JSON.stringify((raw&&raw.precos)||[])),cargas:JSON.parse(JSON.stringify((raw&&raw.cargas)||[]))};
+    data.__baseFin=JSON.parse(JSON.stringify(finMap||{}));
+    _diaCache[iso]=cloneDeep(data); _diaCacheEm[iso]=Date.now();
     return data;
   },
   async saveDia(iso,dia){
     var empId=minhaEmpresaId(); if(!empId) return dia;
-    dia.data=iso; dia.atualizadoEm=new Date().toISOString();
+    var agora=new Date().toISOString();
+    dia.data=iso; dia.atualizadoEm=agora;
+    dia.precos=dia.precos||[]; dia.cargas=dia.cargas||[];
+    var base=dia.__base || (_diaCache[iso]&&_diaCache[iso].__base) || {precos:[],cargas:[]};
+    var baseFin=dia.__baseFin || (_diaCache[iso]&&_diaCache[iso].__baseFin) || {};
+    var admin=podeLerFinanceiro();
+    // o que vai pro documento público: preços como estão, cargas SEM valores
+    var projeta={precos:function(it){return it;}, cargas:cargaPublica};
+    var removidos={}, novos={};
+    ["precos","cargas"].forEach(function(campo){
+      var pj=projeta[campo];
+      var baseLista=base[campo]||[];
+      var baseSemCarimbo={}; baseLista.forEach(function(it){ baseSemCarimbo[jsonCanon(semCarimbo(pj(it)))]=1; });
+      // carimba só o que é novo ou foi alterado na parte pública
+      dia[campo].forEach(function(it){ if(it&&typeof it==="object"&&!baseSemCarimbo[jsonCanon(semCarimbo(pj(it)))]) it._editadoEm=agora; });
+      var nova=dia[campo].map(function(it){ return JSON.parse(JSON.stringify(pj(it))); });
+      var novaSet={}; nova.forEach(function(it){ novaSet[jsonCanon(it)]=1; });
+      var baseSet={}; baseLista.forEach(function(it){ baseSet[jsonCanon(it)]=1; });
+      removidos[campo]=baseLista.filter(function(it){ return !novaSet[jsonCanon(it)]; });
+      novos[campo]=nova.filter(function(it){ return !baseSet[jsonCanon(it)]; });
+    });
+    if(!admin){
+      // operacional só ACRESCENTA carga nova (sem valores); nunca altera nem
+      // apaga carga existente — as regras do banco recusariam a gravação toda
+      var idsBase={}; (base.cargas||[]).forEach(function(c){ if(c&&c.id) idsBase[c.id]=1; });
+      removidos.cargas=[];
+      novos.cargas=novos.cargas.filter(function(c){ return c&&c.id&&!idsBase[c.id]; });
+    }
+    // parte financeira (só administrador grava): por carga, o que mudou
+    var novoFin={}, finMudou=[], finSaiu=[];
+    if(admin){
+      dia.cargas.forEach(function(c){ if(!c||!c.id) return; var f=cargaFinanceira(c); if(Object.keys(f).length) novoFin[c.id]=f; });
+      Object.keys(novoFin).forEach(function(id){ if(jsonCanon(novoFin[id])!==jsonCanon(baseFin[id])) finMudou.push(id); });
+      Object.keys(baseFin).forEach(function(id){ if(!novoFin[id]) finSaiu.push(id); });
+    }
+    dia.__base={precos:JSON.parse(JSON.stringify(dia.precos)),cargas:dia.cargas.map(function(c){ return JSON.parse(JSON.stringify(cargaPublica(c))); })};
+    dia.__baseFin=admin?JSON.parse(JSON.stringify(novoFin)):baseFin;
+    if(!admin) dia.cargas=dia.cargas.map(cargaPublica);
     var copy=cloneDeep(dia);
-    _diaCache[iso]=copy;
-    _mesCache={}; // resumo do mês (calendário) pode ter mudado
-    if(db){ bgSync(db.doc("empresas/"+empId+"/dias/"+iso).set(copy),"dados do dia"); } else { mem.dias[empId+"|"+iso]=copy; }
+    _diaCache[iso]=copy; _diaCacheEm[iso]=Date.now();
+    _mesCache={}; _mesCacheEm={}; // resumo do mês (calendário) pode ter mudado
+    if(db){
+      var ref=db.doc("empresas/"+empId+"/dias/"+iso);
+      var FV=firebase.firestore.FieldValue;
+      var rem={data:iso,atualizadoEm:agora,schema:2}, add={};
+      ["precos","cargas"].forEach(function(campo){
+        if(removidos[campo].length) rem[campo]=FV.arrayRemove.apply(null,removidos[campo]);
+        if(novos[campo].length) add[campo]=FV.arrayUnion.apply(null,novos[campo]);
+      });
+      var lote=db.batch();
+      lote.set(ref,rem,{merge:true});
+      if(Object.keys(add).length) lote.set(ref,add,{merge:true});
+      if(admin && (finMudou.length||finSaiu.length)){
+        var finRef=db.doc("empresas/"+empId+"/diasFin/"+iso);
+        var FP=firebase.firestore.FieldPath;
+        lote.set(finRef,{data:iso,atualizadoEm:agora},{merge:true});
+        var args=[finRef];
+        finMudou.forEach(function(id){ args.push(new FP("cargas",id),novoFin[id]); });
+        finSaiu.forEach(function(id){ args.push(new FP("cargas",id),FV.delete()); });
+        lote.update.apply(lote,args);
+      }
+      bgSync(lote.commit(),"dados do dia");
+    } else {
+      var semBase=cloneDeep(copy); delete semBase.__base; delete semBase.__baseFin;
+      semBase.cargas=(semBase.cargas||[]).map(cargaPublica);
+      mem.dias[empId+"|"+iso]=semBase;
+      if(admin){ mem.diasFin=mem.diasFin||{}; mem.diasFin[empId+"|"+iso]=JSON.parse(JSON.stringify(novoFin)); }
+    }
     return dia;
   },
   async getDiasNoMes(y,m){
     var empId=minhaEmpresaId(); if(!empId) return [];
     var key=empId+"|"+y+"-"+m;
-    if(_mesCache[key]) return cloneDeep(_mesCache[key]);
+    if(_mesCache[key] && cacheFresco(_mesCacheEm[key])) return cloneDeep(_mesCache[key]);
     var b=monthBounds(y,m);
     var list;
-    if(db){ var s=await db.collection("empresas").doc(empId).collection("dias").where("data",">=",b.first).where("data","<=",b.last).limit(60).get(); list=s.docs.map(function(d){return d.data();}); }
-    else { list=Object.keys(mem.dias).filter(function(k){return k.indexOf(empId+"|")===0;}).map(function(k){return mem.dias[k];}).filter(function(d){return d.data>=b.first&&d.data<=b.last;}); }
-    _mesCache[key]=cloneDeep(list);
+    list=await lerDiasIntervalo(empId,b.first,b.last,60);
+    _mesCache[key]=cloneDeep(list); _mesCacheEm[key]=Date.now();
     return list;
   },
   // varredura por período — usada pelo modo "Pendentes" do Financeiro, que
@@ -1234,18 +1428,10 @@ var Store={
   async getDiasNoPeriodo(primeiroIso,ultimoIso){
     var empId=minhaEmpresaId(); if(!empId) return [];
     var key=empId+"|per|"+primeiroIso+"|"+ultimoIso;
-    if(_mesCache[key]) return cloneDeep(_mesCache[key]);
+    if(_mesCache[key] && cacheFresco(_mesCacheEm[key])) return cloneDeep(_mesCache[key]);
     var list;
-    if(db){
-      var s=await db.collection("empresas").doc(empId).collection("dias")
-        .where("data",">=",primeiroIso).where("data","<=",ultimoIso).limit(200).get();
-      list=s.docs.map(function(d){return d.data();});
-    } else {
-      list=Object.keys(mem.dias).filter(function(k){return k.indexOf(empId+"|")===0;})
-        .map(function(k){return mem.dias[k];})
-        .filter(function(d){return d.data>=primeiroIso&&d.data<=ultimoIso;});
-    }
-    _mesCache[key]=cloneDeep(list);
+    list=await lerDiasIntervalo(empId,primeiroIso,ultimoIso,200);
+    _mesCache[key]=cloneDeep(list); _mesCacheEm[key]=Date.now();
     return list;
   },
   async saveFoto(diaIso,fotoId,dataUrl,tipo){
@@ -1258,20 +1444,36 @@ var Store={
     if(db){ var s=await db.doc("empresas/"+empId+"/dias/"+diaIso).collection("fotos").doc(fotoId).get(); return s.exists?s.data().dataUrl:null; }
     var f=mem.fotos[empId+"|"+diaIso+"/"+fotoId]; return f?f.dataUrl:null;
   },
+  // só o próprio cadastro (usado no login, antes de saber a empresa)
+  async getUsuario(id){
+    if(!id) return null;
+    if(db){ var s=await db.doc("usuarios/"+id).get(); return s.exists?Object.assign({id:id},s.data()):null; }
+    return mem.usuarios[id]?cloneDeep(mem.usuarios[id]):null;
+  },
+  // colegas da MESMA empresa (nunca a coleção inteira — a lista de todos os
+  // usuários de todas as empresas não deve sair do banco pra ninguém)
   async listUsuarios(){
     if(_userCache) return cloneDeep(_userCache);
-    var list;
-    if(db){ var s=await db.collection("usuarios").get(); list=s.docs.map(function(d){return Object.assign({id:d.id},d.data());}); }
-    else { list=Object.keys(mem.usuarios).map(function(k){return mem.usuarios[k];}); }
+    return this.listUsuariosFresh();
+  },
+  async listUsuariosFresh(){
+    var empId=minhaEmpresaId();
+    var list=[];
+    if(db){
+      if(empId){ var s=await db.collection("usuarios").where("empresaId","==",empId).get(); list=s.docs.map(function(d){return Object.assign({id:d.id},d.data());}); }
+    } else { list=Object.keys(mem.usuarios).map(function(k){return mem.usuarios[k];}).filter(function(u){return empId&&u.empresaId===empId;}); }
+    if(state.authUser && !list.some(function(u){return u.id===state.authUser.id;})){
+      var eu=await this.getUsuario(state.authUser.id); if(eu) list.push(eu);
+    }
     _userCache=cloneDeep(list);
     return cloneDeep(list);
   },
-  async listUsuariosFresh(){
-    var list;
-    if(db){ var s=await db.collection("usuarios").get(); list=s.docs.map(function(d){return Object.assign({id:d.id},d.data());}); }
-    else { list=Object.keys(mem.usuarios).map(function(k){return mem.usuarios[k];}); }
-    _userCache=cloneDeep(list);
-    return cloneDeep(list);
+  // altera só os campos informados (papel, empresa) — nunca regrava o
+  // cadastro inteiro de outra pessoa com uma cópia possivelmente velha
+  async updateUsuarioCampos(id,campos){
+    if(_userCache) _userCache=_userCache.map(function(u){ return u.id===id?Object.assign({},u,campos):u; });
+    if(db){ await db.doc("usuarios/"+id).update(campos); }
+    else if(mem.usuarios[id]){ Object.assign(mem.usuarios[id],campos); }
   },
   async touchPresence(){
     if(!state.authUser) return;
@@ -1371,10 +1573,14 @@ async function boot(){
 
   try{
     var qs=new URLSearchParams(location.search);
-    if(qs.get("convite")==="1"){
+    var cv=qs.get("convite");
+    if(cv){
       state._convite=true;
       state._authModo="cadastro";
-      state._conviteEmpresaId=qs.get("empresa")||null;
+      // links novos: ?convite=<código de uso único>. Links antigos
+      // (?convite=1&empresa=...) não dão mais acesso a empresa nenhuma — só
+      // um convite registrado no banco por um administrador dá.
+      state._conviteToken=(cv!=="1"&&/^[A-Za-z0-9_-]{16,64}$/.test(cv))?cv:null;
     }
   }catch(e){}
   state._temUsuarios=false;
@@ -1387,6 +1593,9 @@ async function boot(){
     }catch(e){ console.error(e); }
   }
 
+  if(state._convite){
+    state._conviteInfo=await lerConvite(state._conviteToken);
+  }
   if(!db || typeof firebase==="undefined"){ renderAuth(); return; }
 
   firebase.auth().onAuthStateChanged(async function(user){
@@ -1397,13 +1606,15 @@ async function boot(){
         // acesso agora, senão um cadastro novo pode ser barrado por engano (falso "acesso removido").
         return;
       }
-      var list=[];
-      try{ list=await Store.listUsuarios(); }catch(e){ console.error(e); }
-      var u=list.filter(function(x){return x.id===user.uid;})[0];
+      var u=null;
+      try{ u=await Store.getUsuario(user.uid); }catch(e){ console.error(e); }
       if(u){
-        state.usuarios=list;
-        state.authUser={id:u.id,email:u.email,nome:u.nome,papel:papelDe(u),empresaId:u.empresaId||null,isAdmin:u.isAdmin};
+        // o e-mail que vale é o do login (Firebase Auth), nunca o gravado no
+        // documento — assim ninguém "vira" administrador fixo editando o
+        // próprio cadastro
+        state.authUser={id:u.id,email:(user.email||u.email||"").toLowerCase(),nome:u.nome,papel:papelDe(u),empresaId:u.empresaId||null,isAdmin:u.isAdmin};
         state._authErr="";
+        try{ state.usuarios=await Store.listUsuariosFresh(); }catch(e){ console.error(e); state.usuarios=[u]; }
         await afterLogin();
       } else {
         try{ await firebase.auth().signOut(); }catch(e){}
@@ -1433,7 +1644,11 @@ function renderAuth(){
     '<div class="auth-brand"><img class="logo" src="'+logoSrc()+'" alt="Ariel Tomateiro"><div class="s">Compra &amp; venda de tomate</div></div>'+
     (modo==="cadastro"?
       (state._convite?
-        '<div class="auth-title">Bem-vindo(a)!</div><div class="auth-lede">Você recebeu um convite para acessar o Ariel Tomateiro. Crie seu nome, e-mail e senha para entrar.</div>'
+        '<div class="auth-title">Bem-vindo(a)!</div><div class="auth-lede">'+
+          (state._conviteInfo&&state._conviteInfo.valido
+            ?'Você recebeu um convite para entrar'+(state._conviteInfo.empresaNome?' na empresa <b>'+esc(state._conviteInfo.empresaNome)+'</b>':'')+' no Ariel Tomateiro. Crie seu nome, e-mail e senha para entrar.'
+            :esc(textoConviteInvalido(state._conviteInfo))+' Você ainda pode criar sua conta e cadastrar a sua própria empresa.')+
+        '</div>'
         :'<div class="auth-title">Criar acesso</div><div class="auth-lede">Primeiro acesso: cadastre seu e-mail e senha para proteger os dados.</div>')
       :'<div class="auth-title">Entrar</div><div class="auth-lede">Acesso restrito. Informe seu e-mail e senha.</div>')+
     (err?'<div class="auth-err">'+esc(err)+'</div>':"")+
@@ -1443,6 +1658,8 @@ function renderAuth(){
     '<label class="field">Senha<input type="password" id="auth-senha" placeholder="••••••••" autocomplete="'+(modo==="cadastro"?"new-password":"current-password")+'"></label>'+
     (modo==="cadastro"?'<label class="field">Confirmar senha<input type="password" id="auth-senha2" placeholder="••••••••" autocomplete="new-password"></label>':"")+
     '<button class="btn primary block" id="auth-submit" style="margin-top:4px">'+ICONS.lock+(modo==="cadastro"?" Criar e entrar":" Entrar")+"</button>"+
+    (modo==="login"?'<button type="button" class="linklike" id="auth-esqueci" style="align-self:center;margin-top:2px">Esqueci minha senha</button>':"")+
+    (state._authInfo?'<div class="auth-info" role="status">'+esc(state._authInfo)+'</div>':"")+
     "</div>"+
     (state._convite?
       ('<div class="auth-switch">'+(modo==="cadastro"?'Já tem uma conta? <button data-auth-switch="login">Entrar</button>':'Ainda não tem conta? <button data-auth-switch="cadastro">Criar conta</button>')+'</div>')
@@ -1451,10 +1668,121 @@ function renderAuth(){
   var btn=document.getElementById("auth-submit");
   btn.onclick=guarded(modo==="cadastro"?onAuthCadastro:onAuthLogin);
   var sw=el.querySelector("[data-auth-switch]");
-  if(sw) sw.onclick=function(){ state._authModo=sw.getAttribute("data-auth-switch"); state._authErr=""; renderAuth(); };
+  if(sw) sw.onclick=function(){ state._authModo=sw.getAttribute("data-auth-switch"); state._authErr=""; state._authInfo=""; renderAuth(); };
+  var esq=document.getElementById("auth-esqueci");
+  if(esq) esq.onclick=guarded(async function(){
+    var email=(document.getElementById("auth-email").value||"").trim().toLowerCase();
+    if(!email||email.indexOf("@")<1){ state._authErr="Digite seu e-mail no campo acima e toque de novo em \"Esqueci minha senha\"."; state._authInfo=""; renderAuth(); return; }
+    try{ await firebase.auth().sendPasswordResetEmail(email); }
+    catch(e){
+      var c=e&&e.code||"";
+      if(c==="auth/invalid-email"){ state._authErr="E-mail inválido."; state._authInfo=""; renderAuth(); return; }
+      if(c==="auth/network-request-failed"){ state._authErr="Sem conexão com a internet. Tente de novo quando tiver sinal."; state._authInfo=""; renderAuth(); return; }
+      console.error(e); // user-not-found etc.: resposta igual, pra não revelar quem tem conta
+    }
+    state._authErr="";
+    state._authInfo="Se existir uma conta com "+email+", enviamos um link para criar uma senha nova. Confira a caixa de entrada e o spam.";
+    renderAuth();
+    var em=document.getElementById("auth-email"); if(em) em.value=email;
+  });
   [document.getElementById("auth-email"),document.getElementById("auth-senha")].forEach(function(inp){
     if(inp) inp.onkeydown=function(e){ if(e.key==="Enter") btn.click(); };
   });
+}
+
+/* ============ migração única: tira os valores do documento público do dia ============ */
+// Roda uma vez por empresa, no primeiro acesso de um administrador depois
+// desta atualização: pra cada dia que ainda tem preço/pagamento dentro das
+// cargas, copia a parte financeira pra diasFin e regrava o documento público
+// só com a parte sem valores. Não bloqueia a tela (roda por trás).
+var _migrandoFin=false;
+async function migrarFinanceiroSeparado(){
+  if(_migrandoFin||!db||!podeLerFinanceiro()||!minhaEmpresaId()) return 0;
+  var empId=minhaEmpresaId();
+  var cfgRef=db.doc("empresas/"+empId+"/meta/config");
+  _migrandoFin=true;
+  try{
+    var cfg=await cfgRef.get();
+    if(cfg.exists&&cfg.data().finSeparado) return 0;
+    var snap=await db.collection("empresas").doc(empId).collection("dias").get();
+    var FV=firebase.firestore.FieldValue;
+    var pendentes=snap.docs.filter(function(d){
+      var dd=d.data()||{};
+      return (dd.cargas||[]).some(temCampoFinanceiro) || dd.schema!==2;
+    });
+    for(var i=0;i<pendentes.length;i+=15){
+      await Promise.all(pendentes.slice(i,i+15).map(function(d){
+        var dd=d.data()||{}, cargas=dd.cargas||[], finMap={};
+        cargas.forEach(function(c){ if(!c||!c.id) return; var f=cargaFinanceira(c); if(Object.keys(f).length) finMap[c.id]=f; });
+        var lote=db.batch();
+        if(Object.keys(finMap).length){
+          lote.set(db.doc("empresas/"+empId+"/diasFin/"+d.id),{data:dd.data||d.id,cargas:finMap},{merge:true});
+        }
+        lote.update(db.doc("empresas/"+empId+"/dias/"+d.id),{cargas:cargas.map(cargaPublica),schema:2,data:dd.data||d.id});
+        return lote.commit();
+      }));
+    }
+    await cfgRef.set({finSeparado:true,finSeparadoEm:new Date().toISOString()},{merge:true});
+    return pendentes.length;
+  }catch(e){ console.error("migração do financeiro",e); return 0; }
+  finally{ _migrandoFin=false; }
+}
+
+/* ============ convites de uso único ============ */
+// Cada convite é um documento em convites/{código}. O código é longo e
+// aleatório (vai só no link do WhatsApp), vale 7 dias e só pode ser usado
+// uma vez. As regras do banco só deixam alguém entrar numa empresa se
+// apresentar um convite válido DAQUELA empresa.
+var CONVITE_VALIDADE_MS=7*24*60*60*1000;
+function novoCodigoConvite(){
+  var b=new Uint8Array(18);
+  if(window.crypto&&crypto.getRandomValues) crypto.getRandomValues(b);
+  else for(var i=0;i<b.length;i++) b[i]=Math.floor(Math.random()*256);
+  return Array.prototype.map.call(b,function(x){return ("0"+x.toString(16)).slice(-2);}).join("");
+}
+function criarConvite(){
+  var token=novoCodigoConvite();
+  var emp=state.empresa||{};
+  var doc={empresaId:minhaEmpresaId(),empresaNome:emp.nomeFantasia||"",criadoPorUid:meuUid(),
+    criadoEm:new Date().toISOString(),expiraEmMs:Date.now()+CONVITE_VALIDADE_MS,usadoPorUid:null};
+  if(db) bgSync(db.doc("convites/"+token).set(doc),"convite");
+  return token;
+}
+// lê o convite do link (liberado mesmo sem login) e diz se ainda serve
+async function lerConvite(token){
+  if(!token) return {valido:false,motivo:"antigo"};
+  if(!db) return {valido:false,motivo:"erro"};
+  try{
+    var s=await db.doc("convites/"+token).get();
+    if(!s.exists) return {valido:false,motivo:"inexistente"};
+    var c=s.data();
+    if(c.usadoPorUid) return {valido:false,motivo:"usado",empresaNome:c.empresaNome||""};
+    if(!(c.expiraEmMs>Date.now())) return {valido:false,motivo:"vencido",empresaNome:c.empresaNome||""};
+    return {valido:true,empresaId:c.empresaId,empresaNome:c.empresaNome||""};
+  }catch(e){ console.error(e); return {valido:false,motivo:"erro"}; }
+}
+function textoConviteInvalido(info){
+  var m=info&&info.motivo;
+  if(m==="usado") return "Este link de convite já foi usado. Peça um link novo ao administrador da empresa.";
+  if(m==="vencido") return "Este link de convite venceu (vale 7 dias). Peça um link novo ao administrador da empresa.";
+  if(m==="erro") return "Não foi possível conferir o convite agora (sem internet?). Tente abrir o link de novo quando tiver sinal.";
+  return "Este link de convite não é válido. Peça um link novo ao administrador da empresa.";
+}
+// quem JÁ tem conta (sem empresa) e abriu um link de convite válido
+async function aceitarConviteContaExistente(){
+  var info=state._conviteInfo, token=state._conviteToken;
+  if(!info||!info.valido||!token||!state.authUser) return false;
+  try{
+    var lote=db.batch();
+    lote.update(db.doc("usuarios/"+meuUid()),{empresaId:info.empresaId,papel:"operacional",conviteId:token});
+    lote.update(db.doc("convites/"+token),{usadoPorUid:meuUid(),usadoEm:new Date().toISOString()});
+    await lote.commit();
+  }catch(e){ console.error(e); toast("Não foi possível usar o convite agora. Tente abrir o link de novo.",true); return false; }
+  state.authUser.empresaId=info.empresaId; state.authUser.papel="operacional";
+  state._conviteInfo=null; state._conviteToken=null;
+  try{ history.replaceState(null,"",location.pathname); }catch(e){}
+  toast("Você entrou na empresa "+(info.empresaNome||"")+".");
+  return true;
 }
 
 /* ============ empresa: onboarding de quem ainda não tem empresaId ============ */
@@ -1535,6 +1863,7 @@ async function migrarDadosLegados(empresaId){
   var diasSnap=await db.collection("dias").get();
   for(var k=0;k<diasSnap.docs.length;k++){
     var dd=diasSnap.docs[k], ddata=dd.data();
+    ddata.schema=2; // o financeiro é separado logo depois por migrarFinanceiroSeparado()
     await db.doc("empresas/"+empresaId+"/dias/"+dd.id).set(ddata);
     var fotosSnap=await db.doc("dias/"+dd.id).collection("fotos").get();
     for(var f=0;f<fotosSnap.docs.length;f++){
@@ -1570,19 +1899,21 @@ async function onAuthCadastro(){
   try{ cred=await firebase.auth().createUserWithEmailAndPassword(email,senha); }
   catch(e){ _authTransition=null; state._authErr=traduzErroAuth(e); renderAuth(); return; }
   var novoUsuario={id:cred.user.uid,nome:nome||email,email:email,criadoEm:new Date().toISOString(),lastSeen:new Date().toISOString()};
-  // convite com empresa embutida no link: já entra como Operacional da empresa que convidou.
-  // promover pra Administrador é sempre feito depois, de dentro do app (nunca pelo link) —
-  // assim ninguém consegue virar admin só editando a URL do convite.
-  if(state._conviteEmpresaId){
-    try{
-      var empDoc=await db.doc("empresas/"+state._conviteEmpresaId).get();
-      if(empDoc.exists){ novoUsuario.empresaId=state._conviteEmpresaId; novoUsuario.papel="operacional"; }
-    }catch(e){ console.error(e); }
-  }
+  // convite válido: já entra como Operacional da empresa que convidou, e o
+  // convite é "queimado" na MESMA gravação (uso único). Promover pra
+  // Administrador é sempre feito depois, de dentro do app, por outro admin.
+  var conv=state._conviteInfo;
+  var usarConvite=!!(conv && conv.valido && state._conviteToken);
+  if(usarConvite){ novoUsuario.empresaId=conv.empresaId; novoUsuario.papel="operacional"; novoUsuario.conviteId=state._conviteToken; }
   var gravou=false;
   try{
-    await db.collection("usuarios").doc(cred.user.uid).set(novoUsuario);
-    await db.doc("meta/public").set({hasUsers:true},{merge:true});
+    var lote=db.batch();
+    lote.set(db.collection("usuarios").doc(cred.user.uid),novoUsuario);
+    if(usarConvite) lote.update(db.doc("convites/"+state._conviteToken),{usadoPorUid:cred.user.uid,usadoEm:new Date().toISOString()});
+    await lote.commit();
+    if(!state._temUsuarios){
+      db.doc("meta/public").set({hasUsers:true},{merge:true}).catch(function(e){ console.error(e); });
+    }
     // espera as escritas serem confirmadas no servidor antes de ler outras coleções:
     // as regras de segurança (isMember) rodam no servidor, então uma leitura logo em
     // seguida pode ser negada se o doc do usuário ainda só existir no cache local.
@@ -1627,7 +1958,16 @@ function logout(){
 }
 
 async function afterLogin(){
+  if(!minhaEmpresaId() && state._conviteInfo && state._conviteInfo.valido){
+    await aceitarConviteContaExistente();
+  }
   if(!minhaEmpresaId()){ renderSemEmpresa(); return; }
+  if(state._conviteToken){
+    // já faz parte de uma empresa: o convite não é usado (continua valendo
+    // pra quem ele foi mandado de verdade)
+    if(state._conviteInfo&&state._conviteInfo.valido&&state._conviteInfo.empresaId!==minhaEmpresaId()) toast("Você já faz parte de uma empresa, então o convite não foi usado.");
+    state._conviteToken=null; state._conviteInfo=null; try{ history.replaceState(null,"",location.pathname); }catch(e){}
+  }
   // mostra o app (com um placeholder leve em #main) imediatamente — não
   // espera nenhuma busca de dados terminar pra sair da tela de carregamento.
   var bl=document.getElementById("boot-loading"); if(bl) bl.hidden=true;
@@ -1643,7 +1983,7 @@ async function afterLogin(){
   Store.touchPresence();
   if(!window._presenceHeartbeat){
     window._presenceHeartbeat=setInterval(function(){ Store.touchPresence(); },60000);
-    document.addEventListener("visibilitychange",function(){ if(!document.hidden) Store.touchPresence(); });
+    document.addEventListener("visibilitychange",function(){ if(!document.hidden){ Store.touchPresence(); atualizarAoVoltar(); } });
   }
   // busca os dados da empresa em paralelo com o resto (não depende de nada
   // abaixo) — antes isso era feito em série, uma ida-e-volta de rede atrás
@@ -1656,6 +1996,45 @@ async function afterLogin(){
   state.entidades=await entidadesPromise;
   await tabDataPromise;
   render();
+  if(podeLerFinanceiro()){
+    migrarFinanceiroSeparado().then(function(n){
+      if(n){ limparCaches(); if(podeAtualizarSozinho()) refreshCurrentTabData().then(render).catch(function(){}); }
+    });
+  }
+}
+
+/* Ao voltar pro app (desbloqueou o celular, voltou do WhatsApp), relê os
+   dados da tela atual — o que outro aparelho lançou nesse meio-tempo aparece
+   sem precisar fechar e abrir. Nunca faz isso no meio de uma edição: com
+   janela aberta, campo em foco ou campo já preenchido na tela, espera. */
+function temCampoEditado(root){
+  if(!root) return false;
+  return Array.prototype.some.call(root.querySelectorAll("input,textarea,select"),function(el){
+    if(el.type==="checkbox"||el.type==="radio") return el.checked!==el.defaultChecked;
+    if(el.tagName==="SELECT") return Array.prototype.some.call(el.options,function(o){return o.selected!==o.defaultSelected;}) && el.selectedIndex!==0;
+    if(el.type==="file") return !!(el.files&&el.files.length);
+    return el.value!==el.defaultValue;
+  });
+}
+function podeAtualizarSozinho(){
+  if(document.querySelector(".modal-back")) return false;
+  var a=document.activeElement; if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return false;
+  if(state.finFormPag||state.precoFotoPendente) return false;
+  if(temCampoEditado(document.getElementById("main"))) return false;
+  return true;
+}
+var _atualizandoAoVoltar=false;
+async function atualizarAoVoltar(){
+  if(_atualizandoAoVoltar||!state.authUser||!minhaEmpresaId()||!podeAtualizarSozinho()) return;
+  _atualizandoAoVoltar=true;
+  try{
+    limparCaches();
+    var ents=Store.listEntidades();
+    await refreshCurrentTabData();
+    state.entidades=await ents;
+    if(podeAtualizarSozinho() && !document.getElementById("shell").hidden) render();
+  }catch(e){ console.error(e); }
+  finally{ _atualizandoAoVoltar=false; }
 }
 
 function usuariosDaEmpresa(list){
@@ -1875,6 +2254,7 @@ function statusDisponiveis(tipo,modo){
 // janela que o modo Pendentes Futuros varre pra trás. 90 dias cobre com folga os prazos
 // praticados (o maior padrão é 30) sem puxar o histórico inteiro da empresa.
 var FIN_JANELA_DIAS=90;
+var FIN_PAGINA=60;
 
 async function carregarFinanceiro(){
   if(state.finModo==="pendentes"){
@@ -1949,7 +2329,28 @@ function render(){
   else if(state.tab==="cargas") main.innerHTML=viewCargas();
   else if(state.tab==="financeiro") main.innerHTML=viewFinanceiro();
   attachHandlers();
+  marcarClicaveisTeclado(main);
 }
+
+/* Linhas e células que abrem algo ao toque (cadastro, dia do calendário,
+   operação do financeiro, carga) são <div>s: ganham papel de botão e foco
+   pelo Tab, e Enter/Espaço funcionam como clique. */
+var SELETOR_CLICAVEIS="[data-ent-edit],[data-fin-toggle],[data-cal-day],div[data-action],span[data-action],[data-prazo-edit]:not(button)";
+function marcarClicaveisTeclado(root){
+  (root||document).querySelectorAll(SELETOR_CLICAVEIS).forEach(function(el){
+    if(el.tagName==="BUTTON"||el.tagName==="A"||el.tagName==="INPUT"||el.tagName==="SELECT") return;
+    if(!el.hasAttribute("tabindex")) el.setAttribute("tabindex","0");
+    if(!el.hasAttribute("role")) el.setAttribute("role","button");
+    el.setAttribute("data-kb-click","");
+  });
+}
+document.addEventListener("keydown",function(e){
+  if(e.key!=="Enter"&&e.key!==" ") return;
+  var t=e.target;
+  if(!t||!t.hasAttribute||!t.hasAttribute("data-kb-click")) return;
+  e.preventDefault();
+  t.click();
+});
 
 /* ============ VIEW: Calendário ============ */
 function opRow(c){
@@ -2013,7 +2414,7 @@ function viewCalendario(){
   return '<div class="page-head"><div><h1>Fechamentos</h1><p class="lede">Clique em um dia para ver todas as operações e o fechamento do dia.</p></div></div>'+
     banner+
     '<div class="card">'+
-      '<div class="cal-head"><div class="month">'+(MESES[m].charAt(0).toUpperCase()+MESES[m].slice(1))+" de "+y+'</div><div class="cal-nav"><button class="iconbtn" data-cal-nav="-1">'+ICONS.chevL+'</button><button class="iconbtn" data-cal-nav="1">'+ICONS.chevR+'</button></div></div>'+
+      '<div class="cal-head"><div class="month">'+(MESES[m].charAt(0).toUpperCase()+MESES[m].slice(1))+" de "+y+'</div><div class="cal-nav"><button class="iconbtn" data-cal-nav="-1" aria-label="Mês anterior">'+ICONS.chevL+'</button><button class="iconbtn" data-cal-nav="1" aria-label="Próximo mês">'+ICONS.chevR+'</button></div></div>'+
       '<div class="cal-grid">'+DOWS.map(function(w){return '<div class="cal-dow">'+w+"</div>";}).join("")+cells+'</div>'+
       '<div class="cal-legend"><span><i style="background:var(--green)"></i>fechamento positivo</span><span><i style="background:var(--red)"></i>fechamento negativo</span><span><i style="background:var(--gold-bright)"></i>dado de exemplo</span></div>'+
     '</div>'+
@@ -2058,7 +2459,7 @@ function viewCatalogo(){
     return '<div class="page-head"><div><h1>Cadastros</h1><p class="lede">Condições de pagamento usadas no Financeiro. O vencimento de cada operação é a data da carga mais estes dias.</p></div>'+
       '<div class="toolbar"><button class="btn primary" data-action="novo-prazo">'+ICONS.plus+" Novo prazo</button></div></div>"+
       '<div class="toolbar" style="margin-bottom:14px">'+segCat+
-        '<input type="text" placeholder="Buscar prazo…" style="max-width:260px" id="cat-busca" value="'+esc(state._catBusca||"")+'">'+
+        '<input type="text" placeholder="Buscar prazo…" aria-label="Buscar prazo" style="max-width:260px" id="cat-busca" value="'+esc(state._catBusca||"")+'">'+
       "</div>"+
       (usandoPadrao?'<div class="fin-aviso" style="color:var(--text-dim);background:var(--overlay-1)">Esta é a lista padrão. Ao criar ou excluir qualquer prazo, ela passa a ser a lista da sua empresa.</div>':"")+
       linhas;
@@ -2089,7 +2490,7 @@ function viewCatalogo(){
   return '<div class="page-head"><div><h1>Cadastros</h1><p class="lede">Fornecedores, clientes e mercadorias cadastrados.</p></div>'+
     '<div class="toolbar"><button class="btn primary" data-action="novo-ent">'+ICONS.plus+" Novo cadastro</button></div></div>"+
     '<div class="toolbar" style="margin-bottom:14px">'+segCat+
-      '<input type="text" placeholder="Buscar por nome ou cidade…" style="max-width:260px" id="cat-busca" value="'+esc(state._catBusca||"")+'">'+
+      '<input type="text" placeholder="Buscar por nome ou cidade…" aria-label="Buscar cadastro por nome ou cidade" style="max-width:260px" id="cat-busca" value="'+esc(state._catBusca||"")+'">'+
     '</div>'+
     rows;
 }
@@ -2202,7 +2603,7 @@ function viewPrecos(){
   var precosDoDia=dia.precos||[];
   var precosFiltrados=filtroLista==="todas"?precosDoDia:precosDoDia.filter(function(p){return (p.mercadoriaId||"")===filtroLista;});
   var lista=precosFiltrados.slice().reverse().map(function(p){
-    var delBtn=possoEditar(p)?('<button class="iconbtn" data-del-preco="'+p.id+'">'+ICONS.x+"</button>"):"";
+    var delBtn=possoEditar(p)?('<button class="iconbtn" data-del-preco="'+p.id+'" aria-label="Apagar cotação">'+ICONS.x+"</button>"):"";
     // a pill da mercadoria fica FORA do nome: dentro dele ela era um bloco
     // atômico no meio de um texto de uma linha só com reticências, e um nome
     // comprido empurrava a largura da página inteira no celular
@@ -2255,12 +2656,12 @@ function viewPraca(){
   var pf=pracaMercadoriaFiltrada(state.resumoDia||{precos:[]});
   var dia=pf.dia;
   var agg=precosAgregados(dia);
-  var mercSelectHtml='<label class="field" style="flex-direction:row;align-items:center;gap:8px"><select id="resumo-merc-select" style="width:auto">'+
+  var mercSelectHtml='<label class="field" style="flex-direction:row;align-items:center;gap:8px"><select id="resumo-merc-select" aria-label="Filtrar por mercadoria" style="width:auto">'+
     '<option value="todas"'+(pf.filtro==="todas"?" selected":"")+'>Todas as mercadorias</option>'+
     pf.mercadorias.map(function(m){return '<option value="'+m.id+'"'+(pf.filtro===m.id?" selected":"")+">"+esc(m.nome)+"</option>";}).join("")+
   "</select></label>";
   var head='<div class="page-head"><div><h1>Praça — resumo de preços</h1><p class="lede">O que está sendo trabalhado no mercado nesta data (preço por caixa).</p></div>'+
-    '<div class="toolbar"><label class="field" style="flex-direction:row;align-items:center;gap:8px"><input type="date" id="resumo-data" value="'+state.resumoData+'" style="width:auto"></label>'+mercSelectHtml+'</div></div>';
+    '<div class="toolbar"><label class="field" style="flex-direction:row;align-items:center;gap:8px"><input type="date" id="resumo-data" aria-label="Data do resumo" value="'+state.resumoData+'" style="width:auto"></label>'+mercSelectHtml+'</div></div>';
 
   var kpis='<div class="kpi-row"><div class="kpi"><div class="label">Média Brasil / caixa</div><div class="value gold">'+(agg.geralAvg!=null?fmtMoney(agg.geralAvg):"—")+'</div></div>'+
     '<div class="kpi"><div class="label">Fornecedores no dia</div><div class="value">'+agg.geralN+'</div></div>'+
@@ -2765,7 +3166,7 @@ function viewCargas(){
   });
 
   var head='<div class="page-head"><div><h1>Cargas</h1><p class="lede">'+(opView?"Tipo, status, quantidade, placa e fotos das cargas da data selecionada. Um administrador preenche os valores depois.":"Todas as cargas de compra, venda e compra casada da data selecionada.")+'</p></div>'+
-    '<div class="toolbar"><input type="date" id="carga-data" value="'+state.cargaData+'" style="width:auto"><button class="btn primary" data-action="nova-carga">'+ICONS.plus+" Nova carga</button></div></div>";
+    '<div class="toolbar"><input type="date" id="carga-data" aria-label="Data das cargas" value="'+state.cargaData+'" style="width:auto"><button class="btn primary" data-action="nova-carga">'+ICONS.plus+" Nova carga</button></div></div>";
 
   var seg='<div class="seg" style="margin-bottom:16px">'+["todas","compra","venda","casada"].map(function(f){return '<button class="'+(filtro===f?"active":"")+'" data-carga-filtro="'+f+'">'+(f==="todas"?"Todas":f==="compra"?"Compras":f==="venda"?"Vendas":"Compras Casadas")+"</button>";}).join("")+"</div>";
 
@@ -2798,7 +3199,7 @@ function viewCargas(){
     }
 
     var actions='<div class="carga-top-actions">'+
-      '<select class="status-select '+st.cls+'" data-status-carga="'+c.id+'">'+
+      '<select class="status-select '+st.cls+'" data-status-carga="'+c.id+'" aria-label="Status da carga">'+
         ["acarregar","transporte","entregue"].map(function(s){var si=statusInfo(s);return '<option value="'+s+'"'+(c.status===s?" selected":"")+">"+si.label+"</option>";}).join("")+
       "</select>"+
       '<button class="iconbtn sm" data-action="editar-carga" data-id="'+c.id+'" aria-label="Editar carga">'+ICONS.edit+"</button>"+
@@ -3019,7 +3420,7 @@ function viewFinanceiro(){
 
   var head='<div class="page-head"><div><h1>Financeiro</h1><p class="lede">'+lede+'</p></div>'+
     '<div class="toolbar">'+
-      (modo==="dia"?'<input type="date" id="fin-data" value="'+state.finData+'" style="width:auto">':"")+
+      (modo==="dia"?'<input type="date" id="fin-data" aria-label="Data das operações" value="'+state.finData+'" style="width:auto">':"")+
     "</div></div>";
 
   var segModo='<div class="seg" style="margin-bottom:16px">'+
@@ -3048,7 +3449,7 @@ function viewFinanceiro(){
     // status como lista suspensa: eram até seis botões ocupando duas linhas
     // antes da primeira operação aparecer na tela
     '<div class="fin-filtro"><span class="fl">Status</span>'+
-      '<select id="fin-status-sel" class="fin-status-sel">'+
+      '<select id="fin-status-sel" class="fin-status-sel" aria-label="Filtrar por status">'+
         statusDisponiveis(state.finTipo,modo).map(function(f){
           return '<option value="'+f.id+'"'+(state.finStatus===f.id?" selected":"")+">"+esc(f.label)+"</option>";
         }).join("")+
@@ -3056,7 +3457,17 @@ function viewFinanceiro(){
     "</div>"+
   "</div>";
 
-  var lista=lados.map(finLinhaHtml).join("") || '<div class="empty">'+ICONS.cash+'<div class="t">'+
+  // lista longa (meses de operações em aberto) é desenhada em páginas: a tela
+  // continua leve no celular e cada toque não redesenha milhares de linhas.
+  // A operação que está aberta nunca fica escondida atrás do "mostrar mais".
+  var limite=state.finLimite||FIN_PAGINA;
+  if(state.finAberta){
+    for(var ia=limite;ia<lados.length;ia++){ if(lados[ia].chave===state.finAberta){ limite=ia+1; break; } }
+  }
+  var restantes=Math.max(0,lados.length-limite);
+  var lista=lados.slice(0,limite).map(finLinhaHtml).join("")+
+    (restantes?'<div class="fin-mais"><button type="button" class="btn" data-fin-mais="1">Mostrar mais '+Math.min(FIN_PAGINA,restantes)+' <span style="color:var(--text-faint)">(faltam '+restantes+')</span></button></div>':"");
+  lista=lista || '<div class="empty">'+ICONS.cash+'<div class="t">'+
     (modo==="pendentes"?"Nada em aberto":"Nenhuma operação nesta data")+"</div>"+
     (modo==="pendentes"?"Todas as operações do período estão quitadas.":"Lance cargas na aba Cargas para acompanhá-las aqui.")+"</div>";
 
@@ -3500,20 +3911,22 @@ function attachHandlers(){
     });
     document.querySelectorAll("[data-fin-modo]").forEach(function(el){ el.onclick=guarded(async function(){
       state.finModo=el.getAttribute("data-fin-modo");
-      state.finAberta=null; state.finFormPag=null;
+      state.finAberta=null; state.finFormPag=null; state.finLimite=null;
       normalizaStatusFin();
       await carregarFinanceiro(); render();
     });});
     document.querySelectorAll("[data-fin-tipo]").forEach(function(el){ el.onclick=function(){
       state.finTipo=el.getAttribute("data-fin-tipo");
-      state.finFormPag=null; state.finAberta=null;
+      state.finFormPag=null; state.finAberta=null; state.finLimite=null;
       normalizaStatusFin();
       render();
     };});
     var statusSel=document.getElementById("fin-status-sel");
     if(statusSel) statusSel.onchange=function(){
-      state.finStatus=statusSel.value; state.finFormPag=null; state.finAberta=null; render();
+      state.finStatus=statusSel.value; state.finFormPag=null; state.finAberta=null; state.finLimite=null; render();
     };
+    var maisBtn=document.querySelector("[data-fin-mais]");
+    if(maisBtn) maisBtn.onclick=function(){ state.finLimite=(state.finLimite||FIN_PAGINA)+FIN_PAGINA; render(); };
     document.querySelectorAll("[data-fin-toggle]").forEach(function(el){ el.onclick=function(){
       var ch=el.getAttribute("data-fin-toggle");
       state.finAberta=(state.finAberta===ch)?null:ch;
@@ -3754,6 +4167,9 @@ function hookEntidadeModal(ent){
       };
     }
     if(!entObj.id) delete entObj.id;
+    // os contadores de numeração das cargas vivem no cadastro: editar nome,
+    // cidade etc. nunca pode zerá-los (senão a próxima carga volta a ser "nº 1")
+    if(ent){ ["contadorComoFornecedor","contadorComoCliente"].forEach(function(k){ if(ent[k]!=null) entObj[k]=ent[k]; }); }
     await Store.saveEntidade(entObj);
     state.entidades=await Store.listEntidades();
     toast("Cadastro salvo.");
@@ -4084,7 +4500,11 @@ function hookCargaModal(carga){
     var entObj=state.entidades.filter(function(e){return e.id===entId;})[0];
     var counterField=tipo==="venda"?"contadorComoCliente":"contadorComoFornecedor";
     var seq=existing?existing.numeroSequencial:1;
-    if(!existing && entObj){ seq=(entObj[counterField]||0)+1; entObj[counterField]=seq; await Store.saveEntidade(entObj); }
+    if(!existing && entObj){
+      seq=(entObj[counterField]||0)+1; entObj[counterField]=seq;
+      var camposCont={}; camposCont[counterField]=seq;
+      await Store.updateEntidadeCampos(entObj.id,camposCont);
+    }
 
     var fotoId=existing?existing.fotoId:null;
     var fotoQualidadeId=existing?existing.fotoQualidadeId:null;
@@ -4223,7 +4643,8 @@ document.addEventListener("click",function(e){
           confirmarAcao(
             tornarAdmin?'Tornar "'+nomeAlvo+'" administrador da empresa?':'Tornar "'+nomeAlvo+'" operacional (remove os privilégios de administrador)?',
             guarded(async function(){
-              await Store.saveUsuario(Object.assign({},alvo,{papel:tornarAdmin?"administrador":"operacional"}));
+              try{ await Store.updateUsuarioCampos(alvo.id,{papel:tornarAdmin?"administrador":"operacional"}); }
+              catch(e){ console.error(e); toast("Não foi possível alterar o papel agora. Verifique a conexão.",true); return; }
               state.usuarios=await Store.listUsuariosFresh();
               rerenderModal();
               toast(tornarAdmin?"Usuário agora é administrador.":"Usuário agora é operacional.");
@@ -4238,7 +4659,8 @@ document.addEventListener("click",function(e){
           var alvo=state.usuarios.filter(function(u){return u.id===id;})[0];
           if(!alvo||alvo.empresaId!==minhaEmpresaId()) return;
           if(!confirm("Remover \""+(alvo.nome||alvo.email)+"\" desta empresa? A conta continua existindo, mas perde o acesso aos dados da empresa até um administrador convidá-la de novo."))return;
-          await Store.saveUsuario(Object.assign({},alvo,{empresaId:null,papel:null}));
+          try{ await Store.updateUsuarioCampos(alvo.id,{empresaId:null,papel:null}); }
+          catch(e){ console.error(e); toast("Não foi possível remover agora. Verifique a conexão.",true); return; }
           state.usuarios=await Store.listUsuariosFresh();
           rerenderModal();
           toast("Usuário removido da empresa.");
@@ -4261,9 +4683,12 @@ document.addEventListener("click",function(e){
         var raw=(node.querySelector("#nu-whats").value||"").trim();
         var digitos=raw.replace(/\D/g,"");
         if(digitos.length<12||digitos.length>13){ toast("Informe o número completo com DDI (+55), DDD e telefone.",true); return; }
-        var empId=minhaEmpresaId();
-        var link=location.origin+location.pathname+"?convite=1"+(empId?"&empresa="+encodeURIComponent(empId):"");
-        var msg="Parabéns, você foi selecionado para uma lista restrita de convidados para elevar o nível do seu negócio com o aplicativo Ariel Tomateiro! Acesse o link e faça seu cadastro.\n\n"+link;
+        // o convite é registrado no banco em segundo plano (entra na fila
+        // de sincronização se estiver sem sinal) e o WhatsApp abre na hora —
+        // celular bloqueia janela aberta depois de uma espera
+        var token=criarConvite();
+        var link=location.origin+location.pathname+"?convite="+token;
+        var msg="Parabéns, você foi selecionado para uma lista restrita de convidados para elevar o nível do seu negócio com o aplicativo Ariel Tomateiro! Acesse o link e faça seu cadastro (o link vale por 7 dias e só pode ser usado uma vez).\n\n"+link;
         window.open("https://wa.me/"+digitos+"?text="+encodeURIComponent(msg),"_blank");
       });
     }
@@ -4299,10 +4724,27 @@ function registerPWA(){
     window.addEventListener("load",function(){
       navigator.serviceWorker.register("sw.js").catch(function(e){ console.error("service worker",e); });
     });
-    // NÃO existe mais aviso de "nova versão disponível" na tela. O service
-    // worker continua baixando a versão nova por trás e ela passa a valer
-    // sozinha na próxima abertura do app — sem nenhuma faixa, pergunta ou
-    // interrupção no meio de um lançamento.
+    // NÃO existe aviso de "nova versão disponível" na tela. Quando uma versão
+    // nova é publicada, o celular a baixa por trás assim que o app abre; se
+    // isso termina nos primeiros segundos (ainda na tela de carregamento ou
+    // sem ninguém ter começado a mexer), o app simplesmente reabre já na
+    // versão nova — parece só um carregamento. Se a pessoa já estiver usando,
+    // nada acontece agora e a versão nova vale na próxima abertura.
+    var tinhaControle=!!navigator.serviceWorker.controller;
+    var abertoEm=Date.now();
+    navigator.serviceWorker.addEventListener("controllerchange",function(){
+      if(!tinhaControle) return;                 // primeira instalação: não há o que atualizar
+      if(Date.now()-abertoEm>12000) return;      // já está em uso: vale na próxima abertura
+      if(document.querySelector(".modal-back")) return;
+      var a=document.activeElement; if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return;
+      if(temCampoEditado(document.body)) return;
+      try{
+        var ult=+(sessionStorage.getItem("ariel_sw_reload")||0);
+        if(Date.now()-ult<60000) return;          // nunca entra em ciclo de recarregar
+        sessionStorage.setItem("ariel_sw_reload",String(Date.now()));
+      }catch(e){ return; }
+      location.reload();
+    });
   }
   if(navigator.storage && navigator.storage.persist){
     navigator.storage.persist().catch(function(){});
