@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="v11">
 <meta charset="utf-8">
 <script>(function(){try{var t=localStorage.getItem("ariel_tema");if(t==="light"){document.documentElement.setAttribute("data-theme","light");}}catch(e){}})();</script>
 <title>Ariel Tomateiro</title>
@@ -598,6 +598,12 @@ tr:hover td{background:var(--overlay-2);}
 .foto-prod-rm svg{width:12px;height:12px;}
 .foto-prod-rm:hover{color:var(--red);border-color:var(--red);}
 .btn-colar{gap:6px;}
+.doc-wrap{position:relative;flex:none;}
+.doc-rm{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:999px;border:1px solid var(--border-2);background:var(--bg-1);color:var(--text-dim);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;}
+.doc-rm svg{width:12px;height:12px;}
+.doc-rm:hover{color:var(--red);border-color:var(--red);}
+.doc-rm[hidden]{display:none;}
+@media (max-width:640px){ .doc-rm{width:28px;height:28px;top:-8px;right:-8px;} }
 .fotos-docs .photo-slot{min-width:0;}
 @media (max-width:420px){ .fotos-docs{grid-template-columns:minmax(0,1fr) !important;} }
 .dica-colar{font-size:11.5px;color:var(--text-faint);margin:10px 0 0;line-height:1.45;}
@@ -693,7 +699,9 @@ input[type=date]::-webkit-datetime-edit{padding:0;}
 .graf-grade{stroke:var(--border);stroke-width:1;}
 .graf-eixo-l{stroke:var(--border-2);stroke-width:1;}
 .graf-svg text{stroke:none;}
-.graf-eixo{stroke:none;fill:var(--text-faint);font-size:11px;font-weight:500;font-family:var(--font-mono);font-variant-numeric:tabular-nums;}
+.graf-eixo{stroke:none;fill:var(--graf-texto);font-size:11px;font-weight:400;font-family:var(--font-mono);font-variant-numeric:tabular-nums;}
+:root{--graf-texto:#f7f5f0;}
+:root[data-theme="light"]{--graf-texto:#000000;}
 .graf-mira{stroke:var(--text-dim);stroke-width:1;stroke-dasharray:3 3;}
 .graf-pop{position:absolute;z-index:3;background:var(--bg-1);border:1px solid var(--border-2);border-radius:var(--radius-m);padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.35);font-size:12.5px;display:flex;flex-direction:column;gap:6px;max-height:calc(100% - 20px);overflow:auto;}
 .graf-pop[hidden]{display:none;}
@@ -731,6 +739,104 @@ input[type=date]::-webkit-datetime-edit{padding:0;}
 
 .lembrete-estado{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-m);color:var(--text-dim);font-size:13px;font-weight:600;margin-top:6px;}
 .lembrete-estado.on{border-color:var(--green);color:var(--green);background:var(--green-bg);}
+
+/* =====================================================================
+   VISUAL v11 — otimização visual (item 7, 02/10/2026)
+   Tudo daqui até "FIM VISUAL v11" só vale quando a tag <html> tem
+   class="v11". Para DESFAZER este item sem mexer em nada mais: tirar o
+   class="v11" da primeira linha do arquivo (ou usar o arquivo
+   "index_sem_item_7.html" da pasta de reversão).
+   ===================================================================== */
+
+/* ---- 1. Modo dia: botão dourado mais claro + faixa de resultado legível ---- */
+html.v11[data-theme="light"]{
+  --bg-4:#efe5cb;
+  --ouro-1:#f0d58f; --ouro-2:#dcb25a; --ouro-borda:#c39a40; --ouro-tinta:#2c2008;
+}
+html.v11[data-theme="light"] .btn.primary{background:linear-gradient(180deg,var(--ouro-1),var(--ouro-2));border-color:var(--ouro-borda);color:var(--ouro-tinta);}
+html.v11[data-theme="light"] .btn.primary:hover{filter:brightness(1.04);}
+html.v11[data-theme="light"] .seg button.active{background:linear-gradient(180deg,var(--ouro-1),var(--ouro-2));color:var(--ouro-tinta);box-shadow:inset 0 0 0 1px var(--ouro-borda);}
+html.v11[data-theme="light"] .admin-badge{background:var(--ouro-2);}
+/* faixa "Valor total / Lucro líquido": no modo dia estava cinza-escuro com texto escuro */
+html.v11[data-theme="light"] .carga-resumo .linha.final{background:var(--bg-4);border-top:2px solid var(--gold-dim);}
+html.v11[data-theme="light"] .carga-resumo .linha.final .rvalue.gold{color:#6a4a12;}
+html.v11[data-theme="light"] .carga-resumo .linha.final .rvalue.pos{color:#146a38;}
+html.v11[data-theme="light"] .carga-resumo .linha.final .rvalue.neg{color:#a82a1e;}
+/* o valor nunca quebra em duas linhas ("R$" de um lado, número do outro) */
+html.v11 .carga-resumo .linha{flex-wrap:nowrap;}
+html.v11 .carga-resumo .linha.final .rvalue{white-space:nowrap;}
+html.v11 .carga-resumo .rvalue{min-width:0;text-align:right;overflow-wrap:anywhere;}
+html.v11 .carga-resumo .rlabel{min-width:0;flex:1 1 0;overflow-wrap:anywhere;}
+html.v11 .carga-resumo .rvalue{flex:0 1 auto;}
+html.v11 .carga-resumo .linha.final .rvalue{flex:none;}
+
+/* ---- 2. Controles segmentados: uma linha só, sem "pílula" de duas linhas ---- */
+html.v11 .seg{max-width:100%;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+html.v11 .seg::-webkit-scrollbar{display:none;}
+html.v11 .seg button{flex:0 0 auto;white-space:nowrap;}
+/* filtro de categoria dos Cadastros (4 nomes compridos): vira grade 2 x 2 no celular */
+@media (max-width:760px){
+  html.v11 .toolbar>.seg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-radius:16px;overflow:visible;}
+  html.v11 .toolbar>.seg button{border-radius:12px;}
+}
+
+/* ---- 3. Documentos da carga (nota, romaneio, foto): uma fileira compacta ---- */
+html.v11 .carga-docs{align-items:flex-start;}
+html.v11 .doc-chip .doc-label{line-height:1.25;}
+
+/* ---- 4. Tabelas: não esticam por toda a largura do computador ---- */
+@media (min-width:761px){
+  html.v11 .itens-carga{max-width:720px;}
+  html.v11 .carga-details{grid-template-columns:repeat(auto-fit,minmax(150px,240px));justify-content:start;}
+}
+
+/* ---- 5. Celular ---- */
+@media (max-width:760px){
+  /* controles segmentados ocupam a linha toda (alvo de toque maior) */
+  html.v11 .seg{display:flex;width:100%;}
+  html.v11 .seg button{flex:1 1 auto;text-align:center;padding:7px 10px;}
+  /* cartões de resumo: o último, se ficar sozinho, ocupa a linha inteira */
+  html.v11 .kpi-row:not(.poucos)>.kpi:last-child:nth-child(odd){grid-column:1 / -1;}
+  /* Cargas e Financeiro: data em cima, os dois botões lado a lado embaixo */
+  html.v11 .page-head .toolbar:has([data-action="exportar-cargas"]),
+  html.v11 .page-head .toolbar:has([data-action="exportar-fin"]){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%;}
+  html.v11 .page-head .toolbar:has([data-action="exportar-cargas"])>input[type="date"],
+  html.v11 .page-head .toolbar:has([data-action="exportar-fin"])>input[type="date"]{grid-column:1 / -1;width:100% !important;}
+  html.v11 .page-head .toolbar:has([data-action="exportar-cargas"])>.btn,
+  html.v11 .page-head .toolbar:has([data-action="exportar-fin"])>.btn{justify-content:center;}
+  html.v11 .page-head .toolbar:has([data-action="exportar-fin"])>.btn.ghost{border-color:var(--border-2);}
+  /* Praça: botão Gráficos + data na mesma linha; mercadoria embaixo, linha inteira */
+  html.v11 .page-head .toolbar>input[type="date"]{flex:1 1 150px;}
+  html.v11 .page-head .toolbar>select{flex:1 1 100%;width:100%;}
+  /* Financeiro (operação aberta): 2 + 2 botões, todos com o mesmo tamanho */
+  html.v11 .fin-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));}
+  html.v11 .fin-actions .btn{justify-content:center;white-space:nowrap;}
+  html.v11 .fin-actions .btn.ghost{border-color:var(--border-2);}
+  html.v11 .cal-cell{aspect-ratio:auto;min-height:46px;}
+  /* nota fiscal / romaneio / foto: as três na mesma fileira, miniatura em cima do nome */
+  html.v11 .carga-docs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+  html.v11 .carga-docs .doc-chip{flex-direction:column;align-items:center;gap:5px;text-align:center;min-width:0;}
+  html.v11 .carga-docs .doc-label{font-size:10.5px;overflow-wrap:anywhere;}
+  html.v11 .carga-docs .doc-chip:nth-child(n+4){grid-column:auto;}
+}
+@media (max-width:360px){
+  /* telas muito estreitas: controle com 4 opções vira grade 2 x 2 */
+  html.v11 .seg:has(>button:nth-child(4)){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-radius:16px;overflow:visible;}
+  html.v11 .seg:has(>button:nth-child(4)) button{border-radius:12px;}
+  html.v11 .carga-resumo .linha.final .rvalue{font-size:17px;}
+  html.v11 .fin-actions .btn{padding-left:8px;padding-right:8px;font-size:12.5px;}
+}
+@media (max-width:480px){
+  /* calendário: na célula estreita o valor em R$ não cabe (ficava cortado); vira uma
+     marca verde/vermelha — o valor completo aparece ao tocar no dia */
+  html.v11 .cal-cell .tag{font-size:0;line-height:0;height:5px;min-height:5px;padding:0;width:62%;margin:4px auto 0;border-radius:3px;background:currentColor;opacity:.8;overflow:hidden;}
+}
+@media (max-width:420px){
+  /* tabelas de caixas (Fechamentos, resumo): cabem sem rolar de lado */
+  html.v11 .tabela-cx th{font-size:9px;padding:7px 5px;letter-spacing:.02em;}
+  html.v11 .tabela-cx td{padding:8px 5px;font-size:12.5px;}
+}
+/* FIM VISUAL v11 */
 </style>
 
 <div id="boot-loading"><img class="bl-logo bl-dark" src="logo-dark.webp" alt=""><img class="bl-logo bl-light" src="logo-light.webp" alt=""><div class="t">carregando…</div></div>
@@ -1865,11 +1971,10 @@ var state={
   mapZoomUF:null,
   finData:todayIso(),
   finDia:null,
-  finModo:"dia",        // "dia" (data selecionada) | "periodo" (De/Até) | "pendentes" (varre os últimos 90 dias)
+  finModo:"dia",        // "dia" (data selecionada) | "periodo" (De/Até)
   finDe:null, finAte:null, finPeriodoDias:null,
   finTipo:"todas",      // todas | compra | venda | casada
   finStatus:"todos",    // todos | paga | pendente_pag | recebida | pendente_rec | definir
-  finPendentes:null,    // cache da varredura do modo Pendentes
   finAberta:null,       // "cargaId|ladoKey|dataIso" da operação com a caixa aberta
   finFormPag:null,      // mesma chave, enquanto o formulário de lançar pagamento está aberto
   seedBannerDia:null,
@@ -2646,17 +2751,12 @@ function statusDisponiveis(tipo,modo){
   var temReceber = (tipo==="todas"||tipo==="venda" ||tipo==="casada");
   return FIN_STATUS_FILTROS.filter(function(f){
     if(f.id==="todos"||f.id==="definir") return true;
-    // no modo Pendentes Futuros nada quitado aparece, então esses dois somem
-    if(modo==="pendentes"&&(f.id==="paga"||f.id==="recebida")) return false;
     if(f.id==="paga"||f.id==="pendente_pag") return temPagar;
     if(f.id==="recebida"||f.id==="pendente_rec") return temReceber;
     return true;
   });
 }
 
-// janela que o modo Pendentes Futuros varre pra trás. 90 dias cobre com folga os prazos
-// praticados (o maior padrão é 30) sem puxar o histórico inteiro da empresa.
-var FIN_JANELA_DIAS=90;
 var FIN_PAGINA=60;
 
 var FIN_MAX_DIAS=186;
@@ -2674,18 +2774,7 @@ async function carregarFinanceiro(){
       .sort(function(a,b){return a.data<b.data?-1:1;});
     return;
   }
-  if(state.finModo==="pendentes"){
-    var ate=todayIso();
-    var de=addDias(ate,-FIN_JANELA_DIAS);
-    var dias=await Store.getDiasNoPeriodo(de,ate);
-    // o recorte do período também é aplicado aqui, e não só na consulta: assim
-    // a tela mostra a mesma janela independente do que o banco devolver
-    state.finPendentes=dias
-      .filter(function(d){ return d && d.data && d.data>=de && d.data<=ate; })
-      .sort(function(a,b){return a.data<b.data?-1:1;});
-  } else {
-    state.finDia=await Store.getDia(state.finData);
-  }
+  state.finDia=await Store.getDia(state.finData);
 }
 
 // todos os lados financeiros visíveis no modo atual, já com filtro de tipo e
@@ -2693,8 +2782,7 @@ async function carregarFinanceiro(){
 // caixa de detalhe saem todos daqui.
 function ladosDoModo(){
   var dias;
-  if(state.finModo==="pendentes") dias=state.finPendentes||[];
-  else if(state.finModo==="periodo") dias=state.finPeriodoDias||[];
+  if(state.finModo==="periodo") dias=state.finPeriodoDias||[];
   else dias=[state.finDia||{data:state.finData,cargas:[]}];
 
   var out=[];
@@ -2707,20 +2795,9 @@ function ladosDoModo(){
     });
   });
 
-  if(state.finModo==="pendentes"){
-    // pendentes = tudo que ainda tem saldo em aberto (inclui "À Definir",
-    // que também é dinheiro não resolvido), nunca o que já foi quitado
-    out=out.filter(function(l){ return l.status.key!=="paga" && l.status.key!=="recebida"; });
-  }
   if(state.finStatus!=="todos") out=out.filter(function(l){ return l.status.key===state.finStatus; });
 
   out.sort(function(a,b){
-    if(state.finModo==="pendentes"){
-      // atrasado primeiro, depois por vencimento mais próximo; sem prazo vai pro fim
-      if(a.status.atrasado!==b.status.atrasado) return a.status.atrasado?-1:1;
-      var av=a.vencimento||"9999-12-31", bv=b.vencimento||"9999-12-31";
-      if(av!==bv) return av<bv?-1:1;
-    }
     if(state.finModo==="periodo" && a.dataIso!==b.dataIso) return a.dataIso<b.dataIso?-1:1;
     return (a.carga.numeroSequencial||0)-(b.carga.numeroSequencial||0);
   });
@@ -3998,15 +4075,58 @@ function pdfEnc(s){
 }
 function pdfNum(n){ return (Math.round(n*100)/100).toString(); }
 
+/* ---- logo preta (fundo transparente) que vai no cabeçalho de todos os PDFs ---- */
+var PDF_EMPRESA="AGRO SELECT ALIMENTOS LTDA - 33.946.350/0001-02";
+var _pdfLogo; // undefined = ainda não tentou | null = não deu | {w,h,rgb,alpha,...}
+async function pdfDeflate(bytes){
+  try{
+    if(typeof CompressionStream!=="undefined"){
+      var rs=new Blob([bytes]).stream().pipeThrough(new CompressionStream("deflate"));
+      var buf=new Uint8Array(await new Response(rs).arrayBuffer());
+      return {bytes:buf,filtro:"/Filter /FlateDecode "};
+    }
+  }catch(e){}
+  return {bytes:bytes,filtro:""};
+}
+async function pdfLogoCarrega(){
+  if(_pdfLogo!==undefined) return _pdfLogo;
+  try{
+    var r=await fetch("logo-light.webp");
+    if(!r.ok) throw new Error("logo");
+    var bmp=await createImageBitmap(await r.blob());
+    var N=192, h=Math.max(1,Math.round(N*bmp.height/bmp.width));
+    var cv=document.createElement("canvas"); cv.width=N; cv.height=h;
+    var g=cv.getContext("2d"); g.clearRect(0,0,N,h); g.drawImage(bmp,0,0,N,h);
+    var d=g.getImageData(0,0,N,h).data, n=N*h;
+    var rgb=new Uint8Array(n*3), al=new Uint8Array(n);
+    for(var i=0;i<n;i++){ rgb[i*3]=d[i*4]; rgb[i*3+1]=d[i*4+1]; rgb[i*3+2]=d[i*4+2]; al[i]=d[i*4+3]<48?0:d[i*4+3]; } // some o "chuvisco" quase invisível das bordas
+    var c1=await pdfDeflate(rgb), c2=await pdfDeflate(al);
+    _pdfLogo={w:N,h:h,rgb:c1.bytes,rgbF:c1.filtro,alpha:c2.bytes,alphaF:c2.filtro};
+  }catch(e){ _pdfLogo=null; }
+  return _pdfLogo;
+}
+function pdfBin(u8){
+  var s="", k=8192;
+  for(var i=0;i<u8.length;i+=k) s+=String.fromCharCode.apply(null,u8.subarray(i,i+k));
+  return s;
+}
+
+/* ---- motor do PDF: página A4, cabeçalho com logo em todas as páginas,
+   tabelas, cartões de resumo e caixas. Sem biblioteca. ---- */
 function criaPdf(opt){
   opt=opt||{};
-  var W=opt.paisagem?841.89:595.28, H=opt.paisagem?595.28:841.89, M=opt.margem||40;
-  var CW=W-2*M, RODAPE=26;
-  var paginas=[], ops=null, y=0;
-  var COR={txt:[0.10,0.10,0.11],dim:[0.42,0.42,0.45],linha:[0.80,0.80,0.82],fundo:[0.955,0.955,0.96],pos:[0.07,0.50,0.30],neg:[0.78,0.18,0.18],marca:[0.62,0.46,0.10]};
+  var W=opt.paisagem?841.89:595.28, H=opt.paisagem?595.28:841.89, M=opt.paisagem?32:36;
+  var CW=W-2*M, X0=M, LW=CW;
+  var TOPO=88, LIM=H-46;                    // onde o conteúdo começa / termina
+  var paginas=[], ops=null, y=0, caixa=null;
+  var COR={
+    txt:[0.11,0.11,0.12], dim:[0.40,0.40,0.42], linha:[0.84,0.84,0.82],
+    fundo:[0.968,0.965,0.955], zebra:[0.978,0.976,0.968], cab:[0.17,0.15,0.12], branco:[1,1,1],
+    ouro:[0.60,0.44,0.10], ouroClaro:[0.962,0.935,0.855],
+    pos:[0.10,0.45,0.28], neg:[0.70,0.16,0.16], aviso:[0.70,0.43,0.04], azul:[0.16,0.36,0.62]
+  };
   function rgb(c){ return pdfNum(c[0])+" "+pdfNum(c[1])+" "+pdfNum(c[2]); }
 
-  function nova(){ ops=[]; paginas.push(ops); y=M; }
   function txt(x,yb,s,size,o){
     o=o||{};
     var w=pdfLarg(s,size,o.bold);
@@ -4019,15 +4139,36 @@ function criaPdf(opt){
   function ret(x,yt,w,h,cor){
     ops.push(rgb(cor||COR.fundo)+" rg "+pdfNum(x)+" "+pdfNum(H-yt-h)+" "+pdfNum(w)+" "+pdfNum(h)+" re f");
   }
-  function garante(h){ if(y+h>H-M-RODAPE) nova(); }
-  // corta o texto com "..." até caber na largura
+  function contorno(x,yt,w,h,cor,esp){
+    ops.push(rgb(cor||COR.linha)+" RG "+pdfNum(esp||0.6)+" w "+pdfNum(x)+" "+pdfNum(H-yt-h)+" "+pdfNum(w)+" "+pdfNum(h)+" re S");
+  }
+  // cabeçalho padrão: logo preta + nome e CNPJ, em todas as páginas
+  function cabecalho(){
+    var topo=22, alt=42, x=M;
+    if(opt.logo){
+      var lw=alt*opt.logo.w/opt.logo.h;
+      ops.push("q "+pdfNum(lw)+" 0 0 "+pdfNum(alt)+" "+pdfNum(M)+" "+pdfNum(H-topo-alt)+" cm /Im1 Do Q");
+      x=M+lw+11;
+    }
+    txt(x,topo+alt/2+4,PDF_EMPRESA,opt.paisagem?12:11,{bold:true});
+    lin(M,topo+alt+9,M+CW,topo+alt+9,COR.ouro,1.3);
+  }
+  function nova(){ ops=[]; paginas.push(ops); cabecalho(); y=TOPO; }
+  function garante(h){
+    if(y+h>LIM){
+      var dentro=(X0!==M);
+      // se estiver no meio de uma caixa, fecha o contorno na página que acaba
+      if(caixa&&caixa.pg===paginas.length-1){ contorno(M,caixa.y0,CW,y-caixa.y0,COR.linha,0.7); }
+      nova();
+      if(caixa){ caixa.pg=paginas.length-1; caixa.y0=y; }
+    }
+  }
   function cabe(s,w,size,bold){
     s=String(s==null?"":s);
     if(pdfLarg(s,size,bold)<=w) return s;
     while(s.length>1 && pdfLarg(s+"...",size,bold)>w) s=s.slice(0,-1);
     return s+"...";
   }
-  // quebra em linhas que cabem em w
   function quebra(s,w,size,bold){
     var palavras=String(s==null?"":s).split(/\s+/), linhas=[], atual="";
     palavras.forEach(function(p){
@@ -4044,111 +4185,155 @@ function criaPdf(opt){
     get y(){ return y; },
     espaco:function(n){ y+=n; },
     garante:garante,
-    // cabeçalho do documento: marca, título e subtítulo
-    capa:function(marca,titulo,sub){
-      txt(M,y+9,marca,9,{bold:true,cor:COR.marca});
-      y+=24;
-      txt(M,y+12,titulo,18,{bold:true});
-      y+=24;
-      if(sub){ quebra(sub,CW,10,false).forEach(function(l){ txt(M,y+8,l,10,{cor:COR.dim}); y+=14; }); }
-      lin(M,y+4,M+CW,y+4,COR.txt,1);
-      y+=16;
+    // título do documento + subtítulo
+    capa:function(titulo,sub){
+      y+=4;
+      txt(X0,y+17,titulo,20,{bold:true});
+      y+=28;
+      if(sub){ quebra(sub,LW,10,false).forEach(function(l){ txt(X0,y+9,l,10,{cor:COR.dim}); y+=14; }); }
+      y+=10;
     },
-    secao:function(s){
-      garante(34);
-      y+=6;
-      txt(M,y+9,String(s).toUpperCase(),8.5,{bold:true,cor:COR.dim});
-      y+=13;
-      lin(M,y,M+CW,y,COR.linha,0.6);
-      y+=7;
-    },
-    titulo:function(s,dir,corDir){
-      garante(28);
-      txt(M,y+11,s,12,{bold:true});
-      if(dir) txt(M+CW,y+11,dir,9.5,{bold:true,align:"r",cor:corDir||COR.dim});
-      y+=19;
+    // título de seção: texto em caixa alta dourada + fio
+    secao:function(s,hMin){
+      garante(Math.max(78,hMin||0));                       // o título nunca fica sozinho no fim da página
+      y+=12;
+      txt(X0,y+8,String(s).toUpperCase(),8.5,{bold:true,cor:COR.ouro});
+      y+=14;
+      lin(X0,y,X0+LW,y,COR.linha,0.6);
+      lin(X0,y,X0+26,y,COR.ouro,1.6);
+      y+=9;
     },
     texto:function(s,o){
       o=o||{}; var size=o.size||10;
-      quebra(s,CW,size,o.bold).forEach(function(l){ garante(size+5); txt(M,y+size,l,size,{bold:o.bold,cor:o.cor||COR.txt}); y+=size+4.5; });
+      quebra(s,LW,size,o.bold).forEach(function(l){ garante(size+6); txt(X0,y+size,l,size,{bold:o.bold,cor:o.cor||COR.txt}); y+=size+4.5; });
     },
-    // "rótulo ........ valor" (resumo)
+    // "rótulo ........ valor"
     kv:function(rot,val,o){
       o=o||{}; var size=o.size||10;
-      garante(size+7);
-      if(o.fundo) ret(M,y-2,CW,size+7,COR.fundo);
-      txt(M+(o.fundo?6:0),y+size+0.5,rot,size,{bold:o.bold,cor:o.cor||COR.dim});
-      txt(M+CW-(o.fundo?6:0),y+size+0.5,val,size,{bold:o.bold||o.forte,align:"r",cor:o.corVal||COR.txt});
-      y+=size+7;
+      garante(size+10);
+      if(o.fundo) ret(X0,y-1,LW,size+9,COR.ouroClaro);
+      txt(X0+(o.fundo?8:0),y+size+1.5,rot,size,{bold:o.bold,cor:o.cor||COR.dim});
+      txt(X0+LW-(o.fundo?8:0),y+size+1.5,val,size,{bold:o.bold||o.forte,align:"r",cor:o.corVal||COR.txt});
+      y+=size+9;
+      if(!o.fundo) lin(X0,y-3,X0+LW,y-3,COR.linha,0.4);
     },
-    // várias colunas de resumo lado a lado: [{r:"A pagar",v:"R$ 1,00",cor}]
+    // cartões de resumo lado a lado: [{r:"A pagar",v:"R$ 1,00",cor}]
     cartoes:function(lista){
-      garante(46);
-      var n=lista.length, gap=8, w=(CW-gap*(n-1))/n;
+      garante(54);
+      var n=lista.length, gap=8, w=(LW-gap*(n-1))/n;
       lista.forEach(function(k,i){
-        var x=M+i*(w+gap);
-        ret(x,y,w,40,COR.fundo);
-        txt(x+8,y+14,k.r,7.5,{bold:true,cor:COR.dim});
-        txt(x+8,y+32,k.v,12.5,{bold:true,cor:k.cor||COR.txt});
+        var x=X0+i*(w+gap), tam=14;
+        ret(x,y,w,46,COR.fundo);
+        contorno(x,y,w,46,COR.linha,0.5);
+        ret(x,y,w,2.4,COR.ouro);
+        txt(x+9,y+17,k.r,6.8,{bold:true,cor:COR.dim});
+        while(tam>8.5 && pdfLarg(k.v,tam,true)>w-16) tam-=0.5;
+        txt(x+9,y+37,k.v,tam,{bold:true,cor:k.cor||COR.txt});
       });
-      y+=50;
+      y+=58;
     },
-    /* tabela: cols=[{t,w(fração ou pontos),a:"l"|"r"}], linhas=[[...],...];
-       uma linha pode ser {c:[...],b:true(negrito),topo:true(linha acima)} */
-    tabela:function(cols,linhas,o){
-      o=o||{}; var size=o.size||9, alt=o.alt||(size+8.5);
-      var soma=0; cols.forEach(function(c){ soma+=(c.w<=1?c.w*CW:c.w); });
-      var esc=soma>CW?CW/soma:1, xs=[], x=M;
-      cols.forEach(function(c){ var w=(c.w<=1?c.w*CW:c.w)*esc; xs.push({x:x,w:w}); x+=w; });
-      function cab(){
-        ret(M,y,CW,alt+1,COR.fundo);
-        cols.forEach(function(c,i){
-          var px=c.a==="r"?xs[i].x+xs[i].w-5:xs[i].x+5;
-          txt(px,y+alt-3,cabe(String(c.t).toUpperCase(),xs[i].w-10,7,true),7,{bold:true,cor:COR.dim,align:c.a==="r"?"r":"l"});
+    // pares rótulo/valor em colunas: [["Placa","ABC-1D23"],...]
+    grade:function(pares,ncol){
+      ncol=ncol||pares.length; var w=LW/ncol;
+      for(var i=0;i<pares.length;i+=ncol){
+        garante(34);
+        pares.slice(i,i+ncol).forEach(function(p,j){
+          var x=X0+j*w;
+          txt(x,y+8,String(p[0]).toUpperCase(),6.6,{bold:true,cor:COR.dim});
+          txt(x,y+22,cabe(p[1],w-10,10,true),10,{bold:true,cor:p[2]||COR.txt});
         });
-        y+=alt+1;
+        y+=32;
       }
-      garante(alt*3); cab();
-      linhas.forEach(function(L){
-        var cel=L.c||L, b=!!L.b;
-        if(y+alt>H-M-RODAPE){ nova(); cab(); }
-        if(L.topo) lin(M,y,M+CW,y,COR.txt,0.8);
+    },
+    // faixa de título de um bloco (ex.: "Carga nº 3 · Venda"  ........  Entregue)
+    faixa:function(esq,dir,corDir){
+      ret(M,y,CW,27,COR.ouroClaro);
+      ret(M,y,3,27,COR.ouro);
+      txt(M+13,y+17.5,esq,11,{bold:true});
+      if(dir) txt(M+CW-12,y+17.5,dir,9.5,{bold:true,align:"r",cor:corDir||COR.dim});
+      y+=27;
+    },
+    // blocos com contorno: mantém o conteúdo junto e, dentro, recua as laterais
+    caixaIni:function(hEst){
+      garante(hEst);
+      caixa={pg:paginas.length-1,y0:y};
+    },
+    caixaFim:function(){
+      if(caixa&&caixa.pg===paginas.length-1) contorno(M,caixa.y0,CW,y-caixa.y0,COR.linha,0.7);
+      caixa=null;
+    },
+    dentro:function(sim){ if(sim){ X0=M+12; LW=CW-24; } else { X0=M; LW=CW; } },
+    /* tabela: cols=[{t,w(fração ou pontos),a:"l"|"r",q:true(quebra linha)}], linhas=[[...],...];
+       uma linha pode ser {c:[...],b:true,topo:true} — "topo" é a linha de total */
+    tabela:function(cols,linhas,o){
+      o=o||{}; var size=o.size||9, alt=o.alt||(size+9.5), lh=size+2.6;
+      var soma=0; cols.forEach(function(c){ soma+=(c.w<=1?c.w*LW:c.w); });
+      var esc=soma>LW||o.ajusta?LW/soma:1, xs=[], x=X0;
+      cols.forEach(function(c){ var w=(c.w<=1?c.w*LW:c.w)*esc; xs.push({x:x,w:w}); x+=w; });
+      function cab(){
+        ret(X0,y,LW,alt+2,COR.cab);
         cols.forEach(function(c,i){
+          var px=c.a==="r"?xs[i].x+xs[i].w-6:xs[i].x+6;
+          txt(px,y+alt/2+4,cabe(String(c.t).toUpperCase(),xs[i].w-12,7,true),7,{bold:true,cor:COR.branco,align:c.a==="r"?"r":"l"});
+        });
+        y+=alt+2;
+      }
+      garante(alt*3+4); cab();
+      linhas.forEach(function(L,li){
+        var cel=L.c||L, b=!!L.b, tot=!!L.topo;
+        var celulas=cols.map(function(c,i){
           var v=cel[i], cor=COR.txt;
           if(v&&typeof v==="object"){ cor=v.cor||COR.txt; v=v.t; }
-          v=cabe(v==null?"":v,xs[i].w-10,size,b);
-          var px=c.a==="r"?xs[i].x+xs[i].w-5:xs[i].x+5;
-          txt(px,y+alt-4.5,v,size,{bold:b,align:c.a==="r"?"r":"l",cor:cor});
+          v=v==null?"":String(v);
+          var ls=c.q?quebra(v,xs[i].w-12,size,b):[cabe(v,xs[i].w-12,size,b)];
+          return {ls:ls,cor:cor};
         });
-        y+=alt;
-        if(!L.topo) lin(M,y,M+CW,y,COR.linha,0.4);
+        var nl=1; celulas.forEach(function(c){ if(c.ls.length>nl) nl=c.ls.length; });
+        var rh=nl>1?nl*lh+8:alt;
+        if(y+rh>LIM){ garante(1e5); cab(); }
+        if(tot) ret(X0,y,LW,rh,COR.ouroClaro); else if(li%2===1) ret(X0,y,LW,rh,COR.zebra);
+        var pad=(rh-nl*lh)/2;
+        celulas.forEach(function(c,i){
+          var px=cols[i].a==="r"?xs[i].x+xs[i].w-6:xs[i].x+6;
+          c.ls.forEach(function(l,k){
+            txt(px,y+pad+size*0.86+1.3+k*lh,l,size,{bold:b||tot,align:cols[i].a==="r"?"r":"l",cor:c.cor});
+          });
+        });
+        y+=rh;
+        if(tot) lin(X0,y-rh,X0+LW,y-rh,COR.ouro,0.9);
+        lin(X0,y,X0+LW,y,tot?COR.ouro:COR.linha,tot?0.9:0.4);
       });
-      y+=6;
+      y+=8;
     },
     // gera os bytes do arquivo
     gerar:function(rodape){
       var n=paginas.length, objs=[];
       function add(s){ objs.push(s); return objs.length; }
-      add("<< /Type /Catalog /Pages 2 0 R >>");                 // 1
-      add("");                                                    // 2 (preenchido depois)
-      add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>");       // 3
-      add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>");   // 4
+      add("<< /Type /Catalog /Pages 2 0 R >>");
+      add("");
+      add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>");
+      add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>");
+      var xobj="";
+      if(opt.logo){
+        var L=opt.logo;
+        var sm=add("<< /Type /XObject /Subtype /Image /Width "+L.w+" /Height "+L.h+" /ColorSpace /DeviceGray /BitsPerComponent 8 "+L.alphaF+"/Length "+L.alpha.length+" >>\nstream\n"+pdfBin(L.alpha)+"\nendstream");
+        var im=add("<< /Type /XObject /Subtype /Image /Width "+L.w+" /Height "+L.h+" /ColorSpace /DeviceRGB /BitsPerComponent 8 /SMask "+sm+" 0 R "+L.rgbF+"/Length "+L.rgb.length+" >>\nstream\n"+pdfBin(L.rgb)+"\nendstream");
+        xobj=" /XObject << /Im1 "+im+" 0 R >>";
+      }
       var kids=[];
       paginas.forEach(function(p,i){
-        // rodapé com número da página, em todas
-        var conteudo=p.slice();
-        var rod=rodape||"";
-        conteudo.push("BT /F1 7.5 Tf "+rgb(COR.dim)+" rg "+pdfNum(M)+" "+pdfNum(M*0.55)+" Td ("+pdfEnc(rod)+") Tj ET");
-        var pg="Página "+(i+1)+" de "+n, wpg=pdfLarg(pg,7.5,false);
-        conteudo.push("BT /F1 7.5 Tf "+rgb(COR.dim)+" rg "+pdfNum(W-M-wpg)+" "+pdfNum(M*0.55)+" Td ("+pdfEnc(pg)+") Tj ET");
-        var stream=conteudo.join("\n");
+        ops=p;
+        lin(M,H-30,M+CW,H-30,COR.linha,0.5);
+        txt(M,H-19,rodape||"",7.5,{cor:COR.dim});
+        txt(M+CW,H-19,"Página "+(i+1)+" de "+n,7.5,{cor:COR.dim,align:"r"});
+        var stream=p.join("\n");
         var idPag=objs.length+1, idCont=idPag+1;
-        add("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 "+pdfNum(W)+" "+pdfNum(H)+"] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents "+idCont+" 0 R >>");
+        add("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 "+pdfNum(W)+" "+pdfNum(H)+"] /Resources << /Font << /F1 3 0 R /F2 4 0 R >>"+xobj+" >> /Contents "+idCont+" 0 R >>");
         add("<< /Length "+stream.length+" >>\nstream\n"+stream+"\nendstream");
         kids.push(idPag+" 0 R");
       });
       objs[1]="<< /Type /Pages /Kids ["+kids.join(" ")+"] /Count "+n+" >>";
-      var info=add("<< /Title ("+pdfEnc(opt.titulo||"Ariel Tomateiro")+") /Producer (Ariel Tomateiro) >>");
+      var info=add("<< /Title ("+pdfEnc(opt.titulo||"Ariel Tomateiro")+") /Producer (Ariel Tomateiro) /Author (Agro Select Alimentos Ltda) >>");
       var out="%PDF-1.4\n", offs=[];
       objs.forEach(function(o,i){ offs.push(out.length); out+=(i+1)+" 0 obj\n"+o+"\nendobj\n"; });
       var xref=out.length;
@@ -4164,26 +4349,23 @@ function criaPdf(opt){
 }
 
 /* ============ Exportar em PDF (cargas e financeiro) ============
-   Cargas: uma carga, o dia ou um período. Financeiro: uma operação, o dia, o
-   período ou os pendentes. REGRA FIXA: o operacional nunca recebe valor em
-   PDF nenhum — "comValores" só é verdadeiro para administrador, e mesmo assim
-   os dados de preço só existem na memória de quem é administrador. */
+   Cargas: uma carga, o dia ou um período. Financeiro: uma operação, o dia ou o
+   período. REGRA FIXA: o operacional nunca recebe valor em PDF nenhum —
+   "comValores" só é verdadeiro para administrador, e mesmo assim os dados de
+   preço só existem na memória de quem é administrador. */
 var PDF_TIPO={compra:"Compra",venda:"Venda",casada:"Compra casada"};
-function pdfMarca(){
-  var e=state.empresa||{};
-  return ("ARIEL TOMATEIRO"+(e.nomeFantasia?" · "+e.nomeFantasia:"")).toUpperCase();
-}
 function pdfAgora(){
   var d=new Date();
   return pad(d.getDate())+"/"+pad(d.getMonth()+1)+"/"+d.getFullYear()+" "+pad(d.getHours())+":"+pad(d.getMinutes());
 }
-function pdfRodape(){ return "Ariel Tomateiro · gerado em "+pdfAgora(); }
+function pdfRodape(){ return "Documento gerado em "+pdfAgora()+" pelo app Ariel Tomateiro"; }
 function pdfNomeArquivo(base,de,ate){
   return base+"-"+(ate&&ate!==de?de+"_a_"+ate:de)+".pdf";
 }
-function pdfPartes(c){
-  if(c.tipo==="casada") return "Fornecedor: "+c.nome+"  ->  Comprador: "+(c.clienteNome||"—");
-  return (c.tipo==="compra"?"Fornecedor: ":"Cliente: ")+c.nome;
+function pdfStatusCor(doc,s){ return s==="entregue"?doc.COR.pos:(s==="transporte"?doc.COR.azul:doc.COR.aviso); }
+function pdfStatusFinCor(doc,st){
+  if(st.key==="paga"||st.key==="recebida") return doc.COR.pos;
+  return st.atrasado?doc.COR.neg:doc.COR.aviso;
 }
 // soma de caixas por tipo de mercadoria, separada em compra / venda / casada
 function agregaMercs(ops){
@@ -4218,8 +4400,8 @@ function pdfTabelaCaixas(doc,mercs){
     tot.compra+=m.compra; tot.venda+=m.venda; tot.casada+=m.casada; tot.total+=m.total;
     return [m.nome,m.compra?fmtNum(m.compra):"—",m.venda?fmtNum(m.venda):"—",m.casada?fmtNum(m.casada):"—",fmtNum(m.total)];
   });
-  linhas.push({c:["Total",fmtNum(tot.compra),fmtNum(tot.venda),fmtNum(tot.casada),fmtNum(tot.total)],b:true,topo:true});
-  doc.tabela([{t:"Mercadoria",w:.4},{t:"Compras",w:.15,a:"r"},{t:"Vendas",w:.15,a:"r"},{t:"Casadas",w:.15,a:"r"},{t:"Total",w:.15,a:"r"}],linhas);
+  linhas.push({c:["Total",fmtNum(tot.compra),fmtNum(tot.venda),fmtNum(tot.casada),fmtNum(tot.total)],topo:true});
+  doc.tabela([{t:"Mercadoria",w:.40},{t:"Compras",w:.15,a:"r"},{t:"Vendas",w:.15,a:"r"},{t:"Casadas",w:.15,a:"r"},{t:"Total de caixas",w:.15,a:"r"}],linhas);
 }
 
 // itens da carga (com ou sem preço) como tabela do PDF
@@ -4230,7 +4412,7 @@ function pdfTabelaItens(doc,c,comValores){
   if(!comValores){
     cols=[{t:"Mercadoria",w:.7},{t:"Caixas",w:.3,a:"r"}];
     linhas=its.map(function(it){ return [it.mercadoriaNome||"sem tipo",fmtNum(it.quantidadeCaixas)]; });
-    linhas.push({c:["Total",fmtNum(totalCx)],b:true,topo:true});
+    linhas.push({c:["Total",fmtNum(totalCx)],topo:true});
   } else if(casada){
     cols=[{t:"Mercadoria",w:.28},{t:"Caixas",w:.10,a:"r"},{t:"Compra/cx",w:.15,a:"r"},{t:"Venda/cx",w:.15,a:"r"},{t:"Total compra",w:.16,a:"r"},{t:"Total venda",w:.16,a:"r"}];
     linhas=its.map(function(it){
@@ -4238,14 +4420,14 @@ function pdfTabelaItens(doc,c,comValores){
         it.preco==null?"—":fmtMoney(it.preco*it.quantidadeCaixas),it.precoVenda==null?"—":fmtMoney(it.precoVenda*it.quantidadeCaixas)];
     });
     var tc=totalCompra(c), tv=totalVenda(c);
-    linhas.push({c:["Total",fmtNum(totalCx),"","",tc==null?"—":fmtMoney(tc),tv==null?"—":fmtMoney(tv)],b:true,topo:true});
+    linhas.push({c:["Total",fmtNum(totalCx),"","",tc==null?"—":fmtMoney(tc),tv==null?"—":fmtMoney(tv)],topo:true});
   } else {
     cols=[{t:"Mercadoria",w:.40},{t:"Caixas",w:.15,a:"r"},{t:"Preço/cx",w:.20,a:"r"},{t:"Subtotal",w:.25,a:"r"}];
     linhas=its.map(function(it){
       return [it.mercadoriaNome||"sem tipo",fmtNum(it.quantidadeCaixas),it.preco==null?"—":fmtMoney(it.preco),it.preco==null?"—":fmtMoney(it.preco*it.quantidadeCaixas)];
     });
     var t1=totalCompra(c);
-    linhas.push({c:["Total",fmtNum(totalCx),"",t1==null?"—":fmtMoney(t1)],b:true,topo:true});
+    linhas.push({c:["Total",fmtNum(totalCx),"",t1==null?"—":fmtMoney(t1)],topo:true});
   }
   doc.tabela(cols,linhas);
 }
@@ -4265,43 +4447,41 @@ function pdfResultadoCarga(doc,c,destaque){
     doc.kv("Valor total",fmtMoney(tC),{bold:true,fundo:true});
   }
 }
-// bloco de uma carga (usado no PDF de uma carga, do dia e do período)
-function pdfBlocoCarga(doc,c,dataIso,comValores,mostrarData){
-  doc.garante(120);
-  doc.titulo("Carga nº "+(c.numeroSequencial||"—")+" · "+PDF_TIPO[c.tipo],statusInfo(c.status).label);
-  doc.texto(pdfPartes(c),{size:9.5});
-  doc.texto((mostrarData?"Data "+fmtDateBR(dataIso)+" · ":"")+"Placa "+(c.placa||"—")+" · "+fmtNum(c.quantidadeCaixas||0)+" caixas",{size:9,cor:doc.COR.dim});
-  doc.espaco(3);
+// quadro de uma carga — o MESMO desenho no PDF de uma carga, do dia e do período
+function pdfCardCarga(doc,c,dataIso,comValores){
+  var its=itensCarga(c), casada=c.tipo==="casada";
+  doc.caixaIni(27+10+(casada?66:34)+(its.length+2)*19+(comValores?(casada?110:34):6));
+  doc.faixa("Carga nº "+(c.numeroSequencial||"—")+"   ·   "+PDF_TIPO[c.tipo],statusInfo(c.status).label,pdfStatusCor(doc,c.status));
+  doc.dentro(true);
+  doc.espaco(10);
+  var g=[];
+  g.push([c.tipo==="venda"?"Cliente":"Fornecedor",c.nome||"—"]);
+  if(casada) g.push(["Comprador",c.clienteNome||"—"]);
+  g.push(["Placa",c.placa||"—"]);
+  g.push(["Total de caixas",fmtNum(c.quantidadeCaixas||0)+" cx"]);
+  doc.grade(g,Math.min(g.length,4));
   pdfTabelaItens(doc,c,comValores);
   if(comValores) pdfResultadoCarga(doc,c,true);
-  doc.espaco(8);
+  doc.dentro(false);
+  doc.espaco(4);
+  doc.caixaFim();
+  doc.espaco(14);
 }
-function pdfCargaUnica(c,dataIso){
-  var comValores=souAdmin();
-  var doc=criaPdf({titulo:"Carga nº "+(c.numeroSequencial||"")});
-  doc.capa(pdfMarca(),"Resumo da carga nº "+(c.numeroSequencial||"—"),fmtDateBR(dataIso)+" · "+PDF_TIPO[c.tipo]+" · "+statusInfo(c.status).label);
-  doc.kv("Operação",PDF_TIPO[c.tipo]);
-  doc.kv(c.tipo==="casada"?"Fornecedor":(c.tipo==="compra"?"Fornecedor":"Cliente"),c.nome||"—");
-  if(c.tipo==="casada") doc.kv("Comprador",c.clienteNome||"—");
-  doc.kv("Placa",c.placa||"—");
-  doc.kv("Status",statusInfo(c.status).label);
-  doc.kv("Total de caixas",fmtNum(c.quantidadeCaixas||0)+" cx",{bold:true});
-  doc.secao("Mercadorias");
-  pdfTabelaItens(doc,c,comValores);
-  if(comValores){ doc.secao("Valores"); pdfResultadoCarga(doc,c,true); }
-  return {bytes:doc.gerar(pdfRodape()),nome:"carga-"+(c.numeroSequencial||"x")+"-"+dataIso+".pdf"};
-}
-// dias=[{data,cargas}] (já filtrado por tipo, se for o caso)
-function pdfCargasDocumento(dias,de,ate,filtroTxt){
+/* dias=[{data,cargas}] (já filtrado por tipo, se for o caso). Serve para uma
+   carga só (op.unica), para o dia e para o período — mesmo padrão nos três. */
+async function pdfCargasDocumento(dias,de,ate,filtroTxt,op){
+  op=op||{};
   var comValores=souAdmin();
   var ops=[];
   dias.forEach(function(d){ (d.cargas||[]).forEach(function(c){ ops.push({c:c,data:d.data}); }); });
   var umDia=(de===ate);
-  var doc=criaPdf({titulo:"Cargas"});
+  var doc=criaPdf({titulo:op.titulo||"Cargas",logo:await pdfLogoCarrega()});
   var sub=(umDia?fmtDateBR(de):fmtDateBR(de)+" a "+fmtDateBR(ate))+(filtroTxt?" · "+filtroTxt:"");
-  doc.capa(pdfMarca(),umDia?"Cargas do dia":"Cargas do período",sub);
+  doc.capa(op.titulo||(umDia?"Cargas do dia":"Cargas do período"),sub);
   var totCx=ops.reduce(function(a,o){return a+(o.c.quantidadeCaixas||0);},0);
-  var cartoes=[{r:"CARGAS",v:String(ops.length)},{r:"CAIXAS",v:fmtNum(totCx)}];
+  var cartoes=[];
+  if(!op.unica) cartoes.push({r:"CARGAS",v:String(ops.length)});
+  cartoes.push({r:"CAIXAS",v:fmtNum(totCx)});
   if(comValores){
     var calc=calcDia({cargas:ops.map(function(o){return o.c;})});
     cartoes.push({r:"ENTRADAS (VENDAS)",v:fmtMoney(calc.entradas)});
@@ -4315,12 +4495,16 @@ function pdfCargasDocumento(dias,de,ate,filtroTxt){
     pdfTabelaCaixas(doc,agregaMercs(ops));
     dias.forEach(function(d){
       if(!(d.cargas||[]).length) return;
-      doc.secao(umDia?"Cargas":fmtDateBR(d.data));
+      doc.secao(umDia?(op.unica?"Carga":"Cargas"):fmtDateBR(d.data));
       var lista=d.cargas.slice().sort(function(a,b){return (a.numeroSequencial||0)-(b.numeroSequencial||0);});
-      lista.forEach(function(c){ pdfBlocoCarga(doc,c,d.data,comValores,false); });
+      lista.forEach(function(c){ pdfCardCarga(doc,c,d.data,comValores); });
     });
   }
-  return {bytes:doc.gerar(pdfRodape()),nome:pdfNomeArquivo("cargas",de,ate)};
+  return {bytes:doc.gerar(pdfRodape()),nome:op.nome||pdfNomeArquivo("cargas",de,ate)};
+}
+function pdfCargaUnica(c,dataIso){
+  return pdfCargasDocumento([{data:dataIso,cargas:[c]}],dataIso,dataIso,"",
+    {unica:true,titulo:"Resumo da carga nº "+(c.numeroSequencial||"—"),nome:"carga-"+(c.numeroSequencial||"x")+"-"+dataIso+".pdf"});
 }
 
 /* ---- Financeiro ---- */
@@ -4334,39 +4518,60 @@ function pdfDetalhePagamento(p){
   if(p.obs) partes.push(p.obs);
   return partes.join(" · ");
 }
+// um lado da operação (pagamento ao fornecedor / recebimento do cliente)
 function pdfFinLado(doc,l){
-  var st=l.status;
-  doc.secao(l.rotulo+" · "+l.contraparte);
-  doc.kv("Situação",st.label);
-  doc.kv("Valor total",fmtMoney(l.total));
-  doc.kv(l.dir==="pagar"?"Já pago":"Já recebido",fmtMoney(l.pagos),{corVal:doc.COR.pos});
-  doc.kv("Em aberto",fmtMoney(l.falta),{bold:true,fundo:true,corVal:l.falta>0?doc.COR.neg:doc.COR.pos});
-  doc.kv("Condição de pagamento",l.fin.prazoId===PRAZO_DATA?"Data escolhida":(l.fin.prazoNome||"À definir"));
-  doc.kv("Vencimento",vencTexto(l));
-  var pags=(l.fin.pagamentos||[]).slice().sort(function(a,b){return a.data<b.data?-1:1;});
+  var st=l.status, pags=(l.fin.pagamentos||[]).slice().sort(function(a,b){return a.data<b.data?-1:1;});
+  doc.caixaIni(27+10+68+(pags.length+3)*20);
+  doc.faixa(l.rotulo+"   ·   "+l.contraparte,st.label,pdfStatusFinCor(doc,st));
+  doc.dentro(true);
+  doc.espaco(10);
+  doc.grade([
+    ["Valor total",fmtMoney(l.total)],
+    [l.dir==="pagar"?"Já pago":"Já recebido",fmtMoney(l.pagos),doc.COR.pos],
+    ["Em aberto",fmtMoney(l.falta),l.falta>0?doc.COR.neg:doc.COR.pos]
+  ],3);
+  doc.grade([
+    ["Condição de pagamento",l.fin.prazoId===PRAZO_DATA?"Data escolhida":(l.fin.prazoNome||"À definir")],
+    ["Vencimento",vencTexto(l)]
+  ],2);
+  if(!pags.length){ doc.texto("Nenhum pagamento lançado ainda.",{size:9,cor:doc.COR.dim}); }
+  else{
+    doc.tabela([{t:"Data",w:.15},{t:"Meio",w:.20},{t:"Valor",w:.18,a:"r"},{t:"Detalhes",w:.47,q:true}],
+      pags.map(function(p){ return [fmtDateBR(p.data),meioLabel(p.meio),fmtMoney(p.valor),pdfDetalhePagamento(p)]; }));
+  }
+  doc.dentro(false);
   doc.espaco(4);
-  if(!pags.length){ doc.texto("Nenhum pagamento lançado ainda.",{size:9,cor:doc.COR.dim}); return; }
-  doc.tabela([{t:"Data",w:.15},{t:"Meio",w:.20},{t:"Valor",w:.18,a:"r"},{t:"Detalhes",w:.47}],
-    pags.map(function(p){ return [fmtDateBR(p.data),meioLabel(p.meio),fmtMoney(p.valor),pdfDetalhePagamento(p)]; }));
+  doc.caixaFim();
+  doc.espaco(14);
 }
-function pdfFinOperacao(c,dataIso){
-  var doc=criaPdf({titulo:"Operação nº "+(c.numeroSequencial||"")});
-  doc.capa(pdfMarca(),"Resumo da operação nº "+(c.numeroSequencial||"—"),fmtDateBR(dataIso)+" · "+PDF_TIPO[c.tipo]+" · "+statusInfo(c.status).label);
-  doc.kv("Operação",PDF_TIPO[c.tipo]);
-  doc.kv(c.tipo==="venda"?"Cliente":"Fornecedor",c.nome||"—");
-  if(c.tipo==="casada") doc.kv("Comprador",c.clienteNome||"—");
-  doc.kv("Placa",c.placa||"—");
-  doc.kv("Total de caixas",fmtNum(c.quantidadeCaixas||0)+" cx",{bold:true});
+async function pdfFinOperacao(c,dataIso){
+  var doc=criaPdf({titulo:"Operação nº "+(c.numeroSequencial||""),logo:await pdfLogoCarrega()});
+  var lados=ladosFin(c,dataIso);
+  doc.capa("Resumo da operação nº "+(c.numeroSequencial||"—"),fmtDateBR(dataIso)+" · "+PDF_TIPO[c.tipo]+" · "+statusInfo(c.status).label);
+  var cartoes=[{r:"CAIXAS",v:fmtNum(c.quantidadeCaixas||0)}];
+  lados.forEach(function(l){
+    var pagar=l.dir==="pagar";
+    cartoes.push({r:pagar?"TOTAL DA COMPRA":"TOTAL DA VENDA",v:fmtMoney(l.total)});
+    cartoes.push({r:pagar?"A PAGAR":"A RECEBER",v:fmtMoney(l.falta),cor:l.falta>0?doc.COR.neg:doc.COR.pos});
+  });
+  doc.cartoes(cartoes);
+  var g=[["Operação",PDF_TIPO[c.tipo]],[c.tipo==="venda"?"Cliente":"Fornecedor",c.nome||"—"]];
+  if(c.tipo==="casada") g.push(["Comprador",c.clienteNome||"—"]);
+  g.push(["Placa",c.placa||"—"]);
+  doc.secao("Dados da operação");
+  doc.grade(g,Math.min(g.length,4));
   doc.secao("Mercadorias");
   pdfTabelaItens(doc,c,true);
-  doc.secao("Resultado");
+  doc.secao("Pagamentos e recebimentos");
+  lados.forEach(function(l){ pdfFinLado(doc,l); });
+  // o resultado vem DEPOIS das operações de pagamento e recebimento
+  doc.secao("Resultado",c.tipo==="casada"?(5+(c.despesasExtras||[]).length)*19+40:70);
   pdfResultadoCarga(doc,c,true);
-  ladosFin(c,dataIso).forEach(function(l){ pdfFinLado(doc,l); });
   return {bytes:doc.gerar(pdfRodape()),nome:"operacao-"+(c.numeroSequencial||"x")+"-"+dataIso+".pdf"};
 }
-function pdfFinLista(lados,tituloDoc,sub,nomeArq){
-  var doc=criaPdf({titulo:tituloDoc,paisagem:true});
-  doc.capa(pdfMarca(),tituloDoc,sub);
+async function pdfFinLista(lados,tituloDoc,sub,nomeArq){
+  var doc=criaPdf({titulo:tituloDoc,paisagem:true,logo:await pdfLogoCarrega()});
+  doc.capa(tituloDoc,sub);
   var tot=totaisFin(lados);
   var saldo=tot.aReceber-tot.aPagar;
   doc.cartoes([
@@ -4384,18 +4589,21 @@ function pdfFinLista(lados,tituloDoc,sub,nomeArq){
       var tipo=c.tipo==="casada"?(l.dir==="pagar"?"Casada · pagto":"Casada · receb."):PDF_TIPO[c.tipo];
       return [fmtDateBR(l.dataIso),String(c.numeroSequencial||"—"),tipo,l.contraparte,itensResumoTexto(c),fmtNum(c.quantidadeCaixas||0),
         l.total==null?"—":fmtMoney(l.total),fmtMoney(l.pagos),l.total==null?"—":{t:fmtMoney(l.falta),cor:l.falta>0?doc.COR.neg:doc.COR.pos},
-        l.vencimento?fmtDateBR(l.vencimento)+(st.atrasado?" !":""):"—",st.curto||st.label];
+        l.vencimento?fmtDateBR(l.vencimento):"—",{t:st.curto||st.label,cor:pdfStatusFinCor(doc,st)}];
     });
-    doc.tabela([{t:"Data",w:58},{t:"Nº",w:22,a:"r"},{t:"Tipo",w:68},{t:"Contraparte",w:112},{t:"Mercadorias",w:146},{t:"Cx",w:32,a:"r"},
-      {t:"Total",w:66,a:"r"},{t:"Quitado",w:62,a:"r"},{t:"Em aberto",w:66,a:"r"},{t:"Vencimento",w:60},{t:"Situação",w:58}],linhas,{size:8});
-    if(lados.some(function(l){return l.status.atrasado;})) doc.texto("! = vencimento já passou e a operação ainda não foi quitada.",{size:8,cor:doc.COR.dim});
+    doc.tabela([{t:"Data",w:54},{t:"Nº",w:22,a:"r"},{t:"Tipo",w:66,q:true},{t:"Contraparte",w:104,q:true},{t:"Mercadorias",w:146,q:true},{t:"Cx",w:32,a:"r"},
+      {t:"Total",w:66,a:"r"},{t:"Quitado",w:62,a:"r"},{t:"Em aberto",w:66,a:"r"},{t:"Vencimento",w:58},{t:"Situação",w:62,q:true}],linhas,{size:8,ajusta:true});
+    if(lados.some(function(l){return l.status.atrasado;})) doc.texto("Situação em vermelho = vencimento já passou e a operação ainda não foi quitada.",{size:8,cor:doc.COR.dim});
   }
   return {bytes:doc.gerar(pdfRodape()),nome:nomeArq};
 }
 
 /* entrega do arquivo: no celular abre a folha de compartilhar (Salvar em
    Arquivos, WhatsApp, e-mail…); no computador baixa direto */
+// deixa a logo pronta antes do primeiro PDF (assim o botão responde na hora)
+setTimeout(function(){ pdfLogoCarrega(); },4000);
 async function entregaPdf(res){
+  res=await res;
   var blob=new Blob([res.bytes],{type:"application/pdf"});
   var file=null;
   try{ file=new File([blob],res.nome,{type:"application/pdf"}); }catch(e){}
@@ -4868,16 +5076,15 @@ function viewFinanceiro(){
   if(!souAdmin()){
     return '<div class="empty">'+ICONS.lock+'<div class="t">Área restrita</div>O Financeiro é visível apenas para administradores.</div>';
   }
+  if(state.finModo!=="periodo") state.finModo="dia";
   var modo=state.finModo;
   var lados=ladosDoModo();
   var tot=totaisFin(lados);
   var saldo=tot.aReceber-tot.aPagar;
 
-  var lede=modo==="pendentes"
-    ? "Tudo que ainda está em aberto nos últimos "+FIN_JANELA_DIAS+" dias, do mais atrasado para o que vence depois."
-    : modo==="periodo"
-      ? "Operações lançadas entre duas datas, com a situação de pagamento de cada uma."
-      : "Operações lançadas na data selecionada, com a situação de pagamento de cada uma.";
+  var lede=modo==="periodo"
+    ? "Operações lançadas entre duas datas, com a situação de pagamento de cada uma. Para ver só o que falta pagar ou receber, filtre pelo status."
+    : "Operações lançadas na data selecionada, com a situação de pagamento de cada uma.";
 
   var head='<div class="page-head"><div><h1>Financeiro</h1><p class="lede">'+lede+'</p></div>'+
     '<div class="toolbar">'+
@@ -4889,7 +5096,6 @@ function viewFinanceiro(){
   var segModo='<div class="seg" style="margin-bottom:16px">'+
     '<button class="'+(modo==="dia"?"active":"")+'" data-fin-modo="dia">Dia</button>'+
     '<button class="'+(modo==="periodo"?"active":"")+'" data-fin-modo="periodo">Período</button>'+
-    '<button class="'+(modo==="pendentes"?"active":"")+'" data-fin-modo="pendentes">Pendentes Futuros'+(tot.atrasados?" ("+tot.atrasados+" atrasado"+(tot.atrasados>1?"s":"")+")":"")+"</button>"+
   "</div>";
 
   // os totais acompanham o filtro: filtrando só Compra, não faz sentido
@@ -4932,8 +5138,8 @@ function viewFinanceiro(){
   var lista=lados.slice(0,limite).map(finLinhaHtml).join("")+
     (restantes?'<div class="fin-mais"><button type="button" class="btn" data-fin-mais="1">Mostrar mais '+Math.min(FIN_PAGINA,restantes)+' <span style="color:var(--text-faint)">(faltam '+restantes+')</span></button></div>':"");
   lista=lista || '<div class="empty">'+ICONS.cash+'<div class="t">'+
-    (modo==="pendentes"?"Nada em aberto":"Nenhuma operação nesta data")+"</div>"+
-    (modo==="pendentes"?"Todas as operações do período estão quitadas.":"Lance cargas na aba Cargas para acompanhá-las aqui.")+"</div>";
+    (modo==="periodo"?"Nenhuma operação neste período":"Nenhuma operação nesta data")+"</div>"+
+    "Lance cargas na aba Cargas para acompanhá-las aqui.</div>";
 
   var barraPer="";
   if(modo==="periodo"){
@@ -5243,10 +5449,10 @@ function modalCarga(carga){
     "</div>"+
     '<div id="carga-fin-area">'+cargaFinAreaHtml(tipo,carga)+"</div>"+
     '<div class="field-row grid-2 fotos-docs">'+
-      '<div class="photo-slot"><span class="lbl">Nota fiscal (opcional)</span><div class="row"><div class="thumb-add" id="carga-foto-nota-add" role="button" aria-label="Escolher a nota fiscal">'+(carga&&carga.fotoId?'<img class="thumb" id="carga-foto-nota-preview" src="">':ICONS.cam)+'</div>'+
+      '<div class="photo-slot"><span class="lbl">Nota fiscal (opcional)</span><div class="row"><div class="doc-wrap"><div class="thumb-add" id="carga-foto-nota-add" role="button" aria-label="Escolher a nota fiscal">'+(carga&&carga.fotoId?'<img class="thumb" id="carga-foto-nota-preview" src="">':ICONS.cam)+'</div><button type="button" class="doc-rm" id="carga-foto-nota-rm" aria-label="Apagar a nota fiscal"'+(carga&&carga.fotoId?"":" hidden")+'>'+ICONS.x+'</button></div>'+
         '<button type="button" class="btn ghost sm btn-colar" data-colar="nota">'+ICON_COLAR+' Colar</button>'+
         '<input type="file" accept="image/*,application/pdf" id="carga-foto-nota-input" style="display:none"></div></div>'+
-      '<div class="photo-slot"><span class="lbl">Nota de romaneio (opcional)</span><div class="row"><div class="thumb-add" id="carga-foto-romaneio-add" role="button" aria-label="Escolher a nota de romaneio">'+(carga&&carga.fotoRomaneioId?'<img class="thumb" id="carga-foto-romaneio-preview" src="">':ICONS.cam)+'</div>'+
+      '<div class="photo-slot"><span class="lbl">Nota de romaneio (opcional)</span><div class="row"><div class="doc-wrap"><div class="thumb-add" id="carga-foto-romaneio-add" role="button" aria-label="Escolher a nota de romaneio">'+(carga&&carga.fotoRomaneioId?'<img class="thumb" id="carga-foto-romaneio-preview" src="">':ICONS.cam)+'</div><button type="button" class="doc-rm" id="carga-foto-romaneio-rm" aria-label="Apagar a nota de romaneio"'+(carga&&carga.fotoRomaneioId?"":" hidden")+'>'+ICONS.x+'</button></div>'+
         '<button type="button" class="btn ghost sm btn-colar" data-colar="romaneio">'+ICON_COLAR+' Colar</button>'+
         '<input type="file" accept="image/*,application/pdf" id="carga-foto-romaneio-input" style="display:none"></div></div>'+
     "</div>"+
@@ -5261,7 +5467,7 @@ function modalCarga(carga){
 }
 
 /* ============ handlers ============ */
-var modalFotoNota=null, modalFotoQual=null, modalFotoRomaneio=null, modalDespesasExtras=[];
+var modalFotoNota=null, modalFotoQual=null, modalFotoRomaneio=null, modalApagaNota=false, modalApagaRomaneio=false, modalDespesasExtras=[];
 // datas de vencimento escolhidas no calendário enquanto o formulário de carga
 // está aberto, por campo ("finPrazo", "finCompraPrazo", "finVendaPrazo").
 // Só viram dado salvo quando a pessoa clica em Salvar carga.
@@ -5401,7 +5607,7 @@ function attachHandlers(){
   if(state.tab==="cargas"){
     var cd=document.getElementById("carga-data"); if(cd) cd.onchange=async function(){state.cargaData=cd.value;state.cargaDia=await Store.getDia(state.cargaData);render();};
     document.querySelectorAll("[data-carga-filtro]").forEach(function(el){el.onclick=function(){state.cargaFiltroTipo=el.getAttribute("data-carga-filtro");render();};});
-    var nc=document.querySelector('[data-action="nova-carga"]'); if(nc) nc.onclick=function(){ modalFotoNota=null;modalFotoQual=null;modalFotoRomaneio=null;modalDespesasExtras=[];modalVencManual={};modalPrazoTocado={};modalItens=[itemVazio()];openModal(modalCarga());hookCargaModal();};
+    var nc=document.querySelector('[data-action="nova-carga"]'); if(nc) nc.onclick=function(){ modalFotoNota=null;modalFotoQual=null;modalFotoRomaneio=null;modalApagaNota=false;modalApagaRomaneio=false;modalDespesasExtras=[];modalVencManual={};modalPrazoTocado={};modalItens=[itemVazio()];openModal(modalCarga());hookCargaModal();};
     document.querySelectorAll("[data-status-carga]").forEach(function(el){el.onchange=async function(){
       if(!souAdmin()){ toast("Somente administradores podem alterar o status.",true); render(); return; }
       var id=el.getAttribute("data-status-carga");
@@ -5414,7 +5620,7 @@ function attachHandlers(){
       var id=el.getAttribute("data-id");
       var carga=(state.cargaDia.cargas||[]).filter(function(c){return c.id===id;})[0];
       if(!carga) return;
-      modalFotoNota=null; modalFotoQual=null; modalFotoRomaneio=null; modalVencManual={}; modalPrazoTocado={};
+      modalFotoNota=null; modalFotoQual=null; modalFotoRomaneio=null; modalApagaNota=false; modalApagaRomaneio=false; modalVencManual={}; modalPrazoTocado={};
       modalDespesasExtras=(carga.despesasExtras||[]).map(function(d){return {nome:d.nome,valor:d.valor};});
       modalItens=itensDoFormulario(carga);
       openModal(modalCarga(carga)); hookCargaModal(carga);
@@ -5504,7 +5710,6 @@ function attachHandlers(){
       var stAtual=FIN_STATUS_FILTROS.filter(function(f){return f.id===state.finStatus;})[0];
       var filtros=[]; if(tipoNome) filtros.push(tipoNome); if(state.finStatus!=="todos"&&stAtual) filtros.push(stAtual.label);
       if(modo==="periodo"){ t="Financeiro do período"; sub=fmtDateBR(state.finDe)+" a "+fmtDateBR(state.finAte); arq=pdfNomeArquivo("financeiro",state.finDe,state.finAte); }
-      else if(modo==="pendentes"){ t="Pendentes futuros"; sub="Em aberto nos últimos "+FIN_JANELA_DIAS+" dias, até "+fmtDateBR(todayIso()); arq="financeiro-pendentes-"+todayIso()+".pdf"; }
       else { t="Financeiro do dia"; sub=fmtDateBR(state.finData); arq=pdfNomeArquivo("financeiro",state.finData,state.finData); }
       if(filtros.length) sub+=" · "+filtros.join(" · ");
       await entregaPdf(pdfFinLista(lados,t,sub,arq));
@@ -6034,23 +6239,31 @@ function hookCargaModal(carga){
       var img=document.getElementById(imgId); if(url && img) img.src=url;
     })();
   }
-  function ligaSlotDoc(addId,inputId,set){
-    var add=document.getElementById(addId), input=document.getElementById(inputId);
+  function ligaSlotDoc(addId,inputId,set,rmId,apaga){
+    var add=document.getElementById(addId), input=document.getElementById(inputId), rm=document.getElementById(rmId);
+    var vazio=ICONS.cam; // ícone da câmera
     add.onclick=function(){ input.click(); };
+    if(rm) rm.onclick=function(e){
+      e.stopPropagation();
+      set(null); apaga(true);                 // some da carga ao salvar
+      add.innerHTML=vazio; rm.hidden=true;
+      toast("Anexo apagado — vale depois de salvar a carga.");
+    };
     async function recebe(file){
       var prev=add.innerHTML;
       add.innerHTML='<span style="font-size:10px;color:var(--text-faint)">preparando…</span>';
       try{
         var url=await arquivoParaImagem(file,true);
-        set(url);
+        set(url); apaga(false);
         add.innerHTML='<img class="thumb" src="'+url+'" alt="">';
+        if(rm) rm.hidden=false;
       }catch(err){ toast(err.message,true); add.innerHTML=prev; }
     }
     input.onchange=async function(e){ var f=e.target.files&&e.target.files[0]; input.value=""; if(f) await recebe(f); };
     return recebe;
   }
-  var recebeNota=ligaSlotDoc("carga-foto-nota-add","carga-foto-nota-input",function(u){ modalFotoNota=u; });
-  var recebeRomaneio=ligaSlotDoc("carga-foto-romaneio-add","carga-foto-romaneio-input",function(u){ modalFotoRomaneio=u; });
+  var recebeNota=ligaSlotDoc("carga-foto-nota-add","carga-foto-nota-input",function(u){ modalFotoNota=u; },"carga-foto-nota-rm",function(v){ modalApagaNota=v; });
+  var recebeRomaneio=ligaSlotDoc("carga-foto-romaneio-add","carga-foto-romaneio-input",function(u){ modalFotoRomaneio=u; },"carga-foto-romaneio-rm",function(v){ modalApagaRomaneio=v; });
   if(carga && carga.fotoId) carregaPreview(carga.fotoId,"carga-foto-nota-preview");
   if(carga && carga.fotoRomaneioId) carregaPreview(carga.fotoRomaneioId,"carga-foto-romaneio-preview");
 
@@ -6221,8 +6434,8 @@ function hookCargaModal(carga){
     // casadas. Carga editada mantém o número que já tinha.
     var seq=existing?existing.numeroSequencial:await Store.proximoNumeroCarga(dataIso,(diaAlvo.cargas||[]).length);
 
-    var fotoId=existing?existing.fotoId:null;
-    var fotoRomaneioId=existing?existing.fotoRomaneioId:null;
+    var fotoId=existing&&!modalApagaNota?existing.fotoId:null;
+    var fotoRomaneioId=existing&&!modalApagaRomaneio?existing.fotoRomaneioId:null;
     if(modalFotoNota){ fotoId=uid(); await Store.saveFoto(dataIso,fotoId,modalFotoNota,tipo==="compra"?"notaFiscalEntrada":(tipo==="venda"?"notaFiscalSaida":"notaFiscalCasada")); photoCache[dataIso+"/"+fotoId]=modalFotoNota; }
     if(modalFotoRomaneio){ fotoRomaneioId=uid(); await Store.saveFoto(dataIso,fotoRomaneioId,modalFotoRomaneio,"notaRomaneio"); photoCache[dataIso+"/"+fotoRomaneioId]=modalFotoRomaneio; }
     // fotos do produto: as que já existiam continuam com o mesmo id; as novas são gravadas agora
@@ -6312,7 +6525,7 @@ function hookCargaModal(carga){
     }
     await Store.saveDia(dataIso,diaAlvo);
     if(dataIso===state.cargaData) state.cargaDia=diaAlvo;
-    modalFotoNota=null; modalFotoQual=null; modalFotoRomaneio=null; modalDespesasExtras=[]; modalVencManual={}; modalPrazoTocado={}; modalItens=[]; modalFotosProduto=[];
+    modalFotoNota=null; modalFotoQual=null; modalFotoRomaneio=null; modalApagaNota=false; modalApagaRomaneio=false; modalDespesasExtras=[]; modalVencManual={}; modalPrazoTocado={}; modalItens=[]; modalFotosProduto=[];
     toast(isEdit?"Carga atualizada.":"Carga nº "+seq+" registrada.");
     closeModal(document.querySelector(".modal-back"));
     render();
