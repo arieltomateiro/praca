@@ -613,7 +613,7 @@ tr:hover td{background:var(--overlay-2);}
 
 /* ---- Fechamentos: filtro de período ---- */
 .fech-filtro{margin-bottom:18px;}
-.fech-grid{display:grid;grid-template-columns:160px 160px minmax(0,1fr);gap:10px;margin-bottom:12px;}
+.fech-grid{display:grid;grid-template-columns:160px 160px minmax(0,260px);gap:10px;margin-bottom:12px;}
 .fech-grid .field{margin:0;min-width:0;}
 .fech-linha2{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;}
 .fech-acoes{display:flex;gap:8px;flex-wrap:wrap;}
@@ -642,6 +642,38 @@ tr:hover td{background:var(--overlay-2);}
   .fech-acoes .btn{flex:1;justify-content:center;}
 }
 
+/* ---- campos dos filtros de período: mesmo tamanho em todas as abas ----
+   (no iPhone o campo de data nativo vinha maior e com outra fonte; aqui ele
+   segue o mesmo padrão dos outros campos da página) */
+input[type=date]{-webkit-appearance:none;appearance:none;display:block;min-height:40px;line-height:1.2;}
+input[type=date]::-webkit-date-and-time-value{text-align:left;min-height:1.2em;}
+input[type=date]::-webkit-datetime-edit{padding:0;}
+.fech-filtro input,.fech-filtro select,.graf-filtros input,.graf-filtros select,.filtro-card input,.filtro-card select{
+  height:40px;padding:0 11px;font-size:14px;border-radius:var(--radius-s);}
+.filtro-card{margin-bottom:14px;}
+.filtro-linha{display:grid;grid-template-columns:repeat(2,minmax(0,170px)) auto;gap:10px;align-items:end;justify-content:start;}
+.filtro-linha .field{margin:0;min-width:0;}
+.filtro-ok{height:40px;justify-content:center;}
+.carga-card{position:relative;}
+.carga-card .carga-export{position:absolute;top:16px;right:16px;}
+.carga-card .carga-top{padding-right:46px;}
+@media (max-width:420px){
+  .itens-carga table{font-size:12px;}
+  .itens-carga th{font-size:9px;letter-spacing:.03em;}
+  .itens-carga th,.itens-carga td{padding-left:4px;padding-right:4px;}
+}
+.dia-grupo{margin-top:6px;}
+.dia-grupo-tit{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:16px 0 8px;font-size:12px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;}
+.itens-carga tfoot td{border-top:1px solid var(--border-2);border-bottom:none;font-weight:600;}
+.itens-carga thead th:first-child,.itens-carga tbody td:first-child,.itens-carga tfoot td:first-child{padding-left:0;}
+.colar-zona{margin-top:12px;border:1.5px dashed var(--border-2);border-radius:var(--radius-m);padding:14px 12px;min-height:54px;text-align:center;color:var(--text-dim);font-size:13px;line-height:1.4;outline:none;cursor:text;-webkit-user-select:text;user-select:text;-webkit-touch-callout:default;caret-color:transparent;}
+.colar-zona:empty::before{content:attr(data-ph);color:var(--text-faint);}
+.colar-zona:focus{border-color:var(--gold);background:var(--overlay-1);}
+@media (max-width:640px){
+  .filtro-linha{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
+  .filtro-linha .filtro-ok{grid-column:1 / -1;}
+}
+
 /* ---- Praça: gráficos ---- */
 :root{
   --serie-1:#3987e5;--serie-2:#d95926;--serie-3:#199e70;--serie-4:#c98500;
@@ -652,14 +684,16 @@ tr:hover td{background:var(--overlay-2);}
   --serie-5:#e87ba4;--serie-6:#008300;--serie-7:#4a3aa7;--serie-8:#e34948;--serie-outros:#7b7466;
 }
 .graf-filtros{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:14px;}
-.graf-filtros .field{margin:0;min-width:140px;}
+.graf-filtros .field{margin:0;flex:0 1 170px;min-width:0;}
+.graf-filtros .field:has(select){flex-basis:220px;}
 .graf-card{position:relative;}
 .graf-area{position:relative;width:100%;min-height:200px;outline:none;border-radius:var(--radius-m);}
 .graf-area:focus-visible{box-shadow:0 0 0 2px var(--gold);}
 .graf-svg{display:block;cursor:crosshair;touch-action:pan-y;}
 .graf-grade{stroke:var(--border);stroke-width:1;}
 .graf-eixo-l{stroke:var(--border-2);stroke-width:1;}
-.graf-eixo{fill:var(--text-faint);font-size:11px;font-weight:500;font-family:var(--font-mono);font-variant-numeric:tabular-nums;}
+.graf-svg text{stroke:none;}
+.graf-eixo{stroke:none;fill:var(--text-faint);font-size:11px;font-weight:500;font-family:var(--font-mono);font-variant-numeric:tabular-nums;}
 .graf-mira{stroke:var(--text-dim);stroke-width:1;stroke-dasharray:3 3;}
 .graf-pop{position:absolute;z-index:3;background:var(--bg-1);border:1px solid var(--border-2);border-radius:var(--radius-m);padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.35);font-size:12.5px;display:flex;flex-direction:column;gap:6px;max-height:calc(100% - 20px);overflow:auto;}
 .graf-pop[hidden]{display:none;}
@@ -683,6 +717,12 @@ tr:hover td{background:var(--overlay-2);}
 .graf-tabela{margin-top:12px;}
 .graf-tabela summary{cursor:pointer;font-size:12.5px;color:var(--text-dim);font-weight:600;}
 .graf-tabela .tabela-cx{margin-top:8px;max-height:360px;overflow:auto;}
+/* tabela do gráfico: letra fina e leve, para ler os números sem esforço */
+.graf-tabela .tabela-cx table{font-size:12.5px;}
+.graf-tabela .tabela-cx th{font-weight:500;letter-spacing:.04em;}
+.graf-tabela .tabela-cx td{font-weight:400;color:var(--text-dim);}
+.graf-tabela .tabela-cx td:first-child{color:var(--text);}
+.graf-tabela .tabela-cx td.num{font-family:var(--font-body);font-weight:400;font-variant-numeric:tabular-nums;}
 @media (max-width:640px){
   .graf-filtros .field{flex:1 1 140px;}
   .graf-presets,.graf-modo{display:flex;width:100%;}
@@ -971,7 +1011,8 @@ var ICONS = {
   send:'<svg viewBox="0 0 24 24"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/></svg>',
   cash:'<svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 12h.01M18 12h.01"/></svg>',
   check:'<svg viewBox="0 0 24 24"><path d="M4 12.5 9 17.5 20 6.5"/></svg>',
-  clock:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5.2l3.2 2"/></svg>'
+  clock:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5.2l3.2 2"/></svg>',
+  download:'<svg viewBox="0 0 24 24"><path d="M12 4v11M7.5 11 12 15.5 16.5 11M5 20h14"/></svg>'
 };
 
 /* ============ utils ============ */
@@ -1162,7 +1203,7 @@ async function arquivoDaAreaDeTransferencia(){
   var itens;
   try{ itens=await navigator.clipboard.read(); }
   catch(e){
-    throw new Error("Não deu para colar. Copie a imagem ou a nota de novo e toque em Colar (e, se o celular perguntar, toque em \"Colar\" no balãozinho).");
+    throw new Error("Não deu para colar com o botão. Toque e segure na caixa \"Colar a nota aqui\" e escolha Colar — ou copie de novo e tente outra vez.");
   }
   for(var i=0;i<itens.length;i++){
     var tipos=itens[i].types||[];
@@ -1173,7 +1214,38 @@ async function arquivoDaAreaDeTransferencia(){
       return new File([blob],"colado."+ext,{type:tipo});
     }
   }
-  throw new Error("O que está copiado não é uma imagem nem um PDF. Copie a foto da nota (toque e segure nela → Copiar) e tente de novo.");
+  throw new Error("O botão só consegue colar imagens. Para colar um PDF ou outro arquivo, toque e segure na caixa \"Colar a nota aqui\" (acima) e escolha Colar.");
+}
+// tudo que o evento "colar" trouxe: arquivos (imagem/PDF), figura dentro de HTML
+// e a lista de tipos (para explicar quando não veio nada aproveitável)
+function eArquivoDeNota(f){ return !!f && (ehPdf(f)||(f.type||"").indexOf("image/")===0); }
+function coletaArquivosColados(cd){
+  var r={arquivos:[],tipos:[],html:"",texto:""};
+  if(!cd) return r;
+  try{ r.tipos=Array.prototype.slice.call(cd.types||[]); }catch(e){}
+  try{ Array.prototype.forEach.call(cd.files||[],function(f){ if(eArquivoDeNota(f)) r.arquivos.push(f); }); }catch(e){}
+  if(!r.arquivos.length){
+    try{ Array.prototype.forEach.call(cd.items||[],function(it){
+      if(it.kind==="file"){ var f=it.getAsFile(); if(eArquivoDeNota(f)) r.arquivos.push(f); }
+    }); }catch(e){}
+  }
+  try{ r.html=cd.getData("text/html")||""; }catch(e){}
+  try{ r.texto=cd.getData("text/plain")||""; }catch(e){}
+  return r;
+}
+// figura colada dentro de um HTML (data: ou blob:) vira arquivo
+async function arquivoDoHtmlColado(html){
+  var m=String(html||"").match(/<img[^>]+src=["']([^"']+)["']/i);
+  if(!m) return null;
+  try{
+    var b=await (await fetch(m[1].replace(/&amp;/g,"&"))).blob();
+    if(b && ((b.type||"").indexOf("image/")===0 || b.type==="application/pdf")) return new File([b],"colado."+(b.type==="application/pdf"?"pdf":(b.type.split("/")[1]||"png")),{type:b.type});
+  }catch(e){}
+  return null;
+}
+function msgNadaColado(r){
+  var t=(r.tipos||[]).filter(function(x){return x!=="Files";}).slice(0,4).join(", ");
+  return "Não veio imagem nem PDF no que foi copiado"+(t?" (veio: "+t+")":"")+". Copie a foto da nota (toque e segure nela → Copiar) e tente de novo — ou use o botão da câmera para escolher o arquivo.";
 }
 // Ctrl+V / Cmd+V (computador) enquanto o formulário de carga está aberto
 var _colarTecladoAtivo=null;
@@ -1181,10 +1253,17 @@ function ligaColarTeclado(formNode,aoReceber){
   if(_colarTecladoAtivo) document.removeEventListener("paste",_colarTecladoAtivo);
   _colarTecladoAtivo=function(e){
     if(!document.body.contains(formNode)){ document.removeEventListener("paste",_colarTecladoAtivo); _colarTecladoAtivo=null; return; }
-    var arquivos=Array.prototype.slice.call((e.clipboardData&&e.clipboardData.files)||[]).filter(function(f){ return ehPdf(f)||(f.type||"").indexOf("image/")===0; });
-    if(!arquivos.length) return; // texto colado num campo: segue normal
+    var r=coletaArquivosColados(e.clipboardData);
+    if(!r.arquivos.length){
+      // figura colada como HTML (ex.: copiada de uma página)? Só intercepta se houver mesmo uma
+      if(/<img[^>]+src=/i.test(r.html)){
+        e.preventDefault();
+        arquivoDoHtmlColado(r.html).then(function(f){ if(f) aoReceber(f); else toast(msgNadaColado(r),true); });
+      }
+      return; // texto colado num campo: segue normal
+    }
     e.preventDefault();
-    aoReceber(arquivos[0]);
+    aoReceber(r.arquivos[0]);
   };
   document.addEventListener("paste",_colarTecladoAtivo);
 }
@@ -1778,6 +1857,7 @@ var state={
   cargaData:todayIso(),
   cargaDia:null,
   cargaFiltroTipo:"todas",
+  cargaModo:"dia", cargaDe:null, cargaAte:null, cargaPerDias:null, // "dia" | "periodo" (aba Cargas)
   resumoData:todayIso(),
   resumoDia:null,
   resumoView:"mapa",
@@ -1785,7 +1865,8 @@ var state={
   mapZoomUF:null,
   finData:todayIso(),
   finDia:null,
-  finModo:"dia",        // "dia" (data selecionada) | "pendentes" (varre o período, ignora a data)
+  finModo:"dia",        // "dia" (data selecionada) | "periodo" (De/Até) | "pendentes" (varre os últimos 90 dias)
+  finDe:null, finAte:null, finPeriodoDias:null,
   finTipo:"todas",      // todas | compra | venda | casada
   finStatus:"todos",    // todos | paga | pendente_pag | recebida | pendente_rec | definir
   finPendentes:null,    // cache da varredura do modo Pendentes
@@ -2540,7 +2621,7 @@ async function refreshCurrentTabData(){
     state.calDiaSel=await diaSelPromise;
   }
   else if(state.tab==="precos"){ state.precoDia=await Store.getDia(state.precoData); }
-  else if(state.tab==="cargas"){ state.cargaDia=await Store.getDia(state.cargaData); }
+  else if(state.tab==="cargas"){ state.cargaDia=await Store.getDia(state.cargaData); if(state.cargaModo==="periodo") await carregarCargasPeriodo(); }
   else if(state.tab==="praca"){ state.resumoDia=await Store.getDia(state.resumoData); }
   else if(state.tab==="financeiro"){ await carregarFinanceiro(); }
 }
@@ -2578,7 +2659,21 @@ function statusDisponiveis(tipo,modo){
 var FIN_JANELA_DIAS=90;
 var FIN_PAGINA=60;
 
+var FIN_MAX_DIAS=186;
+function finPeriodoDefaults(){
+  if(!state.finAte) state.finAte=todayIso();
+  if(!state.finDe) state.finDe=state.finAte.slice(0,8)+"01";
+}
 async function carregarFinanceiro(){
+  if(state.finModo==="periodo"){
+    finPeriodoDefaults();
+    var de0=state.finDe, ate0=state.finAte;
+    var dias0=await Store.getDiasNoPeriodo(de0,ate0,FIN_MAX_DIAS+5);
+    state.finPeriodoDias=dias0
+      .filter(function(d){ return d && d.data && d.data>=de0 && d.data<=ate0; })
+      .sort(function(a,b){return a.data<b.data?-1:1;});
+    return;
+  }
   if(state.finModo==="pendentes"){
     var ate=todayIso();
     var de=addDias(ate,-FIN_JANELA_DIAS);
@@ -2599,6 +2694,7 @@ async function carregarFinanceiro(){
 function ladosDoModo(){
   var dias;
   if(state.finModo==="pendentes") dias=state.finPendentes||[];
+  else if(state.finModo==="periodo") dias=state.finPeriodoDias||[];
   else dias=[state.finDia||{data:state.finData,cargas:[]}];
 
   var out=[];
@@ -2625,6 +2721,7 @@ function ladosDoModo(){
       var av=a.vencimento||"9999-12-31", bv=b.vencimento||"9999-12-31";
       if(av!==bv) return av<bv?-1:1;
     }
+    if(state.finModo==="periodo" && a.dataIso!==b.dataIso) return a.dataIso<b.dataIso?-1:1;
     return (a.carga.numeroSequencial||0)-(b.carga.numeroSequencial||0);
   });
   return out;
@@ -2696,19 +2793,7 @@ function calcPeriodo(dias){
   });
   ops.sort(function(a,b){ return a.data===b.data?((a.c.numeroSequencial||0)-(b.c.numeroSequencial||0)):(a.data<b.data?-1:1); });
   var calc=calcDia({cargas:ops.map(function(o){return o.c;})});
-  // caixas de cada tipo de mercadoria, separadas por compra / venda / casada
-  var porMerc={}, ordem=[];
-  ops.forEach(function(o){
-    itensCarga(o.c).forEach(function(it){
-      var k=it.mercadoriaId||("nome:"+(it.mercadoriaNome||""));
-      if(!porMerc[k]){ porMerc[k]={nome:it.mercadoriaNome||"sem tipo",compra:0,venda:0,casada:0,total:0,ops:[]}; ordem.push(k); }
-      var m=porMerc[k];
-      m[o.c.tipo]=(m[o.c.tipo]||0)+it.quantidadeCaixas;
-      m.total+=it.quantidadeCaixas;
-      m.ops.push({c:o.c,data:o.data,cx:it.quantidadeCaixas});
-    });
-  });
-  var mercs=ordem.map(function(k){return porMerc[k];}).sort(function(a,b){ return b.total-a.total; });
+  var mercs=agregaMercs(ops);
   var totalCx=ops.reduce(function(a,o){return a+(o.c.quantidadeCaixas||0);},0);
   var nPrecos=(dias||[]).reduce(function(a,d){return a+((d.precos||[]).length);},0);
   return {ops:ops,calc:calc,mercs:mercs,totalCx:totalCx,nPrecos:nPrecos};
@@ -2759,17 +2844,7 @@ function viewPeriodo(){
       '<div class="kpi"><div class="label">Caixas no período</div><div class="value">'+fmtNum(r.totalCx)+"</div></div>"+
     "</div>");
 
-  var tabela;
-  if(!r.mercs.length) tabela='<div class="empty">Nenhuma carga nesse período com esse filtro.</div>';
-  else{
-    var tot={compra:0,venda:0,casada:0,total:0};
-    var linhas=r.mercs.map(function(m){
-      tot.compra+=m.compra; tot.venda+=m.venda; tot.casada+=m.casada; tot.total+=m.total;
-      return "<tr><td>"+esc(m.nome)+'</td><td class="num">'+(m.compra?fmtNum(m.compra):"—")+'</td><td class="num">'+(m.venda?fmtNum(m.venda):"—")+'</td><td class="num">'+(m.casada?fmtNum(m.casada):"—")+'</td><td class="num forte">'+fmtNum(m.total)+"</td></tr>";
-    }).join("");
-    tabela='<div class="tabela-cx"><table><thead><tr><th>Mercadoria</th><th class="num">Compras</th><th class="num">Vendas</th><th class="num">Casadas</th><th class="num">Total</th></tr></thead><tbody>'+linhas+
-      '</tbody><tfoot><tr><td>Total</td><td class="num">'+fmtNum(tot.compra)+'</td><td class="num">'+fmtNum(tot.venda)+'</td><td class="num">'+fmtNum(tot.casada)+'</td><td class="num forte">'+fmtNum(tot.total)+"</td></tr></tfoot></table></div>";
-  }
+  var tabela=tabelaCaixasHtml(r.mercs);
   // de onde veio cada caixa: para cada tipo de mercadoria, as operações
   var detalhe=r.mercs.map(function(m){
     return '<details class="merc-ops"><summary><span class="nm">'+esc(m.nome)+'</span><span class="num">'+fmtNum(m.total)+" cx · "+m.ops.length+(m.ops.length===1?" operação":" operações")+"</span></summary>"+
@@ -2893,6 +2968,7 @@ function viewCalendario(){
     '<div class="daypanel">'+
       '<div class="sub-head"><h2 style="font-size:18px">'+fmtDateBR(state.calSelected)+'</h2></div>'+
       kpis+
+      '<div class="card"><div class="section-title">Caixas por tipo de mercadoria</div>'+tabelaCaixasHtml(agregaMercs((sel.cargas||[]).map(function(c){return {c:c,data:state.calSelected};})),"Nenhuma carga neste dia.")+'</div>'+
       '<div class="card"><div class="section-title">Vendas (entradas)</div>'+vendasRows+'</div>'+
       '<div class="card"><div class="section-title">Compras (saídas)</div>'+comprasRows+'</div>'+
       '<div class="card"><div class="section-title">Vendas Casadas</div>'+casadasRows+'</div>'+
@@ -3883,11 +3959,564 @@ function vencTexto(lado){
   return "vence em "+d+" dias · "+fmtDateBR(lado.vencimento);
 }
 
-function viewCargas(){
-  var dia=state.cargaDia||{cargas:[]};
+/* ============ gerador de PDF (sem biblioteca) ============
+   Monta um PDF de verdade com as fontes padrão (Helvetica), texto e tabelas.
+   Não depende de internet nem de nada hospedado fora: funciona offline, igual
+   ao resto do app. Coordenadas: "y" é a distância do topo da página. */
+var PDF_LARG_REG=[278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584];
+var PDF_LARG_BOLD=[278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584];
+function pdfSemAcento(s){ return String(s).normalize("NFD").replace(/[̀-ͯ]/g,""); }
+function pdfLarg(s,size,bold){
+  var tab=bold?PDF_LARG_BOLD:PDF_LARG_REG, t=pdfSemAcento(s), w=0;
+  for(var i=0;i<t.length;i++){
+    var c=t.charCodeAt(i);
+    if(c>=32&&c<=126) w+=tab[c-32];
+    else if(c===0x2014) w+=1000; else if(c===0x2013) w+=556;
+    else if(c===0xB7||c===0xA0||c===0x202F) w+=278; else if(c===0xBA) w+=365; else if(c===0xAA) w+=370;
+    else if(c===0x2022) w+=350; else w+=556;
+  }
+  return w*size/1000;
+}
+// texto -> string PDF (WinAnsi), tudo em ASCII com escapes octais
+function pdfEnc(s){
+  var map={8212:151,8211:150,8226:149,8230:133,8220:147,8221:148,8216:145,8217:146,8364:128};
+  var out="";
+  s=String(s);
+  for(var i=0;i<s.length;i++){
+    var c=s.charCodeAt(i);
+    if(c===8594) { out+="->"; continue; }
+    if(c===8239) c=32;
+    if(map[c]) c=map[c];
+    else if(c>255) c=63;
+    if(c===40||c===41||c===92) out+="\\"+String.fromCharCode(c);
+    else if(c>=32&&c<=126) out+=String.fromCharCode(c);
+    else if(c===160||c===8239) out+=" ";
+    else if(c>=128) out+="\\"+("00"+c.toString(8)).slice(-3);
+    else out+=" ";
+  }
+  return out;
+}
+function pdfNum(n){ return (Math.round(n*100)/100).toString(); }
+
+function criaPdf(opt){
+  opt=opt||{};
+  var W=opt.paisagem?841.89:595.28, H=opt.paisagem?595.28:841.89, M=opt.margem||40;
+  var CW=W-2*M, RODAPE=26;
+  var paginas=[], ops=null, y=0;
+  var COR={txt:[0.10,0.10,0.11],dim:[0.42,0.42,0.45],linha:[0.80,0.80,0.82],fundo:[0.955,0.955,0.96],pos:[0.07,0.50,0.30],neg:[0.78,0.18,0.18],marca:[0.62,0.46,0.10]};
+  function rgb(c){ return pdfNum(c[0])+" "+pdfNum(c[1])+" "+pdfNum(c[2]); }
+
+  function nova(){ ops=[]; paginas.push(ops); y=M; }
+  function txt(x,yb,s,size,o){
+    o=o||{};
+    var w=pdfLarg(s,size,o.bold);
+    if(o.align==="r") x=x-w; else if(o.align==="c") x=x-w/2;
+    ops.push("BT /"+(o.bold?"F2":"F1")+" "+pdfNum(size)+" Tf "+rgb(o.cor||COR.txt)+" rg "+pdfNum(x)+" "+pdfNum(H-yb)+" Td ("+pdfEnc(s)+") Tj ET");
+  }
+  function lin(x1,y1,x2,y2,cor,esp){
+    ops.push(rgb(cor||COR.linha)+" RG "+pdfNum(esp||0.6)+" w "+pdfNum(x1)+" "+pdfNum(H-y1)+" m "+pdfNum(x2)+" "+pdfNum(H-y2)+" l S");
+  }
+  function ret(x,yt,w,h,cor){
+    ops.push(rgb(cor||COR.fundo)+" rg "+pdfNum(x)+" "+pdfNum(H-yt-h)+" "+pdfNum(w)+" "+pdfNum(h)+" re f");
+  }
+  function garante(h){ if(y+h>H-M-RODAPE) nova(); }
+  // corta o texto com "..." até caber na largura
+  function cabe(s,w,size,bold){
+    s=String(s==null?"":s);
+    if(pdfLarg(s,size,bold)<=w) return s;
+    while(s.length>1 && pdfLarg(s+"...",size,bold)>w) s=s.slice(0,-1);
+    return s+"...";
+  }
+  // quebra em linhas que cabem em w
+  function quebra(s,w,size,bold){
+    var palavras=String(s==null?"":s).split(/\s+/), linhas=[], atual="";
+    palavras.forEach(function(p){
+      var tent=atual?atual+" "+p:p;
+      if(pdfLarg(tent,size,bold)<=w || !atual) atual=tent; else { linhas.push(atual); atual=p; }
+    });
+    if(atual) linhas.push(atual);
+    return linhas.length?linhas:[""];
+  }
+
+  nova();
+  var api={
+    W:W,H:H,M:M,CW:CW,COR:COR,
+    get y(){ return y; },
+    espaco:function(n){ y+=n; },
+    garante:garante,
+    // cabeçalho do documento: marca, título e subtítulo
+    capa:function(marca,titulo,sub){
+      txt(M,y+9,marca,9,{bold:true,cor:COR.marca});
+      y+=24;
+      txt(M,y+12,titulo,18,{bold:true});
+      y+=24;
+      if(sub){ quebra(sub,CW,10,false).forEach(function(l){ txt(M,y+8,l,10,{cor:COR.dim}); y+=14; }); }
+      lin(M,y+4,M+CW,y+4,COR.txt,1);
+      y+=16;
+    },
+    secao:function(s){
+      garante(34);
+      y+=6;
+      txt(M,y+9,String(s).toUpperCase(),8.5,{bold:true,cor:COR.dim});
+      y+=13;
+      lin(M,y,M+CW,y,COR.linha,0.6);
+      y+=7;
+    },
+    titulo:function(s,dir,corDir){
+      garante(28);
+      txt(M,y+11,s,12,{bold:true});
+      if(dir) txt(M+CW,y+11,dir,9.5,{bold:true,align:"r",cor:corDir||COR.dim});
+      y+=19;
+    },
+    texto:function(s,o){
+      o=o||{}; var size=o.size||10;
+      quebra(s,CW,size,o.bold).forEach(function(l){ garante(size+5); txt(M,y+size,l,size,{bold:o.bold,cor:o.cor||COR.txt}); y+=size+4.5; });
+    },
+    // "rótulo ........ valor" (resumo)
+    kv:function(rot,val,o){
+      o=o||{}; var size=o.size||10;
+      garante(size+7);
+      if(o.fundo) ret(M,y-2,CW,size+7,COR.fundo);
+      txt(M+(o.fundo?6:0),y+size+0.5,rot,size,{bold:o.bold,cor:o.cor||COR.dim});
+      txt(M+CW-(o.fundo?6:0),y+size+0.5,val,size,{bold:o.bold||o.forte,align:"r",cor:o.corVal||COR.txt});
+      y+=size+7;
+    },
+    // várias colunas de resumo lado a lado: [{r:"A pagar",v:"R$ 1,00",cor}]
+    cartoes:function(lista){
+      garante(46);
+      var n=lista.length, gap=8, w=(CW-gap*(n-1))/n;
+      lista.forEach(function(k,i){
+        var x=M+i*(w+gap);
+        ret(x,y,w,40,COR.fundo);
+        txt(x+8,y+14,k.r,7.5,{bold:true,cor:COR.dim});
+        txt(x+8,y+32,k.v,12.5,{bold:true,cor:k.cor||COR.txt});
+      });
+      y+=50;
+    },
+    /* tabela: cols=[{t,w(fração ou pontos),a:"l"|"r"}], linhas=[[...],...];
+       uma linha pode ser {c:[...],b:true(negrito),topo:true(linha acima)} */
+    tabela:function(cols,linhas,o){
+      o=o||{}; var size=o.size||9, alt=o.alt||(size+8.5);
+      var soma=0; cols.forEach(function(c){ soma+=(c.w<=1?c.w*CW:c.w); });
+      var esc=soma>CW?CW/soma:1, xs=[], x=M;
+      cols.forEach(function(c){ var w=(c.w<=1?c.w*CW:c.w)*esc; xs.push({x:x,w:w}); x+=w; });
+      function cab(){
+        ret(M,y,CW,alt+1,COR.fundo);
+        cols.forEach(function(c,i){
+          var px=c.a==="r"?xs[i].x+xs[i].w-5:xs[i].x+5;
+          txt(px,y+alt-3,cabe(String(c.t).toUpperCase(),xs[i].w-10,7,true),7,{bold:true,cor:COR.dim,align:c.a==="r"?"r":"l"});
+        });
+        y+=alt+1;
+      }
+      garante(alt*3); cab();
+      linhas.forEach(function(L){
+        var cel=L.c||L, b=!!L.b;
+        if(y+alt>H-M-RODAPE){ nova(); cab(); }
+        if(L.topo) lin(M,y,M+CW,y,COR.txt,0.8);
+        cols.forEach(function(c,i){
+          var v=cel[i], cor=COR.txt;
+          if(v&&typeof v==="object"){ cor=v.cor||COR.txt; v=v.t; }
+          v=cabe(v==null?"":v,xs[i].w-10,size,b);
+          var px=c.a==="r"?xs[i].x+xs[i].w-5:xs[i].x+5;
+          txt(px,y+alt-4.5,v,size,{bold:b,align:c.a==="r"?"r":"l",cor:cor});
+        });
+        y+=alt;
+        if(!L.topo) lin(M,y,M+CW,y,COR.linha,0.4);
+      });
+      y+=6;
+    },
+    // gera os bytes do arquivo
+    gerar:function(rodape){
+      var n=paginas.length, objs=[];
+      function add(s){ objs.push(s); return objs.length; }
+      add("<< /Type /Catalog /Pages 2 0 R >>");                 // 1
+      add("");                                                    // 2 (preenchido depois)
+      add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>");       // 3
+      add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>");   // 4
+      var kids=[];
+      paginas.forEach(function(p,i){
+        // rodapé com número da página, em todas
+        var conteudo=p.slice();
+        var rod=rodape||"";
+        conteudo.push("BT /F1 7.5 Tf "+rgb(COR.dim)+" rg "+pdfNum(M)+" "+pdfNum(M*0.55)+" Td ("+pdfEnc(rod)+") Tj ET");
+        var pg="Página "+(i+1)+" de "+n, wpg=pdfLarg(pg,7.5,false);
+        conteudo.push("BT /F1 7.5 Tf "+rgb(COR.dim)+" rg "+pdfNum(W-M-wpg)+" "+pdfNum(M*0.55)+" Td ("+pdfEnc(pg)+") Tj ET");
+        var stream=conteudo.join("\n");
+        var idPag=objs.length+1, idCont=idPag+1;
+        add("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 "+pdfNum(W)+" "+pdfNum(H)+"] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents "+idCont+" 0 R >>");
+        add("<< /Length "+stream.length+" >>\nstream\n"+stream+"\nendstream");
+        kids.push(idPag+" 0 R");
+      });
+      objs[1]="<< /Type /Pages /Kids ["+kids.join(" ")+"] /Count "+n+" >>";
+      var info=add("<< /Title ("+pdfEnc(opt.titulo||"Ariel Tomateiro")+") /Producer (Ariel Tomateiro) >>");
+      var out="%PDF-1.4\n", offs=[];
+      objs.forEach(function(o,i){ offs.push(out.length); out+=(i+1)+" 0 obj\n"+o+"\nendobj\n"; });
+      var xref=out.length;
+      out+="xref\n0 "+(objs.length+1)+"\n0000000000 65535 f \n";
+      offs.forEach(function(o){ out+=("0000000000"+o).slice(-10)+" 00000 n \n"; });
+      out+="trailer\n<< /Size "+(objs.length+1)+" /Root 1 0 R /Info "+info+" 0 R >>\nstartxref\n"+xref+"\n%%EOF";
+      var bytes=new Uint8Array(out.length);
+      for(var i=0;i<out.length;i++) bytes[i]=out.charCodeAt(i)&255;
+      return bytes;
+    }
+  };
+  return api;
+}
+
+/* ============ Exportar em PDF (cargas e financeiro) ============
+   Cargas: uma carga, o dia ou um período. Financeiro: uma operação, o dia, o
+   período ou os pendentes. REGRA FIXA: o operacional nunca recebe valor em
+   PDF nenhum — "comValores" só é verdadeiro para administrador, e mesmo assim
+   os dados de preço só existem na memória de quem é administrador. */
+var PDF_TIPO={compra:"Compra",venda:"Venda",casada:"Compra casada"};
+function pdfMarca(){
+  var e=state.empresa||{};
+  return ("ARIEL TOMATEIRO"+(e.nomeFantasia?" · "+e.nomeFantasia:"")).toUpperCase();
+}
+function pdfAgora(){
+  var d=new Date();
+  return pad(d.getDate())+"/"+pad(d.getMonth()+1)+"/"+d.getFullYear()+" "+pad(d.getHours())+":"+pad(d.getMinutes());
+}
+function pdfRodape(){ return "Ariel Tomateiro · gerado em "+pdfAgora(); }
+function pdfNomeArquivo(base,de,ate){
+  return base+"-"+(ate&&ate!==de?de+"_a_"+ate:de)+".pdf";
+}
+function pdfPartes(c){
+  if(c.tipo==="casada") return "Fornecedor: "+c.nome+"  ->  Comprador: "+(c.clienteNome||"—");
+  return (c.tipo==="compra"?"Fornecedor: ":"Cliente: ")+c.nome;
+}
+// soma de caixas por tipo de mercadoria, separada em compra / venda / casada
+function agregaMercs(ops){
+  var porMerc={}, ordem=[];
+  ops.forEach(function(o){
+    itensCarga(o.c).forEach(function(it){
+      var k=it.mercadoriaId||("nome:"+(it.mercadoriaNome||""));
+      if(!porMerc[k]){ porMerc[k]={nome:it.mercadoriaNome||"sem tipo",compra:0,venda:0,casada:0,total:0,ops:[]}; ordem.push(k); }
+      var m=porMerc[k];
+      m[o.c.tipo]=(m[o.c.tipo]||0)+it.quantidadeCaixas;
+      m.total+=it.quantidadeCaixas;
+      m.ops.push({c:o.c,data:o.data,cx:it.quantidadeCaixas});
+    });
+  });
+  return ordem.map(function(k){return porMerc[k];}).sort(function(a,b){ return b.total-a.total; });
+}
+// a mesma tabela "Caixas por tipo de mercadoria" na tela e no PDF
+function tabelaCaixasHtml(mercs,vazio){
+  if(!mercs.length) return '<div class="empty">'+(vazio||"Nenhuma carga nesse período com esse filtro.")+'</div>';
+  var tot={compra:0,venda:0,casada:0,total:0};
+  var linhas=mercs.map(function(m){
+    tot.compra+=m.compra; tot.venda+=m.venda; tot.casada+=m.casada; tot.total+=m.total;
+    return "<tr><td>"+esc(m.nome)+'</td><td class="num">'+(m.compra?fmtNum(m.compra):"—")+'</td><td class="num">'+(m.venda?fmtNum(m.venda):"—")+'</td><td class="num">'+(m.casada?fmtNum(m.casada):"—")+'</td><td class="num forte">'+fmtNum(m.total)+"</td></tr>";
+  }).join("");
+  return '<div class="tabela-cx"><table><thead><tr><th>Mercadoria</th><th class="num">Compras</th><th class="num">Vendas</th><th class="num">Casadas</th><th class="num">Total</th></tr></thead><tbody>'+linhas+
+    '</tbody><tfoot><tr><td>Total</td><td class="num">'+fmtNum(tot.compra)+'</td><td class="num">'+fmtNum(tot.venda)+'</td><td class="num">'+fmtNum(tot.casada)+'</td><td class="num forte">'+fmtNum(tot.total)+"</td></tr></tfoot></table></div>";
+}
+function pdfTabelaCaixas(doc,mercs){
+  if(!mercs.length) return;
+  var tot={compra:0,venda:0,casada:0,total:0};
+  var linhas=mercs.map(function(m){
+    tot.compra+=m.compra; tot.venda+=m.venda; tot.casada+=m.casada; tot.total+=m.total;
+    return [m.nome,m.compra?fmtNum(m.compra):"—",m.venda?fmtNum(m.venda):"—",m.casada?fmtNum(m.casada):"—",fmtNum(m.total)];
+  });
+  linhas.push({c:["Total",fmtNum(tot.compra),fmtNum(tot.venda),fmtNum(tot.casada),fmtNum(tot.total)],b:true,topo:true});
+  doc.tabela([{t:"Mercadoria",w:.4},{t:"Compras",w:.15,a:"r"},{t:"Vendas",w:.15,a:"r"},{t:"Casadas",w:.15,a:"r"},{t:"Total",w:.15,a:"r"}],linhas);
+}
+
+// itens da carga (com ou sem preço) como tabela do PDF
+function pdfTabelaItens(doc,c,comValores){
+  var its=itensCarga(c), casada=c.tipo==="casada";
+  var totalCx=its.reduce(function(a,it){return a+it.quantidadeCaixas;},0);
+  var cols, linhas;
+  if(!comValores){
+    cols=[{t:"Mercadoria",w:.7},{t:"Caixas",w:.3,a:"r"}];
+    linhas=its.map(function(it){ return [it.mercadoriaNome||"sem tipo",fmtNum(it.quantidadeCaixas)]; });
+    linhas.push({c:["Total",fmtNum(totalCx)],b:true,topo:true});
+  } else if(casada){
+    cols=[{t:"Mercadoria",w:.28},{t:"Caixas",w:.10,a:"r"},{t:"Compra/cx",w:.15,a:"r"},{t:"Venda/cx",w:.15,a:"r"},{t:"Total compra",w:.16,a:"r"},{t:"Total venda",w:.16,a:"r"}];
+    linhas=its.map(function(it){
+      return [it.mercadoriaNome||"sem tipo",fmtNum(it.quantidadeCaixas),it.preco==null?"—":fmtMoney(it.preco),it.precoVenda==null?"—":fmtMoney(it.precoVenda),
+        it.preco==null?"—":fmtMoney(it.preco*it.quantidadeCaixas),it.precoVenda==null?"—":fmtMoney(it.precoVenda*it.quantidadeCaixas)];
+    });
+    var tc=totalCompra(c), tv=totalVenda(c);
+    linhas.push({c:["Total",fmtNum(totalCx),"","",tc==null?"—":fmtMoney(tc),tv==null?"—":fmtMoney(tv)],b:true,topo:true});
+  } else {
+    cols=[{t:"Mercadoria",w:.40},{t:"Caixas",w:.15,a:"r"},{t:"Preço/cx",w:.20,a:"r"},{t:"Subtotal",w:.25,a:"r"}];
+    linhas=its.map(function(it){
+      return [it.mercadoriaNome||"sem tipo",fmtNum(it.quantidadeCaixas),it.preco==null?"—":fmtMoney(it.preco),it.preco==null?"—":fmtMoney(it.preco*it.quantidadeCaixas)];
+    });
+    var t1=totalCompra(c);
+    linhas.push({c:["Total",fmtNum(totalCx),"",t1==null?"—":fmtMoney(t1)],b:true,topo:true});
+  }
+  doc.tabela(cols,linhas);
+}
+// resultado da carga em valores (administrador)
+function pdfResultadoCarga(doc,c,destaque){
+  var tC=totalCompra(c), tV=totalVenda(c);
+  if(c.tipo==="casada"){
+    var desp=c.despesasExtras||[];
+    var despTotal=desp.reduce(function(s,d){return s+(d.valor||0);},0);
+    var lb=(tV||0)-(tC||0), ll=lb-despTotal;
+    doc.kv("Total da compra",fmtMoney(tC));
+    doc.kv("Total da venda",fmtMoney(tV));
+    desp.forEach(function(d){ doc.kv(d.nome||"Despesa extra","- "+fmtMoney(d.valor||0),{corVal:doc.COR.neg}); });
+    doc.kv("Lucro bruto",fmtMoney(lb),{corVal:lb>=0?doc.COR.pos:doc.COR.neg});
+    doc.kv("Lucro líquido",fmtMoney(ll),{bold:true,fundo:true,corVal:ll>=0?doc.COR.pos:doc.COR.neg});
+  } else if(destaque){
+    doc.kv("Valor total",fmtMoney(tC),{bold:true,fundo:true});
+  }
+}
+// bloco de uma carga (usado no PDF de uma carga, do dia e do período)
+function pdfBlocoCarga(doc,c,dataIso,comValores,mostrarData){
+  doc.garante(120);
+  doc.titulo("Carga nº "+(c.numeroSequencial||"—")+" · "+PDF_TIPO[c.tipo],statusInfo(c.status).label);
+  doc.texto(pdfPartes(c),{size:9.5});
+  doc.texto((mostrarData?"Data "+fmtDateBR(dataIso)+" · ":"")+"Placa "+(c.placa||"—")+" · "+fmtNum(c.quantidadeCaixas||0)+" caixas",{size:9,cor:doc.COR.dim});
+  doc.espaco(3);
+  pdfTabelaItens(doc,c,comValores);
+  if(comValores) pdfResultadoCarga(doc,c,true);
+  doc.espaco(8);
+}
+function pdfCargaUnica(c,dataIso){
+  var comValores=souAdmin();
+  var doc=criaPdf({titulo:"Carga nº "+(c.numeroSequencial||"")});
+  doc.capa(pdfMarca(),"Resumo da carga nº "+(c.numeroSequencial||"—"),fmtDateBR(dataIso)+" · "+PDF_TIPO[c.tipo]+" · "+statusInfo(c.status).label);
+  doc.kv("Operação",PDF_TIPO[c.tipo]);
+  doc.kv(c.tipo==="casada"?"Fornecedor":(c.tipo==="compra"?"Fornecedor":"Cliente"),c.nome||"—");
+  if(c.tipo==="casada") doc.kv("Comprador",c.clienteNome||"—");
+  doc.kv("Placa",c.placa||"—");
+  doc.kv("Status",statusInfo(c.status).label);
+  doc.kv("Total de caixas",fmtNum(c.quantidadeCaixas||0)+" cx",{bold:true});
+  doc.secao("Mercadorias");
+  pdfTabelaItens(doc,c,comValores);
+  if(comValores){ doc.secao("Valores"); pdfResultadoCarga(doc,c,true); }
+  return {bytes:doc.gerar(pdfRodape()),nome:"carga-"+(c.numeroSequencial||"x")+"-"+dataIso+".pdf"};
+}
+// dias=[{data,cargas}] (já filtrado por tipo, se for o caso)
+function pdfCargasDocumento(dias,de,ate,filtroTxt){
+  var comValores=souAdmin();
+  var ops=[];
+  dias.forEach(function(d){ (d.cargas||[]).forEach(function(c){ ops.push({c:c,data:d.data}); }); });
+  var umDia=(de===ate);
+  var doc=criaPdf({titulo:"Cargas"});
+  var sub=(umDia?fmtDateBR(de):fmtDateBR(de)+" a "+fmtDateBR(ate))+(filtroTxt?" · "+filtroTxt:"");
+  doc.capa(pdfMarca(),umDia?"Cargas do dia":"Cargas do período",sub);
+  var totCx=ops.reduce(function(a,o){return a+(o.c.quantidadeCaixas||0);},0);
+  var cartoes=[{r:"CARGAS",v:String(ops.length)},{r:"CAIXAS",v:fmtNum(totCx)}];
+  if(comValores){
+    var calc=calcDia({cargas:ops.map(function(o){return o.c;})});
+    cartoes.push({r:"ENTRADAS (VENDAS)",v:fmtMoney(calc.entradas)});
+    cartoes.push({r:"SAÍDAS (COMPRAS)",v:fmtMoney(calc.saidas)});
+    cartoes.push({r:"FECHAMENTO",v:fmtMoney(calc.saldo),cor:calc.saldo>=0?doc.COR.pos:doc.COR.neg});
+  }
+  doc.cartoes(cartoes);
+  if(!ops.length){ doc.texto("Nenhuma carga nesse período.",{cor:doc.COR.dim}); }
+  else{
+    doc.secao("Caixas por tipo de mercadoria");
+    pdfTabelaCaixas(doc,agregaMercs(ops));
+    dias.forEach(function(d){
+      if(!(d.cargas||[]).length) return;
+      doc.secao(umDia?"Cargas":fmtDateBR(d.data));
+      var lista=d.cargas.slice().sort(function(a,b){return (a.numeroSequencial||0)-(b.numeroSequencial||0);});
+      lista.forEach(function(c){ pdfBlocoCarga(doc,c,d.data,comValores,false); });
+    });
+  }
+  return {bytes:doc.gerar(pdfRodape()),nome:pdfNomeArquivo("cargas",de,ate)};
+}
+
+/* ---- Financeiro ---- */
+function pdfDetalhePagamento(p){
+  var partes=[];
+  if(p.meio==="cheque"&&p.cheque){
+    if(p.cheque.numero) partes.push("cheque nº "+p.cheque.numero);
+    if(p.cheque.banco) partes.push(p.cheque.banco);
+    if(p.cheque.bomPara) partes.push("bom para "+fmtDateBR(p.cheque.bomPara));
+  }
+  if(p.obs) partes.push(p.obs);
+  return partes.join(" · ");
+}
+function pdfFinLado(doc,l){
+  var st=l.status;
+  doc.secao(l.rotulo+" · "+l.contraparte);
+  doc.kv("Situação",st.label);
+  doc.kv("Valor total",fmtMoney(l.total));
+  doc.kv(l.dir==="pagar"?"Já pago":"Já recebido",fmtMoney(l.pagos),{corVal:doc.COR.pos});
+  doc.kv("Em aberto",fmtMoney(l.falta),{bold:true,fundo:true,corVal:l.falta>0?doc.COR.neg:doc.COR.pos});
+  doc.kv("Condição de pagamento",l.fin.prazoId===PRAZO_DATA?"Data escolhida":(l.fin.prazoNome||"À definir"));
+  doc.kv("Vencimento",vencTexto(l));
+  var pags=(l.fin.pagamentos||[]).slice().sort(function(a,b){return a.data<b.data?-1:1;});
+  doc.espaco(4);
+  if(!pags.length){ doc.texto("Nenhum pagamento lançado ainda.",{size:9,cor:doc.COR.dim}); return; }
+  doc.tabela([{t:"Data",w:.15},{t:"Meio",w:.20},{t:"Valor",w:.18,a:"r"},{t:"Detalhes",w:.47}],
+    pags.map(function(p){ return [fmtDateBR(p.data),meioLabel(p.meio),fmtMoney(p.valor),pdfDetalhePagamento(p)]; }));
+}
+function pdfFinOperacao(c,dataIso){
+  var doc=criaPdf({titulo:"Operação nº "+(c.numeroSequencial||"")});
+  doc.capa(pdfMarca(),"Resumo da operação nº "+(c.numeroSequencial||"—"),fmtDateBR(dataIso)+" · "+PDF_TIPO[c.tipo]+" · "+statusInfo(c.status).label);
+  doc.kv("Operação",PDF_TIPO[c.tipo]);
+  doc.kv(c.tipo==="venda"?"Cliente":"Fornecedor",c.nome||"—");
+  if(c.tipo==="casada") doc.kv("Comprador",c.clienteNome||"—");
+  doc.kv("Placa",c.placa||"—");
+  doc.kv("Total de caixas",fmtNum(c.quantidadeCaixas||0)+" cx",{bold:true});
+  doc.secao("Mercadorias");
+  pdfTabelaItens(doc,c,true);
+  doc.secao("Resultado");
+  pdfResultadoCarga(doc,c,true);
+  ladosFin(c,dataIso).forEach(function(l){ pdfFinLado(doc,l); });
+  return {bytes:doc.gerar(pdfRodape()),nome:"operacao-"+(c.numeroSequencial||"x")+"-"+dataIso+".pdf"};
+}
+function pdfFinLista(lados,tituloDoc,sub,nomeArq){
+  var doc=criaPdf({titulo:tituloDoc,paisagem:true});
+  doc.capa(pdfMarca(),tituloDoc,sub);
+  var tot=totaisFin(lados);
+  var saldo=tot.aReceber-tot.aPagar;
+  doc.cartoes([
+    {r:"A PAGAR",v:fmtMoney(tot.aPagar),cor:doc.COR.neg},
+    {r:"A RECEBER",v:fmtMoney(tot.aReceber),cor:doc.COR.pos},
+    {r:"SALDO PREVISTO",v:fmtMoney(saldo),cor:saldo>=0?doc.COR.pos:doc.COR.neg},
+    {r:"JÁ PAGO",v:fmtMoney(tot.pago)},
+    {r:"JÁ RECEBIDO",v:fmtMoney(tot.recebido)}
+  ]);
+  if(!lados.length){ doc.texto("Nenhuma operação com esse filtro.",{cor:doc.COR.dim}); }
+  else{
+    doc.secao("Operações ("+lados.length+")");
+    var linhas=lados.map(function(l){
+      var c=l.carga, st=l.status;
+      var tipo=c.tipo==="casada"?(l.dir==="pagar"?"Casada · pagto":"Casada · receb."):PDF_TIPO[c.tipo];
+      return [fmtDateBR(l.dataIso),String(c.numeroSequencial||"—"),tipo,l.contraparte,itensResumoTexto(c),fmtNum(c.quantidadeCaixas||0),
+        l.total==null?"—":fmtMoney(l.total),fmtMoney(l.pagos),l.total==null?"—":{t:fmtMoney(l.falta),cor:l.falta>0?doc.COR.neg:doc.COR.pos},
+        l.vencimento?fmtDateBR(l.vencimento)+(st.atrasado?" !":""):"—",st.curto||st.label];
+    });
+    doc.tabela([{t:"Data",w:58},{t:"Nº",w:22,a:"r"},{t:"Tipo",w:68},{t:"Contraparte",w:112},{t:"Mercadorias",w:146},{t:"Cx",w:32,a:"r"},
+      {t:"Total",w:66,a:"r"},{t:"Quitado",w:62,a:"r"},{t:"Em aberto",w:66,a:"r"},{t:"Vencimento",w:60},{t:"Situação",w:58}],linhas,{size:8});
+    if(lados.some(function(l){return l.status.atrasado;})) doc.texto("! = vencimento já passou e a operação ainda não foi quitada.",{size:8,cor:doc.COR.dim});
+  }
+  return {bytes:doc.gerar(pdfRodape()),nome:nomeArq};
+}
+
+/* entrega do arquivo: no celular abre a folha de compartilhar (Salvar em
+   Arquivos, WhatsApp, e-mail…); no computador baixa direto */
+async function entregaPdf(res){
+  var blob=new Blob([res.bytes],{type:"application/pdf"});
+  var file=null;
+  try{ file=new File([blob],res.nome,{type:"application/pdf"}); }catch(e){}
+  var toque=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
+  if(toque&&file&&navigator.canShare&&navigator.canShare({files:[file]})){
+    try{ await navigator.share({files:[file],title:res.nome}); return; }
+    catch(e){ if(e&&e.name==="AbortError") return; }
+  }
+  var url=URL.createObjectURL(blob);
+  if(!toque){
+    var a=document.createElement("a"); a.href=url; a.download=res.nome; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); },60000);
+    toast("PDF gerado: "+res.nome);
+    return;
+  }
+  // celular sem compartilhar arquivo (ou compartilhar bloqueado): botão para abrir/baixar
+  var node=openModal('<div class="modal-back centro" data-close-modal="1"><div class="modal" style="max-width:380px" onclick="event.stopPropagation()">'+
+    '<h3 style="font-size:16px;margin-bottom:10px">PDF pronto</h3>'+
+    '<p style="font-size:13.5px;color:var(--text-dim);margin:0 0 12px">'+esc(res.nome)+'</p>'+
+    '<div class="modal-actions"><button type="button" class="btn ghost" data-close-modal="1">Fechar</button>'+
+    '<a class="btn primary" href="'+url+'" download="'+esc(res.nome)+'" target="_blank" rel="noopener">Abrir PDF</a></div></div></div>');
+  return node;
+}
+
+/* tabela com os tipos de mercadoria da carga (e as caixas de cada um). Serve
+   para qualquer carga — com um tipo só ou vários. Valores só se "comValores" */
+function tabelaItensHtml(c,comValores){
+  var its=itensCarga(c);
+  var casada=c.tipo==="casada";
+  var totCx=its.reduce(function(a,it){return a+it.quantidadeCaixas;},0);
+  var head='<tr><th>Mercadoria</th><th class="num">Caixas</th>'+
+    (comValores?(casada?'<th class="num">Compra/cx</th><th class="num">Venda/cx</th>':'<th class="num">Preço/cx</th><th class="num">Subtotal</th>'):"")+"</tr>";
+  var rows=its.map(function(it){
+    return "<tr><td>"+esc(it.mercadoriaNome||"sem tipo")+'</td><td class="num">'+fmtNum(it.quantidadeCaixas)+"</td>"+
+      (comValores?(casada?
+        '<td class="num">'+(it.preco==null?"—":fmtMoney(it.preco))+'</td><td class="num">'+(it.precoVenda==null?"—":fmtMoney(it.precoVenda))+"</td>":
+        '<td class="num">'+(it.preco==null?"—":fmtMoney(it.preco))+'</td><td class="num">'+(it.preco==null?"—":fmtMoney(it.preco*it.quantidadeCaixas))+"</td>"):"")+
+      "</tr>";
+  }).join("");
+  var foot="";
+  if(its.length>1||comValores){
+    var t=comValores&&!casada?totalCompra(c):null;
+    foot='<tfoot><tr><td>Total</td><td class="num">'+fmtNum(totCx)+"</td>"+
+      (comValores?(casada?"<td></td><td></td>":'<td></td><td class="num">'+(t==null?"—":fmtMoney(t))+"</td>"):"")+"</tr></tfoot>";
+  }
+  return '<div class="itens-carga"><table><thead>'+head+"</thead><tbody>"+rows+"</tbody>"+foot+"</table></div>";
+}
+
+var CARGA_MAX_DIAS=92;
+function cargaPeriodoDefaults(){
+  if(!state.cargaAte) state.cargaAte=todayIso();
+  if(!state.cargaDe) state.cargaDe=state.cargaAte.slice(0,8)+"01";
+}
+// campos De / Até no mesmo tamanho e jeito em todas as abas
+function periodoCamposHtml(idDe,idAte,de,ate){
+  return '<label class="field">De<input type="date" id="'+idDe+'" value="'+de+'"></label>'+
+    '<label class="field">Até<input type="date" id="'+idAte+'" value="'+ate+'"></label>';
+}
+async function carregarCargasPeriodo(){
+  cargaPeriodoDefaults();
+  var de=(document.getElementById("carga-de")||{}).value||state.cargaDe;
+  var ate=(document.getElementById("carga-ate")||{}).value||state.cargaAte;
+  if(!de||!ate){ toast("Escolha as duas datas do período.",true); return false; }
+  if(de>ate){ var t=de; de=ate; ate=t; }
+  if(diasEntre(de,ate)+1>CARGA_MAX_DIAS){ toast("Escolha um período de até 3 meses.",true); return false; }
+  state.cargaDe=de; state.cargaAte=ate;
+  state.cargaPerDias=await Store.getDiasNoPeriodo(de,ate,CARGA_MAX_DIAS+5);
+  return true;
+}
+// cargas que aparecem na tela (já com o filtro de tipo), separadas por dia
+function cargasVisiveis(){
   var filtro=state.cargaFiltroTipo;
-  var opView=!souAdmin(); // operacional: sem valores financeiros, sem editar/excluir/adicionar
-  var cargas=(dia.cargas||[]).filter(function(c){return filtro==="todas"||c.tipo===filtro;}).map(function(c){
+  var dias=state.cargaModo==="periodo"
+    ? (state.cargaPerDias||[]).slice().sort(function(a,b){return a.data<b.data?-1:1;})
+    : [{data:state.cargaData,cargas:(state.cargaDia||{cargas:[]}).cargas||[]}];
+  return dias.map(function(d){
+    return {data:d.data,cargas:(d.cargas||[]).filter(function(c){return filtro==="todas"||c.tipo===filtro;})
+      .sort(function(a,b){return (a.numeroSequencial||0)-(b.numeroSequencial||0);})};
+  });
+}
+
+function viewCargas(){
+  var opView=!souAdmin(); // operacional: sem valores financeiros, sem editar/excluir
+  var modoPer=state.cargaModo==="periodo";
+  if(modoPer) cargaPeriodoDefaults();
+  var filtro=state.cargaFiltroTipo;
+  var dias=cargasVisiveis();
+  var tipoPill={compra:"gray",venda:"green",casada:"gold"};
+
+  var lede=modoPer
+    ? "Cargas de um período, separadas por dia. Para editar uma carga, toque em \"Abrir dia\"."
+    : (opView?"Tipo, status, quantidade, placa e fotos das cargas da data selecionada. Um administrador preenche os valores depois.":"Todas as cargas de compra, venda e compra casada da data selecionada.");
+  var head='<div class="page-head"><div><h1>Cargas</h1><p class="lede">'+lede+'</p></div>'+
+    '<div class="toolbar">'+
+      (modoPer?"":'<input type="date" id="carga-data" aria-label="Data das cargas" value="'+state.cargaData+'" style="width:auto">')+
+      '<button class="btn" data-action="exportar-cargas">'+ICONS.download+" Exportar PDF</button>"+
+      (modoPer?"":'<button class="btn primary" data-action="nova-carga">'+ICONS.plus+" Nova carga</button>")+
+    "</div></div>";
+
+  var segModo='<div style="margin-bottom:14px"><div class="seg" role="group" aria-label="Ver por">'+
+    '<button class="'+(modoPer?"":"active")+'" data-carga-modo="dia">Dia</button>'+
+    '<button class="'+(modoPer?"active":"")+'" data-carga-modo="periodo">Período</button></div></div>';
+  var barraPer=modoPer?
+    '<div class="card filtro-card"><div class="section-title">Filtrar um período</div>'+
+      '<div class="filtro-linha">'+periodoCamposHtml("carga-de","carga-ate",state.cargaDe,state.cargaAte)+
+      '<button type="button" class="btn primary filtro-ok" data-action="carga-filtrar">Filtrar</button></div></div>':"";
+
+  var seg='<div class="seg" style="margin-bottom:16px">'+["todas","compra","venda","casada"].map(function(f){return '<button class="'+(filtro===f?"active":"")+'" data-carga-filtro="'+f+'">'+(f==="todas"?"Todas":f==="compra"?"Compras":f==="venda"?"Vendas":"Compras Casadas")+"</button>";}).join("")+"</div>";
+
+  function docChip(label,fotoId,dataIso){
+    return '<div class="doc-chip">'+
+      (fotoId?'<img class="thumb" data-view-foto="'+dataIso+"|"+fotoId+'" src="">':'<div class="thumb thumb-empty">'+ICONS.cam+"</div>")+
+      '<span class="doc-label">'+label+"</span></div>";
+  }
+  // várias fotos do produto: uma miniatura para cada
+  function docsProduto(c,dataIso){
+    var ids=fotosProdutoCarga(c);
+    if(!ids.length) return docChip("Foto do produto",null,dataIso);
+    return ids.map(function(fid,i){ return docChip(ids.length===1?"Foto do produto":"Produto "+(i+1)+"/"+ids.length,fid,dataIso); }).join("");
+  }
+  function enriquece(c){
     var valorTotal=totalCompra(c)||0;
     var valorTotalVenda=c.tipo==="casada"?(totalVenda(c)||0):valorTotal;
     var despesasExtras=c.tipo==="casada"?(c.despesasExtras||[]):[];
@@ -3895,81 +4524,51 @@ function viewCargas(){
     var lucroBruto=c.tipo==="casada"?(valorTotalVenda-valorTotal):undefined;
     var lucroLiquido=c.tipo==="casada"?(lucroBruto-despesasTotal):undefined;
     return Object.assign({},c,{valorTotal:valorTotal,valorTotalVenda:valorTotalVenda,despesasExtras:despesasExtras,despesasTotal:despesasTotal,lucroBruto:lucroBruto,lucroLiquido:lucroLiquido});
-  });
-
-  var head='<div class="page-head"><div><h1>Cargas</h1><p class="lede">'+(opView?"Tipo, status, quantidade, placa e fotos das cargas da data selecionada. Um administrador preenche os valores depois.":"Todas as cargas de compra, venda e compra casada da data selecionada.")+'</p></div>'+
-    '<div class="toolbar"><input type="date" id="carga-data" aria-label="Data das cargas" value="'+state.cargaData+'" style="width:auto"><button class="btn primary" data-action="nova-carga">'+ICONS.plus+" Nova carga</button></div></div>";
-
-  var seg='<div class="seg" style="margin-bottom:16px">'+["todas","compra","venda","casada"].map(function(f){return '<button class="'+(filtro===f?"active":"")+'" data-carga-filtro="'+f+'">'+(f==="todas"?"Todas":f==="compra"?"Compras":f==="venda"?"Vendas":"Compras Casadas")+"</button>";}).join("")+"</div>";
-
-  var tipoPill={compra:"gray",venda:"green",casada:"gold"};
-
-  function docChip(label,fotoId){
-    return '<div class="doc-chip">'+
-      (fotoId?'<img class="thumb" data-view-foto="'+state.cargaData+"|"+fotoId+'" src="">':'<div class="thumb thumb-empty">'+ICONS.cam+"</div>")+
-      '<span class="doc-label">'+label+"</span></div>";
+  }
+  function botaoExportar(c,dataIso){
+    return '<button class="iconbtn sm carga-export" data-export-carga="'+c.id+"|"+dataIso+'" aria-label="Exportar PDF desta carga" title="Exportar PDF desta carga">'+ICONS.download+"</button>";
   }
 
-  // várias fotos do produto: uma miniatura para cada
-  function docsProduto(c){
-    var ids=fotosProdutoCarga(c);
-    if(!ids.length) return docChip("Foto do produto",null);
-    return ids.map(function(fid,i){ return docChip(ids.length===1?"Foto do produto":"Produto "+(i+1)+"/"+ids.length,fid); }).join("");
-  }
-  // tabela dos tipos de mercadoria da carga; valores só se "comValores"
-  function tabelaItens(c,comValores){
-    var its=itensCarga(c);
-    var casada=c.tipo==="casada";
-    var head='<tr><th>Mercadoria</th><th class="num">Caixas</th>'+
-      (comValores?(casada?'<th class="num">Compra/cx</th><th class="num">Venda/cx</th>':'<th class="num">Preço/cx</th><th class="num">Subtotal</th>'):"")+"</tr>";
-    var rows=its.map(function(it){
-      return "<tr><td>"+esc(it.mercadoriaNome||"sem tipo")+'</td><td class="num">'+fmtNum(it.quantidadeCaixas)+"</td>"+
-        (comValores?(casada?
-          '<td class="num">'+(it.preco==null?"—":fmtMoney(it.preco))+'</td><td class="num">'+(it.precoVenda==null?"—":fmtMoney(it.precoVenda))+"</td>":
-          '<td class="num">'+(it.preco==null?"—":fmtMoney(it.preco))+'</td><td class="num">'+(it.preco==null?"—":fmtMoney(it.preco*it.quantidadeCaixas))+"</td>"):"")+
-        "</tr>";
-    }).join("");
-    return '<div class="itens-carga"><table>'+head+rows+"</table></div>";
-  }
-
-  var cards=cargas.map(function(c){
+  function cartao(c0,dataIso){
+    var c=enriquece(c0);
     var st=statusInfo(c.status);
-    var varios=temVariosItens(c);
+    var editavel=!modoPer && !opView;
+    var nomeTxt='<strong>'+(c.tipo==="casada"?(esc(c.nome)+" &rarr; "+esc(c.clienteNome||"—")):esc(c.nome))+"</strong>";
+    var tipoPillHtml='<span class="pill '+(tipoPill[c.tipo]||"gray")+'">'+(c.tipo==="casada"?"compra casada":c.tipo)+"</span>";
+
+    // quadros de quantidade e placa (os preços ficam só na tabela)
+    var details='<div class="carga-details">'+
+      '<div class="item"><div class="k">Quantidade</div><div class="v">'+fmtNum(c.quantidadeCaixas||0)+" cx</div></div>"+
+      '<div class="item"><div class="k">Placa</div><div class="v">'+esc(c.placa||"—")+"</div></div>"+
+    "</div>";
+    var rotNota=c.tipo==="compra"?"Nota fiscal (entrada)":c.tipo==="venda"?"Nota fiscal (saída)":"Nota fiscal";
+    var docs='<div class="carga-docs">'+docChip(rotNota,c.fotoId,dataIso)+docChip("Nota de Romaneio",c.fotoRomaneioId,dataIso)+docsProduto(c,dataIso)+"</div>";
 
     if(opView){
-      // visão operacional: status/tipo/nome/quantidade/placa/foto da mercadoria/número da
-      // carga — sem qualquer valor financeiro (preço, valor total, lucro) e sem ações
-      var topOp='<div class="carga-top"><div class="left">'+
-        '<span class="pill '+(tipoPill[c.tipo]||"gray")+'">'+(c.tipo==="casada"?"compra casada":c.tipo)+'</span>'+
-        (varios?"":itensPillsHtml(c))+
+      // visão operacional: status/tipo/nome/quantidade/placa/fotos/número da carga —
+      // sem qualquer valor financeiro (preço, valor total, lucro) e sem editar
+      var topOp='<div class="carga-top"><div class="left">'+tipoPillHtml+
         '<span class="pill '+st.cls+'">'+esc(st.label)+"</span>"+
-        '<span class="carga-num">carga nº '+(c.numeroSequencial||"—")+'</span>'+
-        '<strong>'+(c.tipo==="casada"?(esc(c.nome)+" &rarr; "+esc(c.clienteNome||"—")):esc(c.nome))+"</strong></div></div>";
-      var detailsOp='<div class="carga-details">'+
-        '<div class="item"><div class="k">Quantidade'+(varios?" total":"")+'</div><div class="v">'+fmtNum(c.quantidadeCaixas||0)+" cx</div></div>"+
-        '<div class="item"><div class="k">Placa</div><div class="v">'+esc(c.placa||"—")+"</div></div>"+
-      "</div>";
-      var docsOp='<div class="carga-docs">'+docChip(c.tipo==="compra"?"Nota fiscal (entrada)":c.tipo==="venda"?"Nota fiscal (saída)":"Nota fiscal",c.fotoId)+docChip("Nota de Romaneio",c.fotoRomaneioId)+docsProduto(c)+"</div>";
-      return '<div class="carga-card tipo-'+c.tipo+'">'+topOp+(varios?tabelaItens(c,false):"")+detailsOp+docsOp+"</div>";
+        '<span class="carga-num">carga nº '+(c.numeroSequencial||"—")+"</span>"+nomeTxt+"</div>"+
+        "</div>";
+      return '<div class="carga-card tipo-'+c.tipo+'">'+botaoExportar(c,dataIso)+topOp+tabelaItensHtml(c,false)+details+docs+"</div>";
     }
 
     var actions='<div class="carga-top-actions">'+
-      '<select class="status-select '+st.cls+'" data-status-carga="'+c.id+'" aria-label="Status da carga">'+
-        ["acarregar","transporte","entregue"].map(function(s){var si=statusInfo(s);return '<option value="'+s+'"'+(c.status===s?" selected":"")+">"+si.label+"</option>";}).join("")+
-      "</select>"+
-      '<button class="iconbtn sm" data-action="editar-carga" data-id="'+c.id+'" aria-label="Editar carga">'+ICONS.edit+"</button>"+
-      '<button class="iconbtn sm" data-action="apagar-carga" data-id="'+c.id+'" aria-label="Apagar carga">'+ICONS.trash+"</button>"+
+      (editavel?
+        '<select class="status-select '+st.cls+'" data-status-carga="'+c.id+'" aria-label="Status da carga">'+
+          ["acarregar","transporte","entregue"].map(function(s){var si=statusInfo(s);return '<option value="'+s+'"'+(c.status===s?" selected":"")+">"+si.label+"</option>";}).join("")+
+        "</select>":'<span class="pill '+st.cls+'">'+esc(st.label)+"</span>")+
+      (editavel?
+        '<button class="iconbtn sm" data-action="editar-carga" data-id="'+c.id+'" aria-label="Editar carga">'+ICONS.edit+"</button>"+
+        '<button class="iconbtn sm" data-action="apagar-carga" data-id="'+c.id+'" aria-label="Apagar carga">'+ICONS.trash+"</button>":"")+
     "</div>";
 
-    var top='<div class="carga-top"><div class="left">'+
-      '<span class="pill '+(tipoPill[c.tipo]||"gray")+'">'+(c.tipo==="casada"?"compra casada":c.tipo)+'</span>'+
-      (varios?"":itensPillsHtml(c))+
+    var top='<div class="carga-top"><div class="left">'+tipoPillHtml+
       (c.preco==null?'<span class="pill orange">aguardando valores</span>':"")+
-      '<span class="carga-num">carga nº '+(c.numeroSequencial||"—")+'</span>'+
-      '<strong>'+(c.tipo==="casada"?(esc(c.nome)+" &rarr; "+esc(c.clienteNome||"—")):esc(c.nome))+"</strong></div>"+
-      actions+"</div>";
+      '<span class="carga-num">carga nº '+(c.numeroSequencial||"—")+"</span>"+nomeTxt+"</div>"+actions+"</div>";
 
-    var result, details, docs;
+    var result;
     if(c.tipo==="casada"){
       var lucroBruto=c.lucroBruto||0, lucroLiquido=c.lucroLiquido||0;
       result='<div class="carga-resumo">'+
@@ -3979,27 +4578,34 @@ function viewCargas(){
         (c.despesasExtras&&c.despesasExtras.length?c.despesasExtras.map(function(d){return '<div class="linha despesa"><span class="rlabel">'+esc(d.nome||"Despesa extra")+'</span><span class="rvalue neg">&minus; '+fmtMoney(d.valor||0)+"</span></div>";}).join(""):"")+
         '<div class="linha final"><span class="rlabel">Lucro líquido</span><span class="rvalue '+(lucroLiquido>=0?"pos":"neg")+'">'+fmtMoney(lucroLiquido)+"</span></div>"+
       "</div>";
-      details='<div class="carga-details">'+
-        '<div class="item"><div class="k">Quantidade'+(varios?" total":"")+'</div><div class="v">'+fmtNum(c.quantidadeCaixas||0)+" cx</div></div>"+
-        '<div class="item"><div class="k">'+(varios?"Compra média / cx":"Preço de compra / cx")+'</div><div class="v">'+fmtMoney(c.preco)+"</div></div>"+
-        '<div class="item"><div class="k">'+(varios?"Venda média / cx":"Preço de venda / cx")+'</div><div class="v">'+fmtMoney(c.precoVenda)+"</div></div>"+
-        '<div class="item"><div class="k">Placa</div><div class="v">'+esc(c.placa||"—")+"</div></div>"+
-      "</div>";
-      docs='<div class="carga-docs">'+docChip("Nota fiscal",c.fotoId)+docChip("Nota de Romaneio",c.fotoRomaneioId)+docsProduto(c)+"</div>";
     } else {
       result='<div class="carga-resumo"><div class="linha final"><span class="rlabel">Valor total</span><span class="rvalue gold">'+fmtMoney(c.valorTotal)+"</span></div></div>";
-      details='<div class="carga-details">'+
-        '<div class="item"><div class="k">'+(varios?"Preço médio / caixa":"Preço / caixa")+'</div><div class="v">'+fmtMoney(c.preco)+"</div></div>"+
-        '<div class="item"><div class="k">Quantidade'+(varios?" total":"")+'</div><div class="v">'+fmtNum(c.quantidadeCaixas||0)+" cx</div></div>"+
-        '<div class="item"><div class="k">Placa</div><div class="v">'+esc(c.placa||"—")+"</div></div>"+
-      "</div>";
-      docs='<div class="carga-docs">'+docChip(c.tipo==="compra"?"Nota fiscal (entrada)":"Nota fiscal (saída)",c.fotoId)+docChip("Nota de Romaneio",c.fotoRomaneioId)+docsProduto(c)+"</div>";
     }
+    return '<div class="carga-card tipo-'+c.tipo+'">'+botaoExportar(c,dataIso)+top+result+tabelaItensHtml(c,true)+details+docs+"</div>";
+  }
 
-    return '<div class="carga-card tipo-'+c.tipo+'">'+top+result+(varios?tabelaItens(c,true):"")+details+docs+"</div>";
-  }).join("") || '<div class="empty">'+ICONS.box+'<div class="t">Nenhuma carga nesta data</div>Cadastre uma nova carga de compra ou venda.</div>';
-
-  return head+seg+cards;
+  var corpo;
+  var totCargas=dias.reduce(function(a,d){return a+d.cargas.length;},0);
+  if(modoPer){
+    if(state.cargaPerDias==null){
+      corpo='<div class="empty">Carregando as cargas do período…</div>';
+    } else if(!totCargas){
+      corpo='<div class="empty">'+ICONS.box+'<div class="t">Nenhuma carga nesse período</div>Escolha outras datas ou outro tipo de carga.</div>';
+    } else {
+      var totCx=0; dias.forEach(function(d){ d.cargas.forEach(function(c){ totCx+=(c.quantidadeCaixas||0); }); });
+      corpo='<div class="kpi-row poucos"><div class="kpi"><div class="label">Cargas no período</div><div class="value">'+totCargas+"</div></div>"+
+        '<div class="kpi"><div class="label">Caixas no período</div><div class="value">'+fmtNum(totCx)+"</div></div></div>"+
+        dias.filter(function(d){return d.cargas.length;}).map(function(d){
+          return '<div class="dia-grupo"><div class="dia-grupo-tit"><span>'+fmtDateBR(d.data)+" · "+d.cargas.length+(d.cargas.length===1?" carga":" cargas")+'</span>'+
+            '<button type="button" class="btn ghost sm" data-abrir-dia="'+d.data+'">Abrir dia</button></div>'+
+            d.cargas.map(function(c){return cartao(c,d.data);}).join("")+"</div>";
+        }).join("");
+    }
+  } else {
+    corpo=dias[0].cargas.map(function(c){return cartao(c,dias[0].data);}).join("") ||
+      '<div class="empty">'+ICONS.box+'<div class="t">Nenhuma carga nesta data</div>Cadastre uma nova carga de compra ou venda.</div>';
+  }
+  return head+segModo+barraPer+seg+corpo;
 }
 
 /* ============ VIEW: Financeiro ============ */
@@ -4116,6 +4722,7 @@ function finDetalheHtml(lado){
     (semValor?"":'<button class="btn" data-fin-novo-pag="'+lado.chave+'">'+ICONS.plus+" Lançar pagamento</button>")+
     (semValor||lado.falta<=0?"":'<button class="btn" data-fin-quitar="'+lado.chave+'">'+ICONS.check+" Quitar tudo</button>")+
     '<button class="btn ghost" data-fin-resumo="'+lado.cargaId+"|"+lado.dataIso+'">Ver resumo da carga</button>'+
+    '<button class="btn ghost" data-fin-export="'+lado.cargaId+"|"+lado.dataIso+'">'+ICONS.download+" Exportar PDF</button>"+
   "</div>";
 
   var aviso=semValor?'<div class="fin-aviso">Esta carga ainda está sem valores. Um administrador precisa preencher o preço na aba Cargas antes de lançar pagamentos.</div>':"";
@@ -4268,16 +4875,20 @@ function viewFinanceiro(){
 
   var lede=modo==="pendentes"
     ? "Tudo que ainda está em aberto nos últimos "+FIN_JANELA_DIAS+" dias, do mais atrasado para o que vence depois."
-    : "Operações lançadas na data selecionada, com a situação de pagamento de cada uma.";
+    : modo==="periodo"
+      ? "Operações lançadas entre duas datas, com a situação de pagamento de cada uma."
+      : "Operações lançadas na data selecionada, com a situação de pagamento de cada uma.";
 
   var head='<div class="page-head"><div><h1>Financeiro</h1><p class="lede">'+lede+'</p></div>'+
     '<div class="toolbar">'+
       (modo==="dia"?'<input type="date" id="fin-data" aria-label="Data das operações" value="'+state.finData+'" style="width:auto">':"")+
+      '<button type="button" class="btn" data-action="exportar-fin">'+ICONS.download+" Exportar PDF</button>"+
       '<button type="button" class="btn ghost" data-action="lembretes">'+ICON_SINO+" Lembretes</button>"+
     "</div></div>";
 
   var segModo='<div class="seg" style="margin-bottom:16px">'+
     '<button class="'+(modo==="dia"?"active":"")+'" data-fin-modo="dia">Dia</button>'+
+    '<button class="'+(modo==="periodo"?"active":"")+'" data-fin-modo="periodo">Período</button>'+
     '<button class="'+(modo==="pendentes"?"active":"")+'" data-fin-modo="pendentes">Pendentes Futuros'+(tot.atrasados?" ("+tot.atrasados+" atrasado"+(tot.atrasados>1?"s":"")+")":"")+"</button>"+
   "</div>";
 
@@ -4324,7 +4935,14 @@ function viewFinanceiro(){
     (modo==="pendentes"?"Nada em aberto":"Nenhuma operação nesta data")+"</div>"+
     (modo==="pendentes"?"Todas as operações do período estão quitadas.":"Lance cargas na aba Cargas para acompanhá-las aqui.")+"</div>";
 
-  return head+segModo+kpis+filtros+lista;
+  var barraPer="";
+  if(modo==="periodo"){
+    finPeriodoDefaults();
+    barraPer='<div class="card filtro-card"><div class="section-title">Filtrar um período</div>'+
+      '<div class="filtro-linha">'+periodoCamposHtml("fin-de","fin-ate",state.finDe,state.finAte)+
+      '<button type="button" class="btn primary filtro-ok" data-action="fin-filtrar">Filtrar</button></div></div>';
+  }
+  return head+segModo+barraPer+kpis+filtros+lista;
 }
 
 function cargaEntBloco(label,listaOpts,selectName,selectedId){
@@ -4475,18 +5093,13 @@ function modalResumoCarga(c,dataIso){
     var lucroBruto=(tV||0)-(tC||0);
     ln("Fornecedor",esc(c.nome));
     ln("Comprador",esc(c.clienteNome||"—"));
-    ln("Quantidade",fmtNum(qtd)+" cx");
-    ln("Preço de compra / cx",fmtMoney(c.preco));
     ln("Total da compra",fmtMoney(tC));
-    ln("Preço de venda / cx",fmtMoney(c.precoVenda));
     ln("Total da venda",fmtMoney(tV));
     desp.forEach(function(d){ ln(d.nome||"Despesa extra","&minus; "+fmtMoney(d.valor||0),"despesa"); });
     ln("Lucro bruto",'<span class="'+(lucroBruto>=0?"pos":"neg")+'">'+fmtMoney(lucroBruto)+"</span>");
     ln("Lucro líquido",'<span class="'+((lucroBruto-despTotal)>=0?"pos":"neg")+'">'+fmtMoney(lucroBruto-despTotal)+"</span>","final");
   } else {
     ln(c.tipo==="compra"?"Fornecedor":"Cliente",esc(c.nome));
-    ln("Quantidade",fmtNum(qtd)+" cx");
-    ln("Preço / caixa",fmtMoney(c.preco));
     ln("Valor total",fmtMoney(tC),"final");
   }
 
@@ -4507,9 +5120,10 @@ function modalResumoCarga(c,dataIso){
       '<span class="carga-num">op. nº '+(c.numeroSequencial||"—")+"</span>"+
     "</div>"+
     '<div class="fin-resumo-sub">'+fmtDateBR(dataIso)+" · placa "+esc(c.placa||"—")+"</div>"+
+    '<div class="section-title" style="margin:6px 0 0">Mercadorias</div>'+tabelaItensHtml(c,true)+
     '<div class="carga-resumo">'+linhas.join("")+"</div>"+
     finBlocos+
-    '<div class="modal-actions"><button type="button" class="btn primary" data-close-modal="1">Fechar</button></div>'+
+    '<div class="modal-actions"><button type="button" class="btn ghost" data-fin-export="'+c.id+"|"+dataIso+'">'+ICONS.download+' Exportar PDF</button><button type="button" class="btn primary" data-close-modal="1">Fechar</button></div>'+
   "</div></div>";
 }
 
@@ -4640,7 +5254,8 @@ function modalCarga(carga){
       '<div class="row" id="carga-fotos-produto-row"></div>'+
       '<input type="file" accept="image/*,application/pdf" multiple id="carga-foto-qual-input" style="display:none">'+
     "</div>"+
-    '<p class="dica-colar">Recebeu a nota no WhatsApp ou no e-mail? Toque e segure nela, escolha <strong>Copiar</strong> e depois toque em <strong>Colar</strong> aqui.</p>'+
+    '<div class="colar-zona" id="carga-colar-zona" contenteditable="true" inputmode="none" role="textbox" spellcheck="false" autocapitalize="off" autocorrect="off" aria-label="Caixa para colar a nota fiscal ou foto copiada" data-ph="Colar a nota aqui: toque e segure nesta caixa e escolha Colar (no computador: clique e use Ctrl+V ou ⌘V)"></div>'+
+    '<p class="dica-colar">Recebeu a nota no WhatsApp, no e-mail ou nos Arquivos? Copie a imagem ou o PDF, volte aqui, toque e segure na caixa acima e escolha <strong>Colar</strong>. Se não colar, use o botão da câmera para escolher o arquivo.</p>'+
     '<div class="modal-actions"><button type="button" class="btn ghost" data-close-modal="1">Cancelar</button><button type="button" class="btn primary" id="carga-save">Salvar carga</button></div>'+
     "</div></div></div>";
 }
@@ -4814,6 +5429,40 @@ function attachHandlers(){
       render();
     });});
     document.querySelectorAll("[data-view-foto]").forEach(hookFotoThumb);
+    // dia x período
+    document.querySelectorAll("[data-carga-modo]").forEach(function(el){ el.onclick=guarded(async function(){
+      var m=el.getAttribute("data-carga-modo");
+      if(m===state.cargaModo) return;
+      state.cargaModo=m;
+      if(m==="periodo"){ state.cargaPerDias=null; cargaPeriodoDefaults(); render(); await carregarCargasPeriodo(); }
+      else { state.cargaDia=await Store.getDia(state.cargaData); }
+      render();
+    }); });
+    var cf=document.querySelector('[data-action="carga-filtrar"]');
+    if(cf) cf.onclick=guarded(async function(){ if(await carregarCargasPeriodo()) render(); });
+    document.querySelectorAll("[data-abrir-dia]").forEach(function(el){ el.onclick=guarded(async function(){
+      state.cargaData=el.getAttribute("data-abrir-dia"); state.cargaModo="dia";
+      state.cargaDia=await Store.getDia(state.cargaData);
+      render(); window.scrollTo(0,0);
+    }); });
+    // exportar em PDF: a carga, o dia ou o período na tela
+    var exC=document.querySelector('[data-action="exportar-cargas"]');
+    if(exC) exC.onclick=guarded(async function(){
+      var de, ate;
+      if(state.cargaModo==="periodo"){
+        if(state.cargaPerDias==null){ toast("Toque em Filtrar antes de exportar.",true); return; }
+        de=state.cargaDe; ate=state.cargaAte;
+      } else { de=ate=state.cargaData; }
+      var nomes={compra:"só compras",venda:"só vendas",casada:"só compras casadas"};
+      await entregaPdf(pdfCargasDocumento(cargasVisiveis(),de,ate,nomes[state.cargaFiltroTipo]||""));
+    });
+    document.querySelectorAll("[data-export-carga]").forEach(function(el){ el.onclick=guarded(async function(){
+      var p=el.getAttribute("data-export-carga").split("|");
+      var c=null;
+      cargasVisiveis().forEach(function(d){ if(d.data===p[1]) d.cargas.forEach(function(x){ if(x.id===p[0]) c=x; }); });
+      if(!c){ toast("Carga não encontrada.",true); return; }
+      await entregaPdf(pdfCargaUnica(c,p[1]));
+    }); });
   }
 
   if(state.tab==="financeiro"){
@@ -4838,6 +5487,36 @@ function attachHandlers(){
       state.finStatus=statusSel.value; state.finFormPag=null; state.finAberta=null; state.finLimite=null; render();
     };
     var lembBtn=document.querySelector('[data-action="lembretes"]'); if(lembBtn) lembBtn.onclick=guarded(modalLembretes);
+    var finF=document.querySelector('[data-action="fin-filtrar"]');
+    if(finF) finF.onclick=guarded(async function(){
+      var de=(document.getElementById("fin-de")||{}).value, ate=(document.getElementById("fin-ate")||{}).value;
+      if(!de||!ate){ toast("Escolha as duas datas do período.",true); return; }
+      if(de>ate){ var t=de; de=ate; ate=t; }
+      if(diasEntre(de,ate)+1>FIN_MAX_DIAS){ toast("Escolha um período de até 6 meses.",true); return; }
+      state.finDe=de; state.finAte=ate; state.finAberta=null; state.finFormPag=null; state.finLimite=null;
+      await carregarFinanceiro(); render();
+    });
+    // exportar em PDF: tudo o que está listado (já com os filtros), ou uma operação
+    var finX=document.querySelector('[data-action="exportar-fin"]');
+    if(finX) finX.onclick=guarded(async function(){
+      var lados=ladosDoModo(), modo=state.finModo, t, sub, arq;
+      var tipoNome={compra:"só compras",venda:"só vendas",casada:"só vendas casadas"}[state.finTipo];
+      var stAtual=FIN_STATUS_FILTROS.filter(function(f){return f.id===state.finStatus;})[0];
+      var filtros=[]; if(tipoNome) filtros.push(tipoNome); if(state.finStatus!=="todos"&&stAtual) filtros.push(stAtual.label);
+      if(modo==="periodo"){ t="Financeiro do período"; sub=fmtDateBR(state.finDe)+" a "+fmtDateBR(state.finAte); arq=pdfNomeArquivo("financeiro",state.finDe,state.finAte); }
+      else if(modo==="pendentes"){ t="Pendentes futuros"; sub="Em aberto nos últimos "+FIN_JANELA_DIAS+" dias, até "+fmtDateBR(todayIso()); arq="financeiro-pendentes-"+todayIso()+".pdf"; }
+      else { t="Financeiro do dia"; sub=fmtDateBR(state.finData); arq=pdfNomeArquivo("financeiro",state.finData,state.finData); }
+      if(filtros.length) sub+=" · "+filtros.join(" · ");
+      await entregaPdf(pdfFinLista(lados,t,sub,arq));
+    });
+    document.querySelectorAll("[data-fin-export]").forEach(function(el){ el.onclick=guarded(async function(e){
+      var p=el.getAttribute("data-fin-export").split("|");
+      var c=null;
+      ladosDoModo().forEach(function(l){ if(l.cargaId===p[0]&&l.dataIso===p[1]) c=l.carga; });
+      if(!c){ var dia=await Store.getDia(p[1]); c=(dia.cargas||[]).filter(function(x){return x.id===p[0];})[0]; }
+      if(!c){ toast("Operação não encontrada.",true); return; }
+      await entregaPdf(pdfFinOperacao(c,p[1]));
+    }); });
     var maisBtn=document.querySelector("[data-fin-mais]");
     if(maisBtn) maisBtn.onclick=function(){ state.finLimite=(state.finLimite||FIN_PAGINA)+FIN_PAGINA; render(); };
     document.querySelectorAll("[data-fin-toggle]").forEach(function(el){ el.onclick=function(){
@@ -4857,7 +5536,9 @@ function attachHandlers(){
       var dia=await Store.getDia(p[1]);
       var c=(dia.cargas||[]).filter(function(x){return x.id===p[0];})[0];
       if(!c){ toast("Operação não encontrada.",true); return; }
-      openModal(modalResumoCarga(c,p[1]));
+      var nodeRes=openModal(modalResumoCarga(c,p[1]));
+      var bx=nodeRes.querySelector("[data-fin-export]");
+      if(bx) bx.onclick=guarded(async function(){ await entregaPdf(pdfFinOperacao(c,p[1])); });
     });});
     document.querySelectorAll("[data-fin-prazo]").forEach(function(el){ el.onchange=guarded(async function(){
       var ch=el.getAttribute("data-fin-prazo"), v=el.value;
@@ -5432,13 +6113,34 @@ function hookCargaModal(carga){
   });
   // no computador, Ctrl+V / Cmd+V com o formulário aberto também funciona:
   // pergunta onde colocar o arquivo
-  ligaColarTeclado(node,function(file){
+  function recebeColado(file){
     escolherDestinoColar(node,function(destino){
       if(destino==="nota") return recebeNota(file);
       if(destino==="romaneio") return recebeRomaneio(file);
       return recebeProduto([file]);
     });
-  });
+  }
+  ligaColarTeclado(node,recebeColado);
+  // caixa de colar: é nela que o "Colar" do próprio celular (toque e segure)
+  // entrega o arquivo — funciona com imagem e PDF copiados de qualquer app
+  var zona=node.querySelector("#carga-colar-zona");
+  if(zona){
+    zona.addEventListener("paste",function(e){
+      e.preventDefault(); e.stopPropagation();
+      var r=coletaArquivosColados(e.clipboardData);
+      if(r.arquivos.length){ recebeColado(r.arquivos[0]); return; }
+      arquivoDoHtmlColado(r.html).then(function(f){ if(f) recebeColado(f); else toast(msgNadaColado(r),true); });
+    });
+    // nada digitado: a caixa só recebe arquivos
+    zona.addEventListener("beforeinput",function(e){ if(e.inputType!=="insertFromPaste") e.preventDefault(); });
+    zona.addEventListener("keydown",function(e){ if(!(e.ctrlKey||e.metaKey) && e.key.length===1) e.preventDefault(); });
+    zona.addEventListener("dragover",function(e){ e.preventDefault(); });
+    zona.addEventListener("drop",function(e){
+      e.preventDefault();
+      var f=Array.prototype.slice.call((e.dataTransfer&&e.dataTransfer.files)||[]).filter(eArquivoDeNota)[0];
+      if(f) recebeColado(f); else toast("Arraste uma foto ou um PDF da nota.",true);
+    });
+  }
 
   document.getElementById("carga-save").onclick=guarded(async function(){
     var editId0=node.getAttribute("data-carga-id")||"";
