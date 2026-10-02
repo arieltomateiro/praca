@@ -4163,8 +4163,8 @@ function finLinhaHtml(lado){
 /* ============ Lembretes do financeiro (notificação no celular) ============
    Só administrador (os avisos têm valores). O aparelho se inscreve e a
    inscrição fica em empresas/{empresa}/pushSubs; uma função agendada no
-   Firebase roda toda manhã e manda 1 aviso por operação que vence amanhã e
-   outro no dia do vencimento. A chave pública vem de publico/push (gravada
+   Firebase roda às 7h e avisa cada operação 3 vezes: 5 dias antes do
+   vencimento, 3 dias antes e no dia. A chave pública vem de publico/push (gravada
    pela própria função na 1ª vez que roda). */
 var ICON_SINO='<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>';
 function pushSuportado(){ return ("serviceWorker" in navigator) && ("PushManager" in window) && ("Notification" in window); }
@@ -4245,7 +4245,7 @@ async function modalLembretes(){
   } else if(perm==="denied"){
     aviso='<p class="lede">As notificações deste app estão bloqueadas no aparelho. No iPhone: <strong>Ajustes → Notificações → Ariel Tomateiro</strong> → Permitir. Depois volte aqui.</p>';
   }
-  var corpo='<p class="lede">Toda manhã o app avisa, com uma notificação para cada operação, o que <strong>vence amanhã</strong> e o que <strong>vence hoje</strong> — a receber e a pagar. Só administradores recebem.</p>'+
+  var corpo='<p class="lede">Às 7h da manhã o app avisa cada operação a receber e a pagar ainda em aberto <strong>3 vezes</strong>: <strong>5 dias antes</strong> do vencimento, <strong>3 dias antes</strong> e <strong>no dia</strong>. Uma notificação por operação. Só administradores recebem.</p>'+
     aviso+
     '<div class="lembrete-estado'+(ativo?" on":"")+'">'+ICON_SINO+"<span>"+(ativo?"Ativo neste aparelho":"Desligado neste aparelho")+"</span></div>";
   var acoes=pushSuportado()&&perm!=="denied"
