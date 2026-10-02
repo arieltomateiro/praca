@@ -362,7 +362,7 @@ tr:hover td{background:var(--overlay-2);}
 .fin-filtro{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
 .fin-filtro .fl{font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;min-width:126px;}
 .fin-status-sel{width:auto;min-width:210px;}
-.fin-row{border:1px solid var(--border);border-left:4px solid var(--border-2);border-radius:var(--radius-m);margin-bottom:10px;background:var(--bg-1);overflow:hidden;}
+.fin-row{border:1px solid var(--border);border-left:4px solid var(--border-2);border-radius:var(--radius-m);margin-bottom:20px;background:var(--bg-1);overflow:hidden;}
 .fin-row.atrasada{border-left-color:var(--red);}
 .fin-row.aberta{border-color:var(--border-2);}
 .fin-row-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;flex-wrap:wrap;cursor:pointer;}
@@ -421,7 +421,7 @@ tr:hover td{background:var(--overlay-2);}
 .carga-fin-grid{display:grid;gap:12px;}
 .carga-fin-status{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:9px;font-size:11.5px;color:var(--text-faint);}
 
-.carga-card{border:1px solid var(--border);border-left-width:4px;border-left-style:solid;border-left-color:var(--border-2);border-radius:var(--radius-m);padding:16px 18px;margin-bottom:12px;background:var(--bg-1);}
+.carga-card{border:1px solid var(--border);border-left-width:4px;border-left-style:solid;border-left-color:var(--border-2);border-radius:var(--radius-m);padding:16px 18px;margin-bottom:24px;background:var(--bg-1);}
 .carga-card.tipo-compra{border-left-color:var(--text-faint);}
 .carga-card.tipo-venda{border-left-color:var(--green);}
 .carga-card.tipo-casada{border-left-color:var(--gold);}
@@ -837,6 +837,17 @@ html.v11 .doc-chip .doc-label{line-height:1.25;}
   html.v11 .tabela-cx td{padding:8px 5px;font-size:12.5px;}
 }
 /* FIM VISUAL v11 */
+
+/* v13: cadastros - classificacao sempre no canto inferior direito; situacao financeira da carga casada sem estourar o quadro */
+.op-row.ent-card{flex-direction:column;align-items:stretch;justify-content:flex-start;gap:8px;flex-wrap:nowrap;}
+.op-row.ent-card .l{min-width:0;}
+.op-row.ent-card .l .meta{min-width:0;flex:1 1 auto;}
+.op-row.ent-card .l .meta .nm{white-space:normal;overflow-wrap:anywhere;}
+.ent-tag{display:flex;justify-content:flex-end;align-items:flex-end;}
+.carga-fin-bloco,.carga-fin-grid>*,.carga-fin-grid label.field{min-width:0;max-width:100%;box-sizing:border-box;}
+.carga-fin-bloco select{width:100%;max-width:100%;min-width:0;text-overflow:ellipsis;}
+.carga-fin-grid.grid-2{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
+@media (max-width:720px){.carga-fin-grid.grid-2{grid-template-columns:minmax(0,1fr);}}
 </style>
 
 <div id="boot-loading"><img class="bl-logo bl-dark" src="logo-dark.webp" alt=""><img class="bl-logo bl-light" src="logo-light.webp" alt=""><div class="t">carregando…</div></div>
@@ -3106,9 +3117,9 @@ function viewCatalogo(){
       :(esc(e.cidade||"—")+"/"+esc(e.estado||"—")+(e.razaoSocial?" · "+esc(e.razaoSocial):"")+(e.cnpj?" · "+esc(e.cnpj):""));
     var somenteLeitura=!possoEditar(e);
     var pillCls=e.tipo==="fornecedor"?"gold":e.tipo==="cliente"?"green":e.tipo==="mercadoria"?"amber":"gray";
-    return '<div class="op-row" data-ent-edit="'+e.id+'" style="cursor:pointer">'+
+    return '<div class="op-row ent-card" data-ent-edit="'+e.id+'" style="cursor:pointer">'+
       '<div class="l"><div class="meta"><div class="nm">'+esc(e.nome)+(somenteLeitura?' <span class="admin-badge" style="opacity:.7">somente leitura</span>':"")+'</div><div class="loc">'+loc+'</div></div></div>'+
-      '<div class="r"><span class="pill '+pillCls+'">'+(e.tipo==="mercadoria"?"mercadoria":esc(e.tipo))+'</span></div>'+
+      '<div class="ent-tag"><span class="pill '+pillCls+'">'+(e.tipo==="mercadoria"?"mercadoria":esc(e.tipo))+'</span></div>'+
     "</div>";
   }).join("") || '<div class="empty">'+ICONS.book+'<div class="t">Nenhum cadastro encontrado.</div></div>';
 
