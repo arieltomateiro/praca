@@ -21,11 +21,15 @@
  *  - Nunca intercepta chamadas do Firebase (Firestore/Auth) — essas sempre
  *    vão direto pra rede, do jeitinho que o SDK já sabe fazer offline.
  *
+ *  - Lembretes do financeiro: recebe a notificação enviada pelo servidor
+ *    (função agendada no Firebase) e mostra no celular; tocar nela abre o
+ *    app na aba Financeiro.
+ *
  * IMPORTANTE: sempre que publicar uma nova versão do site, aumente o número
  * do CACHE_NAME abaixo. Isso garante que o service worker antigo é
  * substituído e o app não fica "preso" numa versão velha em cache.
  */
-var CACHE_VERSION = "v8";
+var CACHE_VERSION = "v9";
 var CACHE_NAME = "ariel-tomateiro-" + CACHE_VERSION;
 
 var PRECACHE_URLS = [
@@ -137,6 +141,40 @@ self.addEventListener("fetch", function (event) {
       // com cache: responde na hora e deixa a rede atualizar por trás.
       // sem cache (primeiríssima visita): precisa esperar a rede mesmo.
       return cached || networkFetch;
+    })
+  );
+});
+
+/* ---- lembretes do financeiro (notificações) ---- */
+self.addEventListener("push", function (event) {
+  var d = {};
+  try { d = event.data ? event.data.json() : {}; } catch (e) { d = { titulo: "Ariel Tomateiro", texto: event.data ? event.data.text() : "" }; }
+  var titulo = d.titulo || "Ariel Tomateiro";
+  event.waitUntil(
+    self.registration.showNotification(titulo, {
+      body: d.texto || "",
+      tag: d.tag || undefined,       // um aviso por operação: tags diferentes não se substituem
+      icon: "./icon-192.png",
+      badge: "./icon-192.png",
+      data: { url: d.url || "./index.html?aba=financeiro", aba: d.aba || "financeiro" }
+    })
+  );
+});
+
+self.addEventListener("notificationclick", function (event) {
+  event.notification.close();
+  var info = event.notification.data || {};
+  var alvo = new URL(info.url || "./index.html?aba=financeiro", self.registration.scope).href;
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(function (lista) {
+      for (var i = 0; i < lista.length; i++) {
+        var c = lista[i];
+        if (c.url.indexOf(self.registration.scope) === 0 && "focus" in c) {
+          c.postMessage({ tipo: "abrir-aba", aba: info.aba || "financeiro" });
+          return c.focus();
+        }
+      }
+      return self.clients.openWindow(alvo);
     })
   );
 });
