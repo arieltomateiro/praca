@@ -15,6 +15,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,600&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600;700&display=swap">
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-check-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <style>
@@ -848,6 +849,10 @@ html.v11 .doc-chip .doc-label{line-height:1.25;}
 .carga-fin-bloco select{width:100%;max-width:100%;min-width:0;text-overflow:ellipsis;}
 .carga-fin-grid.grid-2{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
 @media (max-width:720px){.carga-fin-grid.grid-2{grid-template-columns:minmax(0,1fr);}}
+/* v14: selo do reCAPTCHA (App Check) escondido — o aviso exigido fica na tela de entrada */
+.grecaptcha-badge{visibility:hidden !important;}
+.recaptcha-aviso{font-size:11px;color:var(--text-faint);text-align:center;margin:12px 0 0;line-height:1.5;}
+.recaptcha-aviso a{color:inherit;text-decoration:underline;}
 </style>
 
 <div id="boot-loading"><img class="bl-logo bl-dark" src="logo-dark.webp" alt=""><img class="bl-logo bl-light" src="logo-light.webp" alt=""><div class="t">carregando…</div></div>
@@ -2017,10 +2022,26 @@ var TABS=[
 // então isso não é só esconder botão na tela.
 function tabsVisiveis(){ return TABS.filter(function(t){ return !t.soAdmin || souAdmin(); }); }
 
+/* App Check: prova para o Firebase que quem chama o banco é ESTE app, no
+   endereço oficial (reCAPTCHA Enterprise, invisível — não pede para clicar em
+   nada). Está em modo de observação no console: ainda não bloqueia ninguém.
+   Só liga no endereço publicado; em outro endereço a chave nem funcionaria. */
+var APP_CHECK_SITE_KEY="6Le0pdstAAAAANQZeRHCkrU_W1swVjyQJv6cOcvu";
+var APP_CHECK_HOSTS=["arieltomateiro.github.io"];
+function ativarAppCheck(){
+  try{
+    if(APP_CHECK_HOSTS.indexOf(location.hostname)===-1) return false;
+    if(!firebase.appCheck||!firebase.appCheck.ReCaptchaEnterpriseProvider) return false;
+    firebase.appCheck().activate(new firebase.appCheck.ReCaptchaEnterpriseProvider(APP_CHECK_SITE_KEY),true);
+    return true;
+  }catch(e){ console.error("App Check não ativado",e); return false; }
+}
+
 /* ============ boot / auth ============ */
 async function boot(){
   try{
     firebase.initializeApp(FIREBASE_CONFIG);
+    ativarAppCheck();
     db = firebase.firestore();
     try{ await db.enablePersistence({synchronizeTabs:true}); }
     catch(e){ console.error("persistência offline indisponível",e); }
@@ -2121,6 +2142,7 @@ function renderAuth(){
     (modo==="login"?'<button type="button" class="linklike" id="auth-esqueci" style="align-self:center;margin-top:2px">Esqueci minha senha</button>':"")+
     (state._authInfo?'<div class="auth-info" role="status">'+esc(state._authInfo)+'</div>':"")+
     "</div>"+
+    '<p class="recaptcha-aviso">Protegido pelo reCAPTCHA do Google · <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Privacidade</a> · <a href="https://policies.google.com/terms" target="_blank" rel="noopener">Termos</a></p>'+
     (state._convite?
       ('<div class="auth-switch">'+(modo==="cadastro"?'Já tem uma conta? <button data-auth-switch="login">Entrar</button>':'Ainda não tem conta? <button data-auth-switch="cadastro">Criar conta</button>')+'</div>')
       :(temUsuarios?('<div class="auth-switch">'+(modo==="cadastro"?'Já tem uma conta? <button data-auth-switch="login">Entrar</button>':'Precisa cadastrar outro usuário? Peça para quem já tem acesso usar "gerenciar acesso" depois de entrar.')+'</div>'):""))+
@@ -2531,6 +2553,73 @@ function renderUserRows(list){
     "</div>";
   }).join("");
 }
+/* ============ cópia de segurança (só administrador) ============
+   O banco já tem backup automático diário no Google (guardado 7 dias). Este
+   botão gera, além disso, uma cópia completa em arquivo (.json) para o dono
+   guardar fora do Google (computador, pen drive, outro Drive). Leva tudo da
+   empresa, inclusive os valores — por isso só aparece para administrador. */
+function backupSection(){
+  if(!souAdmin()) return "";
+  return '<div class="section-title" style="margin-top:18px">Cópia de segurança</div>'+
+    '<p style="font-size:13px;color:var(--text-dim);margin:0 0 10px;text-wrap:pretty">O banco já faz backup automático todo dia (o Google guarda os últimos 7 dias). Aqui você baixa uma cópia completa para guardar fora do Google. Faça uma vez por semana.</p>'+
+    '<label class="check-line" style="display:flex;align-items:center;gap:10px;font-size:13px;margin-bottom:10px;min-height:44px;cursor:pointer"><input type="checkbox" id="bk-fotos" style="width:22px;height:22px;flex:none;margin:0"> Incluir fotos, notas e romaneios (arquivo bem maior)</label>'+
+    '<div class="modal-actions" style="justify-content:flex-end;margin-top:0">'+
+      '<button type="button" class="btn" id="bk-baixar">'+ICONS.download+" Baixar cópia de segurança</button>"+
+    "</div>";
+}
+function docsParaObjeto(snap){
+  var o={}; if(!snap) return o;
+  snap.docs.forEach(function(d){ o[d.id]=d.data(); });
+  return o;
+}
+async function montaBackup(incluirFotos,progresso){
+  var empId=minhaEmpresaId();
+  var out={app:"Ariel Tomateiro",formato:1,geradoEm:new Date().toISOString(),geradoPor:(state.authUser&&state.authUser.email)||"",
+    empresaId:empId,empresa:null,entidades:{},usuarios:{},dias:{},diasFin:{},contadores:{},meta:{},fotos:incluirFotos?{}:"não incluídas",avisos:[]};
+  if(!db){
+    out.empresa=mem.empresas[empId]||null;
+    Object.keys(mem.entidades).forEach(function(k){ if(mem.entidades[k]._empresaId===empId) out.entidades[k]=mem.entidades[k]; });
+    Object.keys(mem.dias).forEach(function(k){ if(k.indexOf(empId+"|")===0) out.dias[k.split("|")[1]]=mem.dias[k]; });
+    if(mem.diasFin) Object.keys(mem.diasFin).forEach(function(k){ if(k.indexOf(empId+"|")===0) out.diasFin[k.split("|")[1]]={cargas:mem.diasFin[k]}; });
+    Object.keys(mem.usuarios).forEach(function(k){ if(mem.usuarios[k].empresaId===empId) out.usuarios[k]=mem.usuarios[k]; });
+    if(incluirFotos) Object.keys(mem.fotos).forEach(function(k){ if(k.indexOf(empId+"|")===0) out.fotos[k.slice(empId.length+1)]=mem.fotos[k]; });
+    return out;
+  }
+  var ref=db.collection("empresas").doc(empId);
+  var le=function(nome,p){ return p.catch(function(e){ console.error(e); out.avisos.push("não foi possível ler "+nome); return null; }); };
+  var r=await Promise.all([
+    le("empresa",ref.get()), le("entidades",ref.collection("entidades").get()), le("dias",ref.collection("dias").get()),
+    le("diasFin",ref.collection("diasFin").get()), le("contadores",ref.collection("contadores").get()), le("meta",ref.collection("meta").get()),
+    le("usuarios",db.collection("usuarios").where("empresaId","==",empId).get())
+  ]);
+  out.empresa=r[0]&&r[0].exists?r[0].data():null;
+  out.entidades=docsParaObjeto(r[1]); out.dias=docsParaObjeto(r[2]); out.diasFin=docsParaObjeto(r[3]);
+  out.contadores=docsParaObjeto(r[4]); out.meta=docsParaObjeto(r[5]); out.usuarios=docsParaObjeto(r[6]);
+  if(incluirFotos){
+    var isos=Object.keys(out.dias);
+    for(var i=0;i<isos.length;i++){
+      if(progresso) progresso(i+1,isos.length);
+      var fs=await le("fotos de "+isos[i],ref.collection("dias").doc(isos[i]).collection("fotos").get());
+      var f=docsParaObjeto(fs); if(Object.keys(f).length) out.fotos[isos[i]]=f;
+    }
+  }
+  return out;
+}
+async function baixarBackup(incluirFotos,btn){
+  if(!souAdminReal()){ toast("Só um administrador pode baixar a cópia de segurança.",true); return; }
+  if(db&&!navigator.onLine){ toast("Sem internet: conecte para baixar a cópia completa.",true); return; }
+  var txt=btn?btn.innerHTML:"";
+  try{
+    if(btn){ btn.disabled=true; btn.textContent="Gerando cópia…"; }
+    var dados=await montaBackup(incluirFotos,function(i,n){ if(btn) btn.textContent="Lendo fotos "+i+"/"+n+"…"; });
+    var nome="ariel-tomateiro-backup-"+todayIso()+(incluirFotos?"-com-fotos":"")+".json";
+    var blob=new Blob([JSON.stringify(dados,null,1)],{type:"application/json"});
+    await entregaArquivo(blob,nome,"Cópia de segurança");
+    if(dados.avisos.length) toast("Cópia gerada, mas com avisos: "+dados.avisos.join("; "),true);
+  }catch(e){ console.error(e); toast("Não foi possível gerar a cópia agora. Tente de novo com boa conexão.",true); }
+  finally{ if(btn){ btn.disabled=false; btn.innerHTML=txt; } }
+}
+
 function devToggleSection(){
   if(!souDevToggle()) return "";
   var efetivo=souAdmin()?"administrador":"operacional";
@@ -2579,6 +2668,7 @@ function modalUsuarios(){
     '<div class="section-title" style="margin-top:18px">Usuários com acesso</div>'+
     '<div id="gu-rows">'+renderUserRows(usuariosEmpresa)+"</div>"+
     inviteSection+
+    backupSection()+
     devToggleSection()+
     '<div class="modal-actions" style="justify-content:space-between">'+
     '<button type="button" class="btn danger ghost" data-action="logout">Sair</button>'+
@@ -4615,9 +4705,14 @@ async function pdfFinLista(lados,tituloDoc,sub,nomeArq){
 setTimeout(function(){ pdfLogoCarrega(); },4000);
 async function entregaPdf(res){
   res=await res;
-  var blob=new Blob([res.bytes],{type:"application/pdf"});
+  return entregaArquivo(new Blob([res.bytes],{type:"application/pdf"}),res.nome,"PDF");
+}
+// entrega um arquivo gerado no aparelho: no celular abre o "Compartilhar"
+// (salvar em Arquivos, WhatsApp, Drive…); no computador baixa direto.
+async function entregaArquivo(blob,nome,rotulo){
+  var res={nome:nome};
   var file=null;
-  try{ file=new File([blob],res.nome,{type:"application/pdf"}); }catch(e){}
+  try{ file=new File([blob],res.nome,{type:blob.type}); }catch(e){}
   var toque=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
   if(toque&&file&&navigator.canShare&&navigator.canShare({files:[file]})){
     try{ await navigator.share({files:[file],title:res.nome}); return; }
@@ -4627,15 +4722,15 @@ async function entregaPdf(res){
   if(!toque){
     var a=document.createElement("a"); a.href=url; a.download=res.nome; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function(){ URL.revokeObjectURL(url); },60000);
-    toast("PDF gerado: "+res.nome);
+    toast(rotulo+" gerado: "+res.nome);
     return;
   }
   // celular sem compartilhar arquivo (ou compartilhar bloqueado): botão para abrir/baixar
   var node=openModal('<div class="modal-back centro" data-close-modal="1"><div class="modal" style="max-width:380px" onclick="event.stopPropagation()">'+
-    '<h3 style="font-size:16px;margin-bottom:10px">PDF pronto</h3>'+
+    '<h3 style="font-size:16px;margin-bottom:10px">'+esc(rotulo)+' pronto</h3>'+
     '<p style="font-size:13.5px;color:var(--text-dim);margin:0 0 12px">'+esc(res.nome)+'</p>'+
     '<div class="modal-actions"><button type="button" class="btn ghost" data-close-modal="1">Fechar</button>'+
-    '<a class="btn primary" href="'+url+'" download="'+esc(res.nome)+'" target="_blank" rel="noopener">Abrir PDF</a></div></div></div>');
+    '<a class="btn primary" href="'+url+'" download="'+esc(res.nome)+'" target="_blank" rel="noopener">Abrir '+esc(rotulo)+'</a></div></div></div>');
   return node;
 }
 
@@ -5489,335 +5584,348 @@ var modalVencManual={};
 // redesenhado quando o tipo muda ou quando uma data é escolhida.
 var modalPrazoTocado={};
 
+/* liga os botões/campos da aba aberta. Cada aba tem a sua função logo abaixo. */
 function attachHandlers(){
   document.querySelectorAll("[data-goto]").forEach(function(el){el.onclick=function(){goto(el.getAttribute("data-goto"));};});
-
-  if(state.tab==="calendario"){
-    document.querySelectorAll("[data-cal-day]").forEach(function(el){el.onclick=guarded(async function(){state.calSelected=el.getAttribute("data-cal-day");state.calDiaSel=await Store.getDia(state.calSelected);render();});});
-    document.querySelectorAll("[data-cal-nav]").forEach(function(el){el.onclick=guarded(async function(){
-      var dir=+el.getAttribute("data-cal-nav");
-      state.calMonth+=dir;
-      if(state.calMonth<0){state.calMonth=11;state.calYear--;}
-      if(state.calMonth>11){state.calMonth=0;state.calYear++;}
-      await loadCalMonth();render();
-    });});
-    var rm=document.querySelector('[data-action="remover-exemplo"]'); if(rm) rm.onclick=guarded(removerExemplo);
-    // filtro de período
-    var fde=document.getElementById("fech-de"); if(fde) fde.onchange=function(){ state.fechDe=fde.value; };
-    var fate=document.getElementById("fech-ate"); if(fate) fate.onchange=function(){ state.fechAte=fate.value; };
-    var fps=document.getElementById("fech-pessoa"); if(fps) fps.onchange=function(){ state.fechPessoa=fps.value; };
-    document.querySelectorAll("[data-fech-tipo]").forEach(function(el){ el.onclick=guarded(async function(){
-      state.fechTipo=el.getAttribute("data-fech-tipo");
-      if(state.fechAtivo) await aplicarFiltroPeriodo(); else render();
-    });});
-    var fap=document.querySelector('[data-action="fech-aplicar"]'); if(fap) fap.onclick=guarded(aplicarFiltroPeriodo);
-    var flp=document.querySelector('[data-action="fech-limpar"]'); if(flp) flp.onclick=function(){ state.fechAtivo=false; state.fechDias=null; render(); };
-  }
-
-  if(state.tab==="catalogo"){
-    document.querySelectorAll("[data-cat-filtro]").forEach(function(el){el.onclick=function(){state._catFiltro=el.getAttribute("data-cat-filtro");render();};});
-    var novoPrazo=document.querySelector('[data-action="novo-prazo"]');
-    if(novoPrazo) novoPrazo.onclick=function(){
-      if(!souAdmin()){ toast("Somente administradores cadastram prazos.",true); return; }
-      openModal(modalPrazo()); hookPrazoModal(null);
-    };
-    document.querySelectorAll("[data-prazo-edit]").forEach(function(el){ el.onclick=function(){
-      if(!souAdmin()){ toast("Somente administradores cadastram prazos.",true); return; }
-      var p=prazoPorId(el.getAttribute("data-prazo-edit"));
-      if(!p) return;
-      openModal(modalPrazo(p)); hookPrazoModal(p);
-    };});
-    var busca=document.getElementById("cat-busca"); if(busca){busca.oninput=function(){
-      // sem debounce, cada tecla digitada reconstruía a lista inteira de
-      // cadastros na hora — perceptível como "trava" ao digitar quando o
-      // catálogo cresce. Espera uma pausa curta na digitação antes de filtrar.
-      state._catBusca=busca.value;
-      clearTimeout(_catBuscaTimer);
-      _catBuscaTimer=setTimeout(function(){render();busca_focus();},180);
-    }; }
-    var novo=document.querySelector('[data-action="novo-ent"]'); if(novo) novo.onclick=function(){openModal(modalEntidade());hookEntidadeModal(null);};
-    document.querySelectorAll("[data-ent-edit]").forEach(function(el){el.onclick=function(){
-      var ent=state.entidades.filter(function(e){return e.id===el.getAttribute("data-ent-edit");})[0];
-      openModal(modalEntidade(ent)); hookEntidadeModal(ent);
-    };});
-  }
-
-  if(state.tab==="precos"){
-    var dt=document.getElementById("preco-data"); if(dt) dt.onchange=async function(){state.precoData=dt.value;state.precoDia=await Store.getDia(state.precoData);state.precoFotoPendente=null;render();};
-    document.querySelectorAll("[data-preco-modo]").forEach(function(el){el.onclick=function(){state._precoNovo=el.getAttribute("data-preco-modo")==="novo"?"1":"0";render();};});
-    var sel=document.getElementById("preco-ent-select"); if(sel) sel.onchange=function(){state._precoEntId=sel.value;render();};
-    var mercSel=document.getElementById("preco-merc-select"); if(mercSel) mercSel.onchange=function(){state._precoMercadoriaId=mercSel.value;};
-    var filtroMerc=document.getElementById("preco-filtro-merc"); if(filtroMerc) filtroMerc.onchange=function(){state._precoFiltroMerc=filtroMerc.value;render();};
-    var fa=document.getElementById("preco-foto-add"); if(fa) fa.onclick=function(){document.getElementById("preco-foto-input").click();};
-    var fi=document.getElementById("preco-foto-input"); if(fi) fi.onchange=async function(){
-      if(!fi.files[0])return;
-      var faLoad=document.getElementById("preco-foto-add"); if(faLoad) faLoad.innerHTML='<span style="font-size:11px;color:var(--text-faint)">enviando…</span>';
-      try{
-        state.precoFotoPendente=await compressImage(fi.files[0]);
-        // atualiza só a miniatura no lugar, sem re-renderizar o formulário inteiro
-        // (um render() completo aqui apagaria preço/observações já digitados)
-        if(faLoad) faLoad.innerHTML='<img class="thumb" src="'+state.precoFotoPendente+'">';
-      }
-      catch(e){ toast(e.message,true); if(faLoad) faLoad.innerHTML=ICONS.cam; }
-    };
-    var add=document.querySelector('[data-action="add-preco"]'); if(add) add.onclick=guarded(onAddPreco);
-    document.querySelectorAll("[data-del-preco]").forEach(function(el){el.onclick=guarded(async function(){
-      var id=el.getAttribute("data-del-preco");
-      var alvo=(state.precoDia.precos||[]).filter(function(p){return p.id===id;})[0];
-      if(!possoEditar(alvo)){ toast("Você só pode excluir preços lançados por você.",true); return; }
-      state.precoDia.precos=state.precoDia.precos.filter(function(p){return p.id!==id;});
-      await Store.saveDia(state.precoData,state.precoDia);
-      render();
-    });});
-    document.querySelectorAll("[data-view-foto]").forEach(hookFotoThumb);
-  }
-
-  if(state.tab==="praca"){
-    var abG=document.querySelector('[data-action="abrir-graficos"]');
-    if(abG) abG.onclick=guarded(async function(){
-      state.pracaGraficos=true; state.grafDias=null; state.grafPonto=null;
-      if(state.grafMerc==="todas" && state._pracaMercadoriaId && state._pracaMercadoriaId!=="todas") state.grafMerc=state._pracaMercadoriaId;
-      render(); window.scrollTo(0,0);
-      await carregaGraficos();
-    });
-    if(state.pracaGraficos){
-      var fg=document.querySelector('[data-action="fechar-graficos"]'); if(fg) fg.onclick=function(){ state.pracaGraficos=false; render(); window.scrollTo(0,0); };
-      var gde=document.getElementById("graf-de"); if(gde) gde.onchange=guarded(async function(){ if(!gde.value) return; state.grafDe=gde.value; await carregaGraficos(); });
-      var gate=document.getElementById("graf-ate"); if(gate) gate.onchange=guarded(async function(){ if(!gate.value) return; state.grafAte=gate.value; await carregaGraficos(); });
-      var gm=document.getElementById("graf-merc"); if(gm) gm.onchange=function(){ state.grafMerc=gm.value; state.grafPonto=null; state.grafOcultos={}; render(); };
-      document.querySelectorAll("[data-graf-preset]").forEach(function(el){ el.onclick=guarded(async function(){
-        var n=+el.getAttribute("data-graf-preset"); state.grafAte=todayIso(); state.grafDe=addDias(state.grafAte,-(n-1)); await carregaGraficos();
-      });});
-      document.querySelectorAll("[data-graf-modo]").forEach(function(el){ el.onclick=function(){ state.grafModo=el.getAttribute("data-graf-modo"); render(); }; });
-      document.querySelectorAll("[data-graf-serie]").forEach(function(el){ el.onclick=function(){
-        var id=el.getAttribute("data-graf-serie"); state.grafOcultos[id]=!state.grafOcultos[id]; render();
-      };});
-      desenhaGrafico();
-    } else {
-    var rd=document.getElementById("resumo-data"); if(rd) rd.onchange=async function(){state.resumoData=rd.value;state.resumoDia=await Store.getDia(state.resumoData);state.mapZoomUF=null;render();};
-    var rm=document.getElementById("resumo-merc-select"); if(rm) rm.onchange=function(){state._pracaMercadoriaId=rm.value;state.mapZoomUF=null;render();};
-    document.querySelectorAll("[data-resumo-view]").forEach(function(el){el.onclick=function(){state.resumoView=el.getAttribute("data-resumo-view");state.mapZoomUF=null;render();};});
-    document.querySelectorAll("[data-lista-modo]").forEach(function(el){el.onclick=function(){state.resumoListaModo=el.getAttribute("data-lista-modo");render();};});
-    document.querySelectorAll("[data-zoom-uf]").forEach(function(el){el.onclick=function(){var uf=el.getAttribute("data-zoom-uf");state.mapZoomUF=uf||null;render();};});
-    var rasterWrap=document.querySelector("[data-map-raster]");
-    if(rasterWrap){
-      rasterWrap.onclick=function(ev){
-        var mc=buildMapGeo();
-        var rect=rasterWrap.getBoundingClientRect();
-        var relX=(ev.clientX-rect.left)/rect.width, relY=(ev.clientY-rect.top)/rect.height;
-        var x=mc.minX+relX*(mc.maxX-mc.minX), y=mc.minY+relY*(mc.maxY-mc.minY);
-        var uf=ufAtProjXY(mc,x,y);
-        var pf=pracaMercadoriaFiltrada(state.resumoDia||{precos:[]});
-        var agg=precosAgregados(pf.dia);
-        if(uf && agg.porEstado[uf]){ state.mapZoomUF=uf; render(); }
-      };
+  var porAba={calendario:handlersFechamentos,catalogo:handlersCadastros,precos:handlersPrecos,praca:handlersPraca,cargas:handlersCargas,financeiro:handlersFinanceiro};
+  if(porAba[state.tab]) porAba[state.tab]();
+}
+function handlersFechamentos(){
+  document.querySelectorAll("[data-cal-day]").forEach(function(el){el.onclick=guarded(async function(){state.calSelected=el.getAttribute("data-cal-day");state.calDiaSel=await Store.getDia(state.calSelected);render();});});
+  document.querySelectorAll("[data-cal-nav]").forEach(function(el){el.onclick=guarded(async function(){
+    var dir=+el.getAttribute("data-cal-nav");
+    state.calMonth+=dir;
+    if(state.calMonth<0){state.calMonth=11;state.calYear--;}
+    if(state.calMonth>11){state.calMonth=0;state.calYear++;}
+    await loadCalMonth();render();
+  });});
+  var rm=document.querySelector('[data-action="remover-exemplo"]'); if(rm) rm.onclick=guarded(removerExemplo);
+  // filtro de período
+  var fde=document.getElementById("fech-de"); if(fde) fde.onchange=function(){ state.fechDe=fde.value; };
+  var fate=document.getElementById("fech-ate"); if(fate) fate.onchange=function(){ state.fechAte=fate.value; };
+  var fps=document.getElementById("fech-pessoa"); if(fps) fps.onchange=function(){ state.fechPessoa=fps.value; };
+  document.querySelectorAll("[data-fech-tipo]").forEach(function(el){ el.onclick=guarded(async function(){
+    state.fechTipo=el.getAttribute("data-fech-tipo");
+    if(state.fechAtivo) await aplicarFiltroPeriodo(); else render();
+  });});
+  var fap=document.querySelector('[data-action="fech-aplicar"]'); if(fap) fap.onclick=guarded(aplicarFiltroPeriodo);
+  var flp=document.querySelector('[data-action="fech-limpar"]'); if(flp) flp.onclick=function(){ state.fechAtivo=false; state.fechDias=null; render(); };
+}
+function handlersCadastros(){
+  document.querySelectorAll("[data-cat-filtro]").forEach(function(el){el.onclick=function(){state._catFiltro=el.getAttribute("data-cat-filtro");render();};});
+  var novoPrazo=document.querySelector('[data-action="novo-prazo"]');
+  if(novoPrazo) novoPrazo.onclick=function(){
+    if(!souAdmin()){ toast("Somente administradores cadastram prazos.",true); return; }
+    openModal(modalPrazo()); hookPrazoModal(null);
+  };
+  document.querySelectorAll("[data-prazo-edit]").forEach(function(el){ el.onclick=function(){
+    if(!souAdmin()){ toast("Somente administradores cadastram prazos.",true); return; }
+    var p=prazoPorId(el.getAttribute("data-prazo-edit"));
+    if(!p) return;
+    openModal(modalPrazo(p)); hookPrazoModal(p);
+  };});
+  var busca=document.getElementById("cat-busca"); if(busca){busca.oninput=function(){
+    // sem debounce, cada tecla digitada reconstruía a lista inteira de
+    // cadastros na hora — perceptível como "trava" ao digitar quando o
+    // catálogo cresce. Espera uma pausa curta na digitação antes de filtrar.
+    state._catBusca=busca.value;
+    clearTimeout(_catBuscaTimer);
+    _catBuscaTimer=setTimeout(function(){render();busca_focus();},180);
+  }; }
+  var novo=document.querySelector('[data-action="novo-ent"]'); if(novo) novo.onclick=function(){openModal(modalEntidade());hookEntidadeModal(null);};
+  document.querySelectorAll("[data-ent-edit]").forEach(function(el){el.onclick=function(){
+    var ent=state.entidades.filter(function(e){return e.id===el.getAttribute("data-ent-edit");})[0];
+    openModal(modalEntidade(ent)); hookEntidadeModal(ent);
+  };});
+}
+function handlersPrecos(){
+  var dt=document.getElementById("preco-data"); if(dt) dt.onchange=async function(){state.precoData=dt.value;state.precoDia=await Store.getDia(state.precoData);state.precoFotoPendente=null;render();};
+  document.querySelectorAll("[data-preco-modo]").forEach(function(el){el.onclick=function(){state._precoNovo=el.getAttribute("data-preco-modo")==="novo"?"1":"0";render();};});
+  var sel=document.getElementById("preco-ent-select"); if(sel) sel.onchange=function(){state._precoEntId=sel.value;render();};
+  var mercSel=document.getElementById("preco-merc-select"); if(mercSel) mercSel.onchange=function(){state._precoMercadoriaId=mercSel.value;};
+  var filtroMerc=document.getElementById("preco-filtro-merc"); if(filtroMerc) filtroMerc.onchange=function(){state._precoFiltroMerc=filtroMerc.value;render();};
+  var fa=document.getElementById("preco-foto-add"); if(fa) fa.onclick=function(){document.getElementById("preco-foto-input").click();};
+  var fi=document.getElementById("preco-foto-input"); if(fi) fi.onchange=async function(){
+    if(!fi.files[0])return;
+    var faLoad=document.getElementById("preco-foto-add"); if(faLoad) faLoad.innerHTML='<span style="font-size:11px;color:var(--text-faint)">enviando…</span>';
+    try{
+      state.precoFotoPendente=await compressImage(fi.files[0]);
+      // atualiza só a miniatura no lugar, sem re-renderizar o formulário inteiro
+      // (um render() completo aqui apagaria preço/observações já digitados)
+      if(faLoad) faLoad.innerHTML='<img class="thumb" src="'+state.precoFotoPendente+'">';
     }
-    }
-  }
-
-  if(state.tab==="cargas"){
-    var cd=document.getElementById("carga-data"); if(cd) cd.onchange=async function(){state.cargaData=cd.value;state.cargaDia=await Store.getDia(state.cargaData);render();};
-    document.querySelectorAll("[data-carga-filtro]").forEach(function(el){el.onclick=function(){state.cargaFiltroTipo=el.getAttribute("data-carga-filtro");render();};});
-    var nc=document.querySelector('[data-action="nova-carga"]'); if(nc) nc.onclick=function(){ modalFotoNota=null;modalFotoQual=null;modalFotoRomaneio=null;modalApagaNota=false;modalApagaRomaneio=false;modalDespesasExtras=[];modalVencManual={};modalPrazoTocado={};modalItens=[itemVazio()];openModal(modalCarga());hookCargaModal();};
-    document.querySelectorAll("[data-status-carga]").forEach(function(el){el.onchange=async function(){
-      if(!souAdmin()){ toast("Somente administradores podem alterar o status.",true); render(); return; }
-      var id=el.getAttribute("data-status-carga");
-      state.cargaDia.cargas.forEach(function(c){if(c.id===id)c.status=el.value;});
-      await Store.saveDia(state.cargaData,state.cargaDia);
-      render();
-    };});
-    document.querySelectorAll('[data-action="editar-carga"]').forEach(function(el){el.onclick=function(){
-      if(!souAdmin()){ toast("Somente administradores podem editar cargas.",true); return; }
-      var id=el.getAttribute("data-id");
-      var carga=(state.cargaDia.cargas||[]).filter(function(c){return c.id===id;})[0];
-      if(!carga) return;
-      modalFotoNota=null; modalFotoQual=null; modalFotoRomaneio=null; modalApagaNota=false; modalApagaRomaneio=false; modalVencManual={}; modalPrazoTocado={};
-      modalDespesasExtras=(carga.despesasExtras||[]).map(function(d){return {nome:d.nome,valor:d.valor};});
-      modalItens=itensDoFormulario(carga);
-      openModal(modalCarga(carga)); hookCargaModal(carga);
-    };});
-    document.querySelectorAll('[data-action="apagar-carga"]').forEach(function(el){el.onclick=guarded(async function(){
-      if(!souAdmin()){ toast("Somente administradores podem apagar cargas.",true); return; }
-      var id=el.getAttribute("data-id");
-      if(!confirm("Apagar esta carga? Essa ação não pode ser desfeita.")) return;
-      state.cargaDia.cargas=(state.cargaDia.cargas||[]).filter(function(c){return c.id!==id;});
-      await Store.saveDia(state.cargaData,state.cargaDia);
-      toast("Carga apagada.");
-      render();
-    });});
-    document.querySelectorAll("[data-view-foto]").forEach(hookFotoThumb);
-    // dia x período
-    document.querySelectorAll("[data-carga-modo]").forEach(function(el){ el.onclick=guarded(async function(){
-      var m=el.getAttribute("data-carga-modo");
-      if(m===state.cargaModo) return;
-      state.cargaModo=m;
-      if(m==="periodo"){ state.cargaPerDias=null; cargaPeriodoDefaults(); render(); await carregarCargasPeriodo(); }
-      else { state.cargaDia=await Store.getDia(state.cargaData); }
-      render();
-    }); });
-    var cf=document.querySelector('[data-action="carga-filtrar"]');
-    if(cf) cf.onclick=guarded(async function(){ if(await carregarCargasPeriodo()) render(); });
-    document.querySelectorAll("[data-abrir-dia]").forEach(function(el){ el.onclick=guarded(async function(){
-      state.cargaData=el.getAttribute("data-abrir-dia"); state.cargaModo="dia";
-      state.cargaDia=await Store.getDia(state.cargaData);
-      render(); window.scrollTo(0,0);
-    }); });
-    // exportar em PDF: a carga, o dia ou o período na tela
-    var exC=document.querySelector('[data-action="exportar-cargas"]');
-    if(exC) exC.onclick=guarded(async function(){
-      var de, ate;
-      if(state.cargaModo==="periodo"){
-        if(state.cargaPerDias==null){ toast("Toque em Filtrar antes de exportar.",true); return; }
-        de=state.cargaDe; ate=state.cargaAte;
-      } else { de=ate=state.cargaData; }
-      var nomes={compra:"só compras",venda:"só vendas",casada:"só compras casadas"};
-      await entregaPdf(pdfCargasDocumento(cargasVisiveis(),de,ate,nomes[state.cargaFiltroTipo]||""));
-    });
-    document.querySelectorAll("[data-export-carga]").forEach(function(el){ el.onclick=guarded(async function(){
-      var p=el.getAttribute("data-export-carga").split("|");
-      var c=null;
-      cargasVisiveis().forEach(function(d){ if(d.data===p[1]) d.cargas.forEach(function(x){ if(x.id===p[0]) c=x; }); });
-      if(!c){ toast("Carga não encontrada.",true); return; }
-      await entregaPdf(pdfCargaUnica(c,p[1]));
-    }); });
-  }
-
-  if(state.tab==="financeiro"){
-    var fd=document.getElementById("fin-data"); if(fd) fd.onchange=guarded(async function(){
-      state.finData=fd.value; state.finAberta=null; state.finFormPag=null;
-      await carregarFinanceiro(); render();
-    });
-    document.querySelectorAll("[data-fin-modo]").forEach(function(el){ el.onclick=guarded(async function(){
-      state.finModo=el.getAttribute("data-fin-modo");
-      state.finAberta=null; state.finFormPag=null; state.finLimite=null;
-      normalizaStatusFin();
-      await carregarFinanceiro(); render();
-    });});
-    document.querySelectorAll("[data-fin-tipo]").forEach(function(el){ el.onclick=function(){
-      state.finTipo=el.getAttribute("data-fin-tipo");
-      state.finFormPag=null; state.finAberta=null; state.finLimite=null;
-      normalizaStatusFin();
-      render();
-    };});
-    var statusSel=document.getElementById("fin-status-sel");
-    if(statusSel) statusSel.onchange=function(){
-      state.finStatus=statusSel.value; state.finFormPag=null; state.finAberta=null; state.finLimite=null; render();
+    catch(e){ toast(e.message,true); if(faLoad) faLoad.innerHTML=ICONS.cam; }
+  };
+  var add=document.querySelector('[data-action="add-preco"]'); if(add) add.onclick=guarded(onAddPreco);
+  document.querySelectorAll("[data-del-preco]").forEach(function(el){el.onclick=guarded(async function(){
+    var id=el.getAttribute("data-del-preco");
+    var alvo=(state.precoDia.precos||[]).filter(function(p){return p.id===id;})[0];
+    if(!possoEditar(alvo)){ toast("Você só pode excluir preços lançados por você.",true); return; }
+    state.precoDia.precos=state.precoDia.precos.filter(function(p){return p.id!==id;});
+    await Store.saveDia(state.precoData,state.precoDia);
+    render();
+  });});
+  document.querySelectorAll("[data-view-foto]").forEach(hookFotoThumb);
+}
+function handlersPraca(){
+  var abG=document.querySelector('[data-action="abrir-graficos"]');
+  if(abG) abG.onclick=guarded(async function(){
+    state.pracaGraficos=true; state.grafDias=null; state.grafPonto=null;
+    if(state.grafMerc==="todas" && state._pracaMercadoriaId && state._pracaMercadoriaId!=="todas") state.grafMerc=state._pracaMercadoriaId;
+    render(); window.scrollTo(0,0);
+    await carregaGraficos();
+  });
+  if(state.pracaGraficos) handlersPracaGraficos(); else handlersPracaMapa();
+}
+function handlersPracaGraficos(){
+  var fg=document.querySelector('[data-action="fechar-graficos"]'); if(fg) fg.onclick=function(){ state.pracaGraficos=false; render(); window.scrollTo(0,0); };
+  var gde=document.getElementById("graf-de"); if(gde) gde.onchange=guarded(async function(){ if(!gde.value) return; state.grafDe=gde.value; await carregaGraficos(); });
+  var gate=document.getElementById("graf-ate"); if(gate) gate.onchange=guarded(async function(){ if(!gate.value) return; state.grafAte=gate.value; await carregaGraficos(); });
+  var gm=document.getElementById("graf-merc"); if(gm) gm.onchange=function(){ state.grafMerc=gm.value; state.grafPonto=null; state.grafOcultos={}; render(); };
+  document.querySelectorAll("[data-graf-preset]").forEach(function(el){ el.onclick=guarded(async function(){
+    var n=+el.getAttribute("data-graf-preset"); state.grafAte=todayIso(); state.grafDe=addDias(state.grafAte,-(n-1)); await carregaGraficos();
+  });});
+  document.querySelectorAll("[data-graf-modo]").forEach(function(el){ el.onclick=function(){ state.grafModo=el.getAttribute("data-graf-modo"); render(); }; });
+  document.querySelectorAll("[data-graf-serie]").forEach(function(el){ el.onclick=function(){
+    var id=el.getAttribute("data-graf-serie"); state.grafOcultos[id]=!state.grafOcultos[id]; render();
+  };});
+  desenhaGrafico();
+}
+function handlersPracaMapa(){
+  var rd=document.getElementById("resumo-data"); if(rd) rd.onchange=async function(){state.resumoData=rd.value;state.resumoDia=await Store.getDia(state.resumoData);state.mapZoomUF=null;render();};
+  var rm=document.getElementById("resumo-merc-select"); if(rm) rm.onchange=function(){state._pracaMercadoriaId=rm.value;state.mapZoomUF=null;render();};
+  document.querySelectorAll("[data-resumo-view]").forEach(function(el){el.onclick=function(){state.resumoView=el.getAttribute("data-resumo-view");state.mapZoomUF=null;render();};});
+  document.querySelectorAll("[data-lista-modo]").forEach(function(el){el.onclick=function(){state.resumoListaModo=el.getAttribute("data-lista-modo");render();};});
+  document.querySelectorAll("[data-zoom-uf]").forEach(function(el){el.onclick=function(){var uf=el.getAttribute("data-zoom-uf");state.mapZoomUF=uf||null;render();};});
+  var rasterWrap=document.querySelector("[data-map-raster]");
+  if(rasterWrap){
+    rasterWrap.onclick=function(ev){
+      var mc=buildMapGeo();
+      var rect=rasterWrap.getBoundingClientRect();
+      var relX=(ev.clientX-rect.left)/rect.width, relY=(ev.clientY-rect.top)/rect.height;
+      var x=mc.minX+relX*(mc.maxX-mc.minX), y=mc.minY+relY*(mc.maxY-mc.minY);
+      var uf=ufAtProjXY(mc,x,y);
+      var pf=pracaMercadoriaFiltrada(state.resumoDia||{precos:[]});
+      var agg=precosAgregados(pf.dia);
+      if(uf && agg.porEstado[uf]){ state.mapZoomUF=uf; render(); }
     };
-    var lembBtn=document.querySelector('[data-action="lembretes"]'); if(lembBtn) lembBtn.onclick=guarded(modalLembretes);
-    var finF=document.querySelector('[data-action="fin-filtrar"]');
-    if(finF) finF.onclick=guarded(async function(){
-      var de=(document.getElementById("fin-de")||{}).value, ate=(document.getElementById("fin-ate")||{}).value;
-      if(!de||!ate){ toast("Escolha as duas datas do período.",true); return; }
-      if(de>ate){ var t=de; de=ate; ate=t; }
-      if(diasEntre(de,ate)+1>FIN_MAX_DIAS){ toast("Escolha um período de até 6 meses.",true); return; }
-      state.finDe=de; state.finAte=ate; state.finAberta=null; state.finFormPag=null; state.finLimite=null;
-      await carregarFinanceiro(); render();
-    });
-    // exportar em PDF: tudo o que está listado (já com os filtros), ou uma operação
-    var finX=document.querySelector('[data-action="exportar-fin"]');
-    if(finX) finX.onclick=guarded(async function(){
-      var lados=ladosDoModo(), modo=state.finModo, t, sub, arq;
-      var tipoNome={compra:"só compras",venda:"só vendas",casada:"só vendas casadas"}[state.finTipo];
-      var stAtual=FIN_STATUS_FILTROS.filter(function(f){return f.id===state.finStatus;})[0];
-      var filtros=[]; if(tipoNome) filtros.push(tipoNome); if(state.finStatus!=="todos"&&stAtual) filtros.push(stAtual.label);
-      if(modo==="periodo"){ t="Financeiro do período"; sub=fmtDateBR(state.finDe)+" a "+fmtDateBR(state.finAte); arq=pdfNomeArquivo("financeiro",state.finDe,state.finAte); }
-      else { t="Financeiro do dia"; sub=fmtDateBR(state.finData); arq=pdfNomeArquivo("financeiro",state.finData,state.finData); }
-      if(filtros.length) sub+=" · "+filtros.join(" · ");
-      await entregaPdf(pdfFinLista(lados,t,sub,arq));
-    });
-    document.querySelectorAll("[data-fin-export]").forEach(function(el){ el.onclick=guarded(async function(e){
-      var p=el.getAttribute("data-fin-export").split("|");
-      var c=null;
-      ladosDoModo().forEach(function(l){ if(l.cargaId===p[0]&&l.dataIso===p[1]) c=l.carga; });
-      if(!c){ var dia=await Store.getDia(p[1]); c=(dia.cargas||[]).filter(function(x){return x.id===p[0];})[0]; }
-      if(!c){ toast("Operação não encontrada.",true); return; }
-      await entregaPdf(pdfFinOperacao(c,p[1]));
-    }); });
-    var maisBtn=document.querySelector("[data-fin-mais]");
-    if(maisBtn) maisBtn.onclick=function(){ state.finLimite=(state.finLimite||FIN_PAGINA)+FIN_PAGINA; render(); };
-    document.querySelectorAll("[data-fin-toggle]").forEach(function(el){ el.onclick=function(){
-      var ch=el.getAttribute("data-fin-toggle");
-      state.finAberta=(state.finAberta===ch)?null:ch;
-      state.finFormPag=null;
-      render();
-    };});
-    document.querySelectorAll("[data-fin-quitar-rapido]").forEach(function(el){ el.onclick=function(e){
-      e.stopPropagation();
-      var ch=el.getAttribute("data-fin-quitar-rapido");
-      var lado=ladosDoModo().filter(function(l){return l.chave===ch;})[0];
-      if(lado) abrirQuitacaoRapida(lado);
-    };});
-    document.querySelectorAll("[data-fin-resumo]").forEach(function(el){ el.onclick=guarded(async function(){
-      var p=el.getAttribute("data-fin-resumo").split("|");
-      var dia=await Store.getDia(p[1]);
-      var c=(dia.cargas||[]).filter(function(x){return x.id===p[0];})[0];
-      if(!c){ toast("Operação não encontrada.",true); return; }
-      var nodeRes=openModal(modalResumoCarga(c,p[1]));
-      var bx=nodeRes.querySelector("[data-fin-export]");
-      if(bx) bx.onclick=guarded(async function(){ await entregaPdf(pdfFinOperacao(c,p[1])); });
-    });});
-    document.querySelectorAll("[data-fin-prazo]").forEach(function(el){ el.onchange=guarded(async function(){
-      var ch=el.getAttribute("data-fin-prazo"), v=el.value;
-      if(v==="__pago"){
-        // "Pago" não vira um campo marcado na mão: abre o lançamento já com o
-        // valor que falta, pra registrar COMO foi pago. O status vira "Paga"
-        // sozinho quando a soma dos pagamentos fecha o total.
-        state.finFormPag=ch; render(); finFocoValor(); return;
-      }
-      if(v===PRAZO_DATA){ finEscolherData(ch); return; }
-      await finMutar(ch,function(fin){
-        var p=v?prazoPorId(v):null;
-        fin.prazoId=p?p.id:null;
-        fin.prazoNome=p?p.nome:null;
-        fin.prazoDias=p?p.dias:null;
-        fin.vencimentoManual=null;
-      });
-    });});
-    document.querySelectorAll("[data-fin-trocar-data]").forEach(function(el){ el.onclick=function(){
-      finEscolherData(el.getAttribute("data-fin-trocar-data"));
-    };});
-    document.querySelectorAll("[data-fin-novo-pag],[data-fin-quitar]").forEach(function(el){ el.onclick=function(){
-      state.finFormPag=el.getAttribute("data-fin-novo-pag")||el.getAttribute("data-fin-quitar");
-      render(); finFocoValor();
-    };});
-    var cancelar=document.querySelector("[data-fin-cancelar-pag]");
-    if(cancelar) cancelar.onclick=function(){ state.finFormPag=null; render(); };
-    var meioSel=document.getElementById("fin-pag-meio");
-    if(meioSel) meioSel.onchange=function(){
-      var area=document.getElementById("fin-pag-cheque-area");
-      if(area) area.hidden=(meioSel.value!=="cheque");
-    };
-    var salvarPag=document.querySelector("[data-fin-salvar-pag]");
-    if(salvarPag) salvarPag.onclick=guarded(async function(){
-      var ch=salvarPag.getAttribute("data-fin-salvar-pag");
-      var valor=parseFloat((document.getElementById("fin-pag-valor")||{}).value);
-      var data=(document.getElementById("fin-pag-data")||{}).value||todayIso();
-      var meio=(document.getElementById("fin-pag-meio")||{}).value||"dinheiro";
-      var obs=((document.getElementById("fin-pag-obs")||{}).value||"").trim();
-      if(!valor||valor<=0){ toast("Informe o valor do pagamento.",true); return; }
-      var pag={id:uid(),data:data,valor:valor,meio:meio,obs:obs,criadoEm:new Date().toISOString(),criadoPor:meuUid()};
-      if(meio==="cheque"){
-        pag.cheque={
-          numero:((document.getElementById("fin-pag-cheque-num")||{}).value||"").trim(),
-          banco:((document.getElementById("fin-pag-cheque-banco")||{}).value||"").trim(),
-          bomPara:((document.getElementById("fin-pag-cheque-bom")||{}).value||"")||null
-        };
-      }
-      state.finFormPag=null;
-      await finMutar(ch,function(fin){ fin.pagamentos=(fin.pagamentos||[]).concat([pag]); });
-      toast("Pagamento lançado.");
-    });
-    document.querySelectorAll("[data-fin-del-pag]").forEach(function(el){ el.onclick=guarded(async function(){
-      var raw=el.getAttribute("data-fin-del-pag");
-      var i=raw.lastIndexOf("|");
-      var ch=raw.slice(0,i), pagId=raw.slice(i+1);
-      if(!confirm("Remover este pagamento? O status da operação será recalculado.")) return;
-      await finMutar(ch,function(fin){ fin.pagamentos=(fin.pagamentos||[]).filter(function(p){return p.id!==pagId;}); });
-      toast("Pagamento removido.");
-    });});
   }
 }
-
+function handlersCargas(){
+  var cd=document.getElementById("carga-data"); if(cd) cd.onchange=async function(){state.cargaData=cd.value;state.cargaDia=await Store.getDia(state.cargaData);render();};
+  document.querySelectorAll("[data-carga-filtro]").forEach(function(el){el.onclick=function(){state.cargaFiltroTipo=el.getAttribute("data-carga-filtro");render();};});
+  var nc=document.querySelector('[data-action="nova-carga"]'); if(nc) nc.onclick=function(){ modalFotoNota=null;modalFotoQual=null;modalFotoRomaneio=null;modalApagaNota=false;modalApagaRomaneio=false;modalDespesasExtras=[];modalVencManual={};modalPrazoTocado={};modalItens=[itemVazio()];openModal(modalCarga());hookCargaModal();};
+  document.querySelectorAll("[data-status-carga]").forEach(function(el){el.onchange=async function(){
+    if(!souAdmin()){ toast("Somente administradores podem alterar o status.",true); render(); return; }
+    var id=el.getAttribute("data-status-carga");
+    state.cargaDia.cargas.forEach(function(c){if(c.id===id)c.status=el.value;});
+    await Store.saveDia(state.cargaData,state.cargaDia);
+    render();
+  };});
+  document.querySelectorAll('[data-action="editar-carga"]').forEach(function(el){el.onclick=function(){
+    if(!souAdmin()){ toast("Somente administradores podem editar cargas.",true); return; }
+    var id=el.getAttribute("data-id");
+    var carga=(state.cargaDia.cargas||[]).filter(function(c){return c.id===id;})[0];
+    if(!carga) return;
+    modalFotoNota=null; modalFotoQual=null; modalFotoRomaneio=null; modalApagaNota=false; modalApagaRomaneio=false; modalVencManual={}; modalPrazoTocado={};
+    modalDespesasExtras=(carga.despesasExtras||[]).map(function(d){return {nome:d.nome,valor:d.valor};});
+    modalItens=itensDoFormulario(carga);
+    openModal(modalCarga(carga)); hookCargaModal(carga);
+  };});
+  document.querySelectorAll('[data-action="apagar-carga"]').forEach(function(el){el.onclick=guarded(async function(){
+    if(!souAdmin()){ toast("Somente administradores podem apagar cargas.",true); return; }
+    var id=el.getAttribute("data-id");
+    if(!confirm("Apagar esta carga? Essa ação não pode ser desfeita.")) return;
+    state.cargaDia.cargas=(state.cargaDia.cargas||[]).filter(function(c){return c.id!==id;});
+    await Store.saveDia(state.cargaData,state.cargaDia);
+    toast("Carga apagada.");
+    render();
+  });});
+  document.querySelectorAll("[data-view-foto]").forEach(hookFotoThumb);
+  // dia x período
+  document.querySelectorAll("[data-carga-modo]").forEach(function(el){ el.onclick=guarded(async function(){
+    var m=el.getAttribute("data-carga-modo");
+    if(m===state.cargaModo) return;
+    state.cargaModo=m;
+    if(m==="periodo"){ state.cargaPerDias=null; cargaPeriodoDefaults(); render(); await carregarCargasPeriodo(); }
+    else { state.cargaDia=await Store.getDia(state.cargaData); }
+    render();
+  }); });
+  var cf=document.querySelector('[data-action="carga-filtrar"]');
+  if(cf) cf.onclick=guarded(async function(){ if(await carregarCargasPeriodo()) render(); });
+  document.querySelectorAll("[data-abrir-dia]").forEach(function(el){ el.onclick=guarded(async function(){
+    state.cargaData=el.getAttribute("data-abrir-dia"); state.cargaModo="dia";
+    state.cargaDia=await Store.getDia(state.cargaData);
+    render(); window.scrollTo(0,0);
+  }); });
+  handlersCargasExportar();
+}
+function handlersCargasExportar(){
+  // exportar em PDF: a carga, o dia ou o período na tela
+  var exC=document.querySelector('[data-action="exportar-cargas"]');
+  if(exC) exC.onclick=guarded(async function(){
+    var de, ate;
+    if(state.cargaModo==="periodo"){
+      if(state.cargaPerDias==null){ toast("Toque em Filtrar antes de exportar.",true); return; }
+      de=state.cargaDe; ate=state.cargaAte;
+    } else { de=ate=state.cargaData; }
+    var nomes={compra:"só compras",venda:"só vendas",casada:"só compras casadas"};
+    await entregaPdf(pdfCargasDocumento(cargasVisiveis(),de,ate,nomes[state.cargaFiltroTipo]||""));
+  });
+  document.querySelectorAll("[data-export-carga]").forEach(function(el){ el.onclick=guarded(async function(){
+    var p=el.getAttribute("data-export-carga").split("|");
+    var c=null;
+    cargasVisiveis().forEach(function(d){ if(d.data===p[1]) d.cargas.forEach(function(x){ if(x.id===p[0]) c=x; }); });
+    if(!c){ toast("Carga não encontrada.",true); return; }
+    await entregaPdf(pdfCargaUnica(c,p[1]));
+  }); });
+}
+function handlersFinanceiro(){
+  var fd=document.getElementById("fin-data"); if(fd) fd.onchange=guarded(async function(){
+    state.finData=fd.value; state.finAberta=null; state.finFormPag=null;
+    await carregarFinanceiro(); render();
+  });
+  document.querySelectorAll("[data-fin-modo]").forEach(function(el){ el.onclick=guarded(async function(){
+    state.finModo=el.getAttribute("data-fin-modo");
+    state.finAberta=null; state.finFormPag=null; state.finLimite=null;
+    normalizaStatusFin();
+    await carregarFinanceiro(); render();
+  });});
+  document.querySelectorAll("[data-fin-tipo]").forEach(function(el){ el.onclick=function(){
+    state.finTipo=el.getAttribute("data-fin-tipo");
+    state.finFormPag=null; state.finAberta=null; state.finLimite=null;
+    normalizaStatusFin();
+    render();
+  };});
+  var statusSel=document.getElementById("fin-status-sel");
+  if(statusSel) statusSel.onchange=function(){
+    state.finStatus=statusSel.value; state.finFormPag=null; state.finAberta=null; state.finLimite=null; render();
+  };
+  var lembBtn=document.querySelector('[data-action="lembretes"]'); if(lembBtn) lembBtn.onclick=guarded(modalLembretes);
+  var finF=document.querySelector('[data-action="fin-filtrar"]');
+  if(finF) finF.onclick=guarded(async function(){
+    var de=(document.getElementById("fin-de")||{}).value, ate=(document.getElementById("fin-ate")||{}).value;
+    if(!de||!ate){ toast("Escolha as duas datas do período.",true); return; }
+    if(de>ate){ var t=de; de=ate; ate=t; }
+    if(diasEntre(de,ate)+1>FIN_MAX_DIAS){ toast("Escolha um período de até 6 meses.",true); return; }
+    state.finDe=de; state.finAte=ate; state.finAberta=null; state.finFormPag=null; state.finLimite=null;
+    await carregarFinanceiro(); render();
+  });
+  handlersFinExportar();
+  handlersFinLista();
+  handlersFinPrazo();
+  handlersFinPagamentos();
+}
+function handlersFinExportar(){
+  // exportar em PDF: tudo o que está listado (já com os filtros), ou uma operação
+  var finX=document.querySelector('[data-action="exportar-fin"]');
+  if(finX) finX.onclick=guarded(async function(){
+    var lados=ladosDoModo(), modo=state.finModo, t, sub, arq;
+    var tipoNome={compra:"só compras",venda:"só vendas",casada:"só vendas casadas"}[state.finTipo];
+    var stAtual=FIN_STATUS_FILTROS.filter(function(f){return f.id===state.finStatus;})[0];
+    var filtros=[]; if(tipoNome) filtros.push(tipoNome); if(state.finStatus!=="todos"&&stAtual) filtros.push(stAtual.label);
+    if(modo==="periodo"){ t="Financeiro do período"; sub=fmtDateBR(state.finDe)+" a "+fmtDateBR(state.finAte); arq=pdfNomeArquivo("financeiro",state.finDe,state.finAte); }
+    else { t="Financeiro do dia"; sub=fmtDateBR(state.finData); arq=pdfNomeArquivo("financeiro",state.finData,state.finData); }
+    if(filtros.length) sub+=" · "+filtros.join(" · ");
+    await entregaPdf(pdfFinLista(lados,t,sub,arq));
+  });
+  document.querySelectorAll("[data-fin-export]").forEach(function(el){ el.onclick=guarded(async function(e){
+    var p=el.getAttribute("data-fin-export").split("|");
+    var c=null;
+    ladosDoModo().forEach(function(l){ if(l.cargaId===p[0]&&l.dataIso===p[1]) c=l.carga; });
+    if(!c){ var dia=await Store.getDia(p[1]); c=(dia.cargas||[]).filter(function(x){return x.id===p[0];})[0]; }
+    if(!c){ toast("Operação não encontrada.",true); return; }
+    await entregaPdf(pdfFinOperacao(c,p[1]));
+  }); });
+}
+function handlersFinLista(){
+  var maisBtn=document.querySelector("[data-fin-mais]");
+  if(maisBtn) maisBtn.onclick=function(){ state.finLimite=(state.finLimite||FIN_PAGINA)+FIN_PAGINA; render(); };
+  document.querySelectorAll("[data-fin-toggle]").forEach(function(el){ el.onclick=function(){
+    var ch=el.getAttribute("data-fin-toggle");
+    state.finAberta=(state.finAberta===ch)?null:ch;
+    state.finFormPag=null;
+    render();
+  };});
+  document.querySelectorAll("[data-fin-quitar-rapido]").forEach(function(el){ el.onclick=function(e){
+    e.stopPropagation();
+    var ch=el.getAttribute("data-fin-quitar-rapido");
+    var lado=ladosDoModo().filter(function(l){return l.chave===ch;})[0];
+    if(lado) abrirQuitacaoRapida(lado);
+  };});
+  document.querySelectorAll("[data-fin-resumo]").forEach(function(el){ el.onclick=guarded(async function(){
+    var p=el.getAttribute("data-fin-resumo").split("|");
+    var dia=await Store.getDia(p[1]);
+    var c=(dia.cargas||[]).filter(function(x){return x.id===p[0];})[0];
+    if(!c){ toast("Operação não encontrada.",true); return; }
+    var nodeRes=openModal(modalResumoCarga(c,p[1]));
+    var bx=nodeRes.querySelector("[data-fin-export]");
+    if(bx) bx.onclick=guarded(async function(){ await entregaPdf(pdfFinOperacao(c,p[1])); });
+  });});
+}
+function handlersFinPrazo(){
+  document.querySelectorAll("[data-fin-prazo]").forEach(function(el){ el.onchange=guarded(async function(){
+    var ch=el.getAttribute("data-fin-prazo"), v=el.value;
+    if(v==="__pago"){
+      // "Pago" não vira um campo marcado na mão: abre o lançamento já com o
+      // valor que falta, pra registrar COMO foi pago. O status vira "Paga"
+      // sozinho quando a soma dos pagamentos fecha o total.
+      state.finFormPag=ch; render(); finFocoValor(); return;
+    }
+    if(v===PRAZO_DATA){ finEscolherData(ch); return; }
+    await finMutar(ch,function(fin){
+      var p=v?prazoPorId(v):null;
+      fin.prazoId=p?p.id:null;
+      fin.prazoNome=p?p.nome:null;
+      fin.prazoDias=p?p.dias:null;
+      fin.vencimentoManual=null;
+    });
+  });});
+  document.querySelectorAll("[data-fin-trocar-data]").forEach(function(el){ el.onclick=function(){
+    finEscolherData(el.getAttribute("data-fin-trocar-data"));
+  };});
+}
+function handlersFinPagamentos(){
+  document.querySelectorAll("[data-fin-novo-pag],[data-fin-quitar]").forEach(function(el){ el.onclick=function(){
+    state.finFormPag=el.getAttribute("data-fin-novo-pag")||el.getAttribute("data-fin-quitar");
+    render(); finFocoValor();
+  };});
+  var cancelar=document.querySelector("[data-fin-cancelar-pag]");
+  if(cancelar) cancelar.onclick=function(){ state.finFormPag=null; render(); };
+  var meioSel=document.getElementById("fin-pag-meio");
+  if(meioSel) meioSel.onchange=function(){
+    var area=document.getElementById("fin-pag-cheque-area");
+    if(area) area.hidden=(meioSel.value!=="cheque");
+  };
+  var salvarPag=document.querySelector("[data-fin-salvar-pag]");
+  if(salvarPag) salvarPag.onclick=guarded(async function(){
+    var ch=salvarPag.getAttribute("data-fin-salvar-pag");
+    var valor=parseFloat((document.getElementById("fin-pag-valor")||{}).value);
+    var data=(document.getElementById("fin-pag-data")||{}).value||todayIso();
+    var meio=(document.getElementById("fin-pag-meio")||{}).value||"dinheiro";
+    var obs=((document.getElementById("fin-pag-obs")||{}).value||"").trim();
+    if(!valor||valor<=0){ toast("Informe o valor do pagamento.",true); return; }
+    var pag={id:uid(),data:data,valor:valor,meio:meio,obs:obs,criadoEm:new Date().toISOString(),criadoPor:meuUid()};
+    if(meio==="cheque"){
+      pag.cheque={
+        numero:((document.getElementById("fin-pag-cheque-num")||{}).value||"").trim(),
+        banco:((document.getElementById("fin-pag-cheque-banco")||{}).value||"").trim(),
+        bomPara:((document.getElementById("fin-pag-cheque-bom")||{}).value||"")||null
+      };
+    }
+    state.finFormPag=null;
+    await finMutar(ch,function(fin){ fin.pagamentos=(fin.pagamentos||[]).concat([pag]); });
+    toast("Pagamento lançado.");
+  });
+  document.querySelectorAll("[data-fin-del-pag]").forEach(function(el){ el.onclick=guarded(async function(){
+    var raw=el.getAttribute("data-fin-del-pag");
+    var i=raw.lastIndexOf("|");
+    var ch=raw.slice(0,i), pagId=raw.slice(i+1);
+    if(!confirm("Remover este pagamento? O status da operação será recalculado.")) return;
+    await finMutar(ch,function(fin){ fin.pagamentos=(fin.pagamentos||[]).filter(function(p){return p.id!==pagId;}); });
+    toast("Pagamento removido.");
+  });});
+}
 // se o status selecionado não existe mais para o tipo/modo atual, volta pra
 // "Todos" — senão a lista ficaria vazia sem nenhum botão marcado explicando
 function normalizaStatusFin(){
@@ -6074,473 +6182,506 @@ async function onAddPreco(){
   render();
 }
 
+/* ============ formulário de carga (nova / editar) ============
+   hookCargaModal só liga as partes do formulário; cada parte é uma função
+   curta logo abaixo (itens e resumo, despesas, prazos, anexos, colar, salvar).
+   O que é digitado vive em modalItens / modalDespesasExtras / modalFotos…
+   (variáveis do formulário aberto), não no DOM. */
 function hookCargaModal(carga){
-  var node=document.getElementById("form-carga");
-  var tipoSel=document.getElementById("carga-tipo-sel");
-  var entArea=document.getElementById("carga-ent-area");
-  var precoArea=document.getElementById("carga-preco-area");
-  var restrito=!souAdmin();
-
-  function updateValorTotal(){
-    var resumo=document.getElementById("carga-resumo-live");
-    if(!resumo) return;
-    var qtdTot=0, valorCompra=0, valorVenda=0;
-    modalItens.forEach(function(it){
-      var q=parseFloat(it.qtd)||0;
-      qtdTot+=q; valorCompra+=q*(parseFloat(it.preco)||0); valorVenda+=q*(parseFloat(it.precoVenda)||0);
-    });
-    var linhaCx=modalItens.length>1?'<div class="linha"><span class="rlabel">Total de caixas</span><span class="rvalue">'+fmtNum(qtdTot)+" cx</span></div>":"";
-    if(tipoSel.value==="casada"){
-      var lucroBruto=valorVenda-valorCompra;
-      var despesasTotal=modalDespesasExtras.reduce(function(s,d){return s+(parseFloat(d.valor)||0);},0);
-      var lucroLiquido=lucroBruto-despesasTotal;
-      resumo.innerHTML=linhaCx+
-        '<div class="linha"><span class="rlabel">Valor compra</span><span class="rvalue">'+fmtMoney(valorCompra)+"</span></div>"+
-        '<div class="linha"><span class="rlabel">Valor venda</span><span class="rvalue">'+fmtMoney(valorVenda)+"</span></div>"+
-        '<div class="linha"><span class="rlabel">Lucro bruto</span><span class="rvalue '+(lucroBruto>=0?"pos":"neg")+'">'+fmtMoney(lucroBruto)+"</span></div>"+
-        (modalDespesasExtras.length?'<div class="linha despesa"><span class="rlabel">Despesas extras</span><span class="rvalue neg">&minus; '+fmtMoney(despesasTotal)+"</span></div>":"")+
-        '<div class="linha final"><span class="rlabel">Lucro líquido</span><span class="rvalue '+(lucroLiquido>=0?"pos":"neg")+'">'+fmtMoney(lucroLiquido)+"</span></div>";
-    } else {
-      resumo.innerHTML=linhaCx+'<div class="linha final"><span class="rlabel">Valor total da carga</span><span class="rvalue gold">'+fmtMoney(valorCompra)+"</span></div>";
-    }
-  }
-  // linhas de mercadoria: cada campo digitado vai direto para modalItens
-  function renderItensArea(jaSincronizado){
-    var area=document.getElementById("carga-itens-area");
-    if(!area) return;
-    if(!jaSincronizado) syncItensDoDom();
-    area.innerHTML=itensEditorHtml(tipoSel.value,restrito);
-    wireItens();
-    updateValorTotal();
-  }
-  // relê o que está escrito nas linhas (garante que nada digitado fica de
-  // fora, mesmo preenchido por corretor/autocompletar sem evento de digitação)
-  function syncItensDoDom(){
-    document.querySelectorAll("#carga-itens-rows .item-row").forEach(function(row){
-      var it=modalItens[parseInt(row.getAttribute("data-item-idx"),10)]; if(!it) return;
-      var m=row.querySelector(".item-merc"); if(m) it.mercadoriaId=m.value;
-      var q=row.querySelector(".item-qtd"); if(q) it.qtd=q.value;
-      var p=row.querySelector(".item-preco"); if(p) it.preco=p.value;
-      var pv=row.querySelector(".item-preco-venda"); if(pv) it.precoVenda=pv.value;
-    });
-  }
-  function wireItens(){
-    document.querySelectorAll("#carga-itens-rows .item-row").forEach(function(row){
-      var idx=parseInt(row.getAttribute("data-item-idx"),10);
-      var it=modalItens[idx]; if(!it) return;
-      var m=row.querySelector(".item-merc"); if(m) m.onchange=function(){ it.mercadoriaId=m.value; };
-      var q=row.querySelector(".item-qtd"); if(q) q.oninput=function(){ it.qtd=q.value; updateValorTotal(); };
-      var p=row.querySelector(".item-preco"); if(p) p.oninput=function(){ it.preco=p.value; updateValorTotal(); };
-      var pv=row.querySelector(".item-preco-venda"); if(pv) pv.oninput=function(){ it.precoVenda=pv.value; updateValorTotal(); };
-      var rm=row.querySelector(".item-remove"); if(rm) rm.onclick=function(){ syncItensDoDom(); modalItens.splice(idx,1); renderItensArea(true); };
-    });
-    var add=document.getElementById("carga-item-add");
-    if(add) add.onclick=function(){
-      if(modalItens.length>=MAX_ITENS_CARGA) return;
-      modalItens.push(itemVazio()); renderItensArea();
-      var sels=document.querySelectorAll("#carga-itens-rows .item-merc");
-      if(sels.length) sels[sels.length-1].focus();
-    };
-  }
-  function wireDespesasRows(){
-    document.querySelectorAll(".despesa-row").forEach(function(row){
-      var idx=parseInt(row.getAttribute("data-despesa-idx"),10);
-      var nomeEl=row.querySelector(".despesa-nome");
-      var valorEl=row.querySelector(".despesa-valor");
-      var rmBtn=row.querySelector(".despesa-remove");
-      if(nomeEl) nomeEl.oninput=function(){ modalDespesasExtras[idx].nome=nomeEl.value; };
-      if(valorEl) valorEl.oninput=function(){ var v=valorEl.value; modalDespesasExtras[idx].valor=(v===""?null:(parseFloat(v)||0)); updateValorTotal(); };
-      if(rmBtn) rmBtn.onclick=function(){ modalDespesasExtras.splice(idx,1); renderDespesasArea(); };
-    });
-    var addBtn=document.getElementById("carga-despesa-add");
-    if(addBtn) addBtn.onclick=function(){ modalDespesasExtras.push({nome:"",valor:null}); renderDespesasArea(); };
-  }
-  function renderDespesasArea(){
-    var area=document.getElementById("carga-despesas-area");
-    if(!area) return;
-    area.innerHTML=despesasExtrasEditorHtml();
-    wireDespesasRows();
-    updateValorTotal();
-  }
-  function wirePrecoInputs(){
-    wireItens();
-    if(tipoSel.value==="casada" && !restrito) wireDespesasRows();
-    updateValorTotal();
-  }
-  wirePrecoInputs();
-
-  tipoSel.onchange=function(){
-    // os tipos de mercadoria e as caixas já digitados continuam; só as
-    // despesas extras (que existem só na compra casada) recomeçam
-    modalDespesasExtras=[];
-    entArea.innerHTML=cargaEntAreaHtml(tipoSel.value,null);
-    syncItensDoDom();
-    precoArea.innerHTML=cargaPrecoAreaHtml(tipoSel.value,null,restrito);
-    // a venda casada tem dois lados financeiros; compra e venda têm um só —
-    // então o bloco de situação financeira é remontado junto com o resto
-    modalVencManual={}; modalPrazoTocado={};
-    redesenhaFinArea(tipoSel.value,null);
-    wirePrecoInputs();
-    // os seletores de cadastro foram recriados: religa o prazo habitual neles
-    wirePrazoPadrao();
+  var ctx={
+    node:document.getElementById("form-carga"),
+    tipoSel:document.getElementById("carga-tipo-sel"),
+    entArea:document.getElementById("carga-ent-area"),
+    precoArea:document.getElementById("carga-preco-area"),
+    restrito:!souAdmin(),
+    carga:carga
   };
+  cargaLigaPrecos(ctx);
+  ctx.tipoSel.onchange=function(){ cargaTrocaTipo(ctx); };
+  cargaLigaPrazoSelects(ctx.tipoSel.value,carga);
+  cargaLigaPrazoPadrao(ctx);
+  var receb=cargaLigaAnexos(carga);
+  cargaLigaColar(ctx.node,receb);
+  document.getElementById("carga-save").onclick=guarded(function(){ return salvarCargaDoModal(ctx.node); });
+}
 
-  function redesenhaFinArea(tipo,cargaRef){
-    var finArea=document.getElementById("carga-fin-area");
-    if(!finArea) return;
-    finArea.innerHTML=cargaFinAreaHtml(tipo,cargaRef);
-    wirePrazoSelects(tipo,cargaRef);
+/* ---- tipos de mercadoria, despesas e o resumo ao vivo ---- */
+function cargaAtualizaResumo(ctx){
+  var resumo=document.getElementById("carga-resumo-live");
+  if(!resumo) return;
+  var qtdTot=0, valorCompra=0, valorVenda=0;
+  modalItens.forEach(function(it){
+    var q=parseFloat(it.qtd)||0;
+    qtdTot+=q; valorCompra+=q*(parseFloat(it.preco)||0); valorVenda+=q*(parseFloat(it.precoVenda)||0);
+  });
+  var linhaCx=modalItens.length>1?'<div class="linha"><span class="rlabel">Total de caixas</span><span class="rvalue">'+fmtNum(qtdTot)+" cx</span></div>":"";
+  if(ctx.tipoSel.value!=="casada"){
+    resumo.innerHTML=linhaCx+'<div class="linha final"><span class="rlabel">Valor total da carga</span><span class="rvalue gold">'+fmtMoney(valorCompra)+"</span></div>";
+    return;
   }
-  // "Selecionar data…" abre o calendário por cima do formulário; a data fica
-  // guardada até o Salvar, e cancelar devolve o seletor ao estado anterior
-  function wirePrazoSelects(tipo,cargaRef){
-    document.querySelectorAll("[data-carga-prazo]").forEach(function(sel){
-      sel.onchange=function(){
-        var campo=sel.getAttribute("data-carga-prazo");
-        modalPrazoTocado[campo]=true; // escolha manual: o prazo habitual não mexe mais aqui
-        if(sel.value!==PRAZO_DATA){ delete modalVencManual[campo]; return; }
-        abrirEscolhaData({
-          titulo:"Vencimento no calendário",
-          sub:"Carga de "+fmtDateBR(state.cargaData),
-          valor:modalVencManual[campo]||"",
-          onCancel:function(){ redesenhaFinArea(tipo,cargaRef); },
-          onOk:function(v){ modalVencManual[campo]=v; redesenhaFinArea(tipo,cargaRef); }
-        });
-      };
-    });
-  }
-  wirePrazoSelects(tipoSel.value,carga);
+  var lucroBruto=valorVenda-valorCompra;
+  var despesasTotal=modalDespesasExtras.reduce(function(s,d){return s+(parseFloat(d.valor)||0);},0);
+  var lucroLiquido=lucroBruto-despesasTotal;
+  resumo.innerHTML=linhaCx+
+    '<div class="linha"><span class="rlabel">Valor compra</span><span class="rvalue">'+fmtMoney(valorCompra)+"</span></div>"+
+    '<div class="linha"><span class="rlabel">Valor venda</span><span class="rvalue">'+fmtMoney(valorVenda)+"</span></div>"+
+    '<div class="linha"><span class="rlabel">Lucro bruto</span><span class="rvalue '+(lucroBruto>=0?"pos":"neg")+'">'+fmtMoney(lucroBruto)+"</span></div>"+
+    (modalDespesasExtras.length?'<div class="linha despesa"><span class="rlabel">Despesas extras</span><span class="rvalue neg">&minus; '+fmtMoney(despesasTotal)+"</span></div>":"")+
+    '<div class="linha final"><span class="rlabel">Lucro líquido</span><span class="rvalue '+(lucroLiquido>=0?"pos":"neg")+'">'+fmtMoney(lucroLiquido)+"</span></div>";
+}
+// linhas de mercadoria: cada campo digitado vai direto para modalItens
+function cargaRenderItens(ctx,jaSincronizado){
+  var area=document.getElementById("carga-itens-area");
+  if(!area) return;
+  if(!jaSincronizado) cargaSyncItensDoDom();
+  area.innerHTML=itensEditorHtml(ctx.tipoSel.value,ctx.restrito);
+  cargaLigaItens(ctx);
+  cargaAtualizaResumo(ctx);
+}
+// relê o que está escrito nas linhas (garante que nada digitado fica de
+// fora, mesmo preenchido por corretor/autocompletar sem evento de digitação)
+function cargaSyncItensDoDom(){
+  document.querySelectorAll("#carga-itens-rows .item-row").forEach(function(row){
+    var it=modalItens[parseInt(row.getAttribute("data-item-idx"),10)]; if(!it) return;
+    var m=row.querySelector(".item-merc"); if(m) it.mercadoriaId=m.value;
+    var q=row.querySelector(".item-qtd"); if(q) it.qtd=q.value;
+    var p=row.querySelector(".item-preco"); if(p) it.preco=p.value;
+    var pv=row.querySelector(".item-preco-venda"); if(pv) it.precoVenda=pv.value;
+  });
+}
+function cargaLigaItens(ctx){
+  var atualiza=function(){ cargaAtualizaResumo(ctx); };
+  document.querySelectorAll("#carga-itens-rows .item-row").forEach(function(row){
+    var idx=parseInt(row.getAttribute("data-item-idx"),10);
+    var it=modalItens[idx]; if(!it) return;
+    var m=row.querySelector(".item-merc"); if(m) m.onchange=function(){ it.mercadoriaId=m.value; };
+    var q=row.querySelector(".item-qtd"); if(q) q.oninput=function(){ it.qtd=q.value; atualiza(); };
+    var p=row.querySelector(".item-preco"); if(p) p.oninput=function(){ it.preco=p.value; atualiza(); };
+    var pv=row.querySelector(".item-preco-venda"); if(pv) pv.oninput=function(){ it.precoVenda=pv.value; atualiza(); };
+    var rm=row.querySelector(".item-remove"); if(rm) rm.onclick=function(){ cargaSyncItensDoDom(); modalItens.splice(idx,1); cargaRenderItens(ctx,true); };
+  });
+  var add=document.getElementById("carga-item-add");
+  if(add) add.onclick=function(){
+    if(modalItens.length>=MAX_ITENS_CARGA) return;
+    modalItens.push(itemVazio()); cargaRenderItens(ctx);
+    var sels=document.querySelectorAll("#carga-itens-rows .item-merc");
+    if(sels.length) sels[sels.length-1].focus();
+  };
+}
+function cargaLigaDespesas(ctx){
+  document.querySelectorAll(".despesa-row").forEach(function(row){
+    var idx=parseInt(row.getAttribute("data-despesa-idx"),10);
+    var nomeEl=row.querySelector(".despesa-nome");
+    var valorEl=row.querySelector(".despesa-valor");
+    var rmBtn=row.querySelector(".despesa-remove");
+    if(nomeEl) nomeEl.oninput=function(){ modalDespesasExtras[idx].nome=nomeEl.value; };
+    if(valorEl) valorEl.oninput=function(){ var v=valorEl.value; modalDespesasExtras[idx].valor=(v===""?null:(parseFloat(v)||0)); cargaAtualizaResumo(ctx); };
+    if(rmBtn) rmBtn.onclick=function(){ modalDespesasExtras.splice(idx,1); cargaRenderDespesas(ctx); };
+  });
+  var addBtn=document.getElementById("carga-despesa-add");
+  if(addBtn) addBtn.onclick=function(){ modalDespesasExtras.push({nome:"",valor:null}); cargaRenderDespesas(ctx); };
+}
+function cargaRenderDespesas(ctx){
+  var area=document.getElementById("carga-despesas-area");
+  if(!area) return;
+  area.innerHTML=despesasExtrasEditorHtml();
+  cargaLigaDespesas(ctx);
+  cargaAtualizaResumo(ctx);
+}
+function cargaLigaPrecos(ctx){
+  cargaLigaItens(ctx);
+  if(ctx.tipoSel.value==="casada" && !ctx.restrito) cargaLigaDespesas(ctx);
+  cargaAtualizaResumo(ctx);
+}
+function cargaTrocaTipo(ctx){
+  var tipo=ctx.tipoSel.value;
+  // os tipos de mercadoria e as caixas já digitados continuam; só as
+  // despesas extras (que existem só na compra casada) recomeçam
+  modalDespesasExtras=[];
+  ctx.entArea.innerHTML=cargaEntAreaHtml(tipo,null);
+  cargaSyncItensDoDom();
+  ctx.precoArea.innerHTML=cargaPrecoAreaHtml(tipo,null,ctx.restrito);
+  // a venda casada tem dois lados financeiros; compra e venda têm um só —
+  // então o bloco de situação financeira é remontado junto com o resto
+  modalVencManual={}; modalPrazoTocado={};
+  cargaRedesenhaFin(tipo,null);
+  cargaLigaPrecos(ctx);
+  // os seletores de cadastro foram recriados: religa o prazo habitual neles
+  cargaLigaPrazoPadrao(ctx);
+}
 
-  /* Ao escolher o fornecedor/cliente numa carga NOVA, o prazo habitual daquele
-     cadastro já vem preenchido. Numa carga que está sendo editada nada é
-     mexido — o prazo dela já foi decidido. E se a pessoa trocar o prazo na
-     mão, a escolha dela manda: só sobrescrevemos enquanto o campo estiver
-     intocado. */
-  function wirePrazoPadrao(){
-    if(carga) return; // edição: não mexe no que já está lançado
-    function liga(nomeCampoEnt,nomeCampoPrazo){
-      var selEnt=document.querySelector('[name="'+nomeCampoEnt+'"]');
-      if(!selEnt) return;
-      selEnt.addEventListener("change",function(){
-        // nunca sobrescreve uma escolha da pessoa, inclusive uma data de
-        // vencimento já marcada no calendário
-        if(modalPrazoTocado[nomeCampoPrazo]) return;
-        var selPrazo=document.querySelector('[name="'+nomeCampoPrazo+'"]');
-        if(!selPrazo || selPrazo.value===PRAZO_DATA) return;
-        var e=state.entidades.filter(function(x){return x.id===selEnt.value;})[0];
-        var pid=e&&e.prazoPadraoId;
-        if(pid && prazoPorId(pid)){
-          selPrazo.value=pid;
-          toast("Prazo habitual de "+e.nome+": "+prazoPorId(pid).nome+".");
-        }
+/* ---- prazo de pagamento / recebimento ---- */
+function cargaRedesenhaFin(tipo,cargaRef){
+  var finArea=document.getElementById("carga-fin-area");
+  if(!finArea) return;
+  finArea.innerHTML=cargaFinAreaHtml(tipo,cargaRef);
+  cargaLigaPrazoSelects(tipo,cargaRef);
+}
+// "Selecionar data…" abre o calendário por cima do formulário; a data fica
+// guardada até o Salvar, e cancelar devolve o seletor ao estado anterior
+function cargaLigaPrazoSelects(tipo,cargaRef){
+  document.querySelectorAll("[data-carga-prazo]").forEach(function(sel){
+    sel.onchange=function(){
+      var campo=sel.getAttribute("data-carga-prazo");
+      modalPrazoTocado[campo]=true; // escolha manual: o prazo habitual não mexe mais aqui
+      if(sel.value!==PRAZO_DATA){ delete modalVencManual[campo]; return; }
+      abrirEscolhaData({
+        titulo:"Vencimento no calendário",
+        sub:"Carga de "+fmtDateBR(state.cargaData),
+        valor:modalVencManual[campo]||"",
+        onCancel:function(){ cargaRedesenhaFin(tipo,cargaRef); },
+        onOk:function(v){ modalVencManual[campo]=v; cargaRedesenhaFin(tipo,cargaRef); }
       });
-    }
-    liga("entidadeId", tipoSel.value==="casada"?"finCompraPrazo":"finPrazo");
-    if(tipoSel.value==="casada") liga("clienteEntidadeId","finVendaPrazo");
-  }
-  wirePrazoPadrao();
-
-  /* ---- nota fiscal e romaneio: escolher o arquivo (foto ou PDF) ou colar o
-     que foi copiado no celular (WhatsApp, e-mail, prints...) ---- */
-  function carregaPreview(fid,imgId){
-    var diaIso=state.cargaData;
-    (async function(){
-      var key=diaIso+"/"+fid;
-      var url=photoCache[key]; if(!url){ url=await Store.getFoto(diaIso,fid); photoCache[key]=url; }
-      var img=document.getElementById(imgId); if(url && img) img.src=url;
-    })();
-  }
-  function ligaSlotDoc(addId,inputId,set,rmId,apaga){
-    var add=document.getElementById(addId), input=document.getElementById(inputId), rm=document.getElementById(rmId);
-    var vazio=ICONS.cam; // ícone da câmera
-    add.onclick=function(){ input.click(); };
-    if(rm) rm.onclick=function(e){
-      e.stopPropagation();
-      set(null); apaga(true);                 // some da carga ao salvar
-      add.innerHTML=vazio; rm.hidden=true;
-      toast("Anexo apagado — vale depois de salvar a carga.");
     };
-    async function recebe(file){
-      var prev=add.innerHTML;
-      add.innerHTML='<span style="font-size:10px;color:var(--text-faint)">preparando…</span>';
-      try{
-        var url=await arquivoParaImagem(file,true);
-        set(url); apaga(false);
-        add.innerHTML='<img class="thumb" src="'+url+'" alt="">';
-        if(rm) rm.hidden=false;
-      }catch(err){ toast(err.message,true); add.innerHTML=prev; }
+  });
+}
+/* Ao escolher o fornecedor/cliente numa carga NOVA, o prazo habitual daquele
+   cadastro já vem preenchido. Numa carga que está sendo editada nada é
+   mexido — o prazo dela já foi decidido. E se a pessoa trocar o prazo na
+   mão, a escolha dela manda: só sobrescrevemos enquanto o campo estiver
+   intocado. */
+function cargaLigaPrazoPadrao(ctx){
+  if(ctx.carga) return; // edição: não mexe no que já está lançado
+  var casada=ctx.tipoSel.value==="casada";
+  cargaLigaPrazoDoCadastro("entidadeId", casada?"finCompraPrazo":"finPrazo");
+  if(casada) cargaLigaPrazoDoCadastro("clienteEntidadeId","finVendaPrazo");
+}
+function cargaLigaPrazoDoCadastro(nomeCampoEnt,nomeCampoPrazo){
+  var selEnt=document.querySelector('[name="'+nomeCampoEnt+'"]');
+  if(!selEnt) return;
+  selEnt.addEventListener("change",function(){
+    // nunca sobrescreve uma escolha da pessoa, inclusive uma data de
+    // vencimento já marcada no calendário
+    if(modalPrazoTocado[nomeCampoPrazo]) return;
+    var selPrazo=document.querySelector('[name="'+nomeCampoPrazo+'"]');
+    if(!selPrazo || selPrazo.value===PRAZO_DATA) return;
+    var e=state.entidades.filter(function(x){return x.id===selEnt.value;})[0];
+    var pid=e&&e.prazoPadraoId;
+    if(pid && prazoPorId(pid)){
+      selPrazo.value=pid;
+      toast("Prazo habitual de "+e.nome+": "+prazoPorId(pid).nome+".");
     }
-    input.onchange=async function(e){ var f=e.target.files&&e.target.files[0]; input.value=""; if(f) await recebe(f); };
-    return recebe;
-  }
-  var recebeNota=ligaSlotDoc("carga-foto-nota-add","carga-foto-nota-input",function(u){ modalFotoNota=u; },"carga-foto-nota-rm",function(v){ modalApagaNota=v; });
-  var recebeRomaneio=ligaSlotDoc("carga-foto-romaneio-add","carga-foto-romaneio-input",function(u){ modalFotoRomaneio=u; },"carga-foto-romaneio-rm",function(v){ modalApagaRomaneio=v; });
-  if(carga && carga.fotoId) carregaPreview(carga.fotoId,"carga-foto-nota-preview");
-  if(carga && carga.fotoRomaneioId) carregaPreview(carga.fotoRomaneioId,"carga-foto-romaneio-preview");
+  });
+}
 
-  /* ---- várias fotos do produto ---- */
+/* ---- nota fiscal, romaneio e fotos do produto: escolher o arquivo (foto
+   ou PDF) ou colar o que foi copiado no celular (WhatsApp, e-mail, prints...) ---- */
+// devolve as funções que recebem um arquivo para cada lugar (usadas pelo "Colar")
+function cargaLigaAnexos(carga){
+  var receb={};
+  receb.nota=cargaLigaSlotDoc("carga-foto-nota-add","carga-foto-nota-input",function(u){ modalFotoNota=u; },"carga-foto-nota-rm",function(v){ modalApagaNota=v; });
+  receb.romaneio=cargaLigaSlotDoc("carga-foto-romaneio-add","carga-foto-romaneio-input",function(u){ modalFotoRomaneio=u; },"carga-foto-romaneio-rm",function(v){ modalApagaRomaneio=v; });
+  if(carga && carga.fotoId) cargaCarregaPreview(carga.fotoId,"carga-foto-nota-preview");
+  if(carga && carga.fotoRomaneioId) cargaCarregaPreview(carga.fotoRomaneioId,"carga-foto-romaneio-preview");
+  receb.produto=cargaLigaFotosProduto(carga,function(destino){ return cargaColarEm(receb,destino); });
+  return receb;
+}
+function cargaCarregaPreview(fid,imgId){
+  var diaIso=state.cargaData;
+  (async function(){
+    var key=diaIso+"/"+fid;
+    var url=photoCache[key]; if(!url){ url=await Store.getFoto(diaIso,fid); photoCache[key]=url; }
+    var img=document.getElementById(imgId); if(url && img) img.src=url;
+  })();
+}
+function cargaLigaSlotDoc(addId,inputId,set,rmId,apaga){
+  var add=document.getElementById(addId), input=document.getElementById(inputId), rm=document.getElementById(rmId);
+  var vazio=ICONS.cam; // ícone da câmera
+  add.onclick=function(){ input.click(); };
+  if(rm) rm.onclick=function(e){
+    e.stopPropagation();
+    set(null); apaga(true);                 // some da carga ao salvar
+    add.innerHTML=vazio; rm.hidden=true;
+    toast("Anexo apagado — vale depois de salvar a carga.");
+  };
+  async function recebe(file){
+    var prev=add.innerHTML;
+    add.innerHTML='<span style="font-size:10px;color:var(--text-faint)">preparando…</span>';
+    try{
+      var url=await arquivoParaImagem(file,true);
+      set(url); apaga(false);
+      add.innerHTML='<img class="thumb" src="'+url+'" alt="">';
+      if(rm) rm.hidden=false;
+    }catch(err){ toast(err.message,true); add.innerHTML=prev; }
+  }
+  input.onchange=async function(e){ var f=e.target.files&&e.target.files[0]; input.value=""; if(f) await recebe(f); };
+  return recebe;
+}
+// várias fotos do produto; devolve a função que recebe novos arquivos
+function cargaLigaFotosProduto(carga,colar){
   modalFotosProduto=fotosProdutoCarga(carga).map(function(fid){ return {fotoId:fid,url:photoCache[state.cargaData+"/"+fid]||null}; });
   var inputProd=document.getElementById("carga-foto-qual-input");
-  function renderFotosProduto(){
-    var row=document.getElementById("carga-fotos-produto-row");
-    if(!row) return;
-    var html=modalFotosProduto.map(function(f,i){
-      return '<div class="foto-prod" data-foto-idx="'+i+'">'+
-        (f.url?'<img class="thumb" src="'+f.url+'" alt="Foto do produto '+(i+1)+'">':'<div class="thumb thumb-empty"><span style="font-size:10px;color:var(--text-faint)">…</span></div>')+
-        '<button type="button" class="foto-prod-rm" aria-label="Remover a foto '+(i+1)+'">'+ICONS.x+"</button></div>";
-    }).join("");
-    if(modalFotosProduto.length<MAX_FOTOS_PRODUTO){
-      html+='<div class="thumb-add" id="carga-foto-qual-add" role="button" tabindex="0" aria-label="Adicionar fotos do produto">'+ICONS.plus+"</div>"+
-        '<button type="button" class="btn ghost sm btn-colar" data-colar="produto">'+ICON_COLAR+" Colar</button>";
-    }
-    row.innerHTML=html;
-    row.querySelectorAll(".foto-prod-rm").forEach(function(b){
-      b.onclick=function(){ var i=+b.parentNode.getAttribute("data-foto-idx"); modalFotosProduto.splice(i,1); renderFotosProduto(); };
-    });
-    var addP=document.getElementById("carga-foto-qual-add");
-    if(addP) addP.onclick=function(){ inputProd.click(); };
-    var colarP=row.querySelector('[data-colar="produto"]');
-    if(colarP) colarP.onclick=guarded(function(){ return colarEm("produto"); });
-  }
+  var desenha=function(){ cargaRenderFotosProduto(inputProd,colar); };
   async function recebeProduto(files){
     var lista=Array.prototype.slice.call(files||[]);
     var cabe=MAX_FOTOS_PRODUTO-modalFotosProduto.length;
     if(lista.length>cabe){ toast("Cabem até "+MAX_FOTOS_PRODUTO+" fotos do produto por carga — "+(cabe>0?"só as "+cabe+" primeiras foram usadas.":"remova alguma antes."),true); lista=lista.slice(0,Math.max(0,cabe)); }
     for(var i=0;i<lista.length;i++){
-      var slot={fotoId:null,url:null}; modalFotosProduto.push(slot); renderFotosProduto();
+      var slot={fotoId:null,url:null}; modalFotosProduto.push(slot); desenha();
       try{ slot.url=await arquivoParaImagem(lista[i],false); }
       catch(err){ toast(err.message,true); modalFotosProduto.splice(modalFotosProduto.indexOf(slot),1); }
-      renderFotosProduto();
+      desenha();
     }
   }
   inputProd.onchange=async function(e){ var fs=e.target.files; var copia=Array.prototype.slice.call(fs||[]); inputProd.value=""; await recebeProduto(copia); };
-  renderFotosProduto();
+  desenha();
   // as fotos antigas são buscadas no banco e aparecem conforme chegam
   modalFotosProduto.forEach(function(f){
     if(f.url||!f.fotoId) return;
     (async function(){
       var key=state.cargaData+"/"+f.fotoId;
       var url=photoCache[key]; if(!url){ url=await Store.getFoto(state.cargaData,f.fotoId); photoCache[key]=url; }
-      f.url=url; renderFotosProduto();
+      f.url=url; desenha();
     })();
   });
-
-  /* ---- "Colar" ---- */
-  async function colarEm(destino){
-    var file=await arquivoDaAreaDeTransferencia();
-    if(destino==="nota") await recebeNota(file);
-    else if(destino==="romaneio") await recebeRomaneio(file);
-    else await recebeProduto([file]);
+  return recebeProduto;
+}
+function cargaRenderFotosProduto(inputProd,colar){
+  var row=document.getElementById("carga-fotos-produto-row");
+  if(!row) return;
+  var html=modalFotosProduto.map(function(f,i){
+    return '<div class="foto-prod" data-foto-idx="'+i+'">'+
+      (f.url?'<img class="thumb" src="'+f.url+'" alt="Foto do produto '+(i+1)+'">':'<div class="thumb thumb-empty"><span style="font-size:10px;color:var(--text-faint)">…</span></div>')+
+      '<button type="button" class="foto-prod-rm" aria-label="Remover a foto '+(i+1)+'">'+ICONS.x+"</button></div>";
+  }).join("");
+  if(modalFotosProduto.length<MAX_FOTOS_PRODUTO){
+    html+='<div class="thumb-add" id="carga-foto-qual-add" role="button" tabindex="0" aria-label="Adicionar fotos do produto">'+ICONS.plus+"</div>"+
+      '<button type="button" class="btn ghost sm btn-colar" data-colar="produto">'+ICON_COLAR+" Colar</button>";
   }
+  row.innerHTML=html;
+  row.querySelectorAll(".foto-prod-rm").forEach(function(b){
+    b.onclick=function(){ var i=+b.parentNode.getAttribute("data-foto-idx"); modalFotosProduto.splice(i,1); cargaRenderFotosProduto(inputProd,colar); };
+  });
+  var addP=document.getElementById("carga-foto-qual-add");
+  if(addP) addP.onclick=function(){ inputProd.click(); };
+  var colarP=row.querySelector('[data-colar="produto"]');
+  if(colarP) colarP.onclick=guarded(function(){ return colar("produto"); });
+}
+
+/* ---- "Colar" ---- */
+async function cargaColarEm(receb,destino){
+  var file=await arquivoDaAreaDeTransferencia();
+  if(destino==="nota") await receb.nota(file);
+  else if(destino==="romaneio") await receb.romaneio(file);
+  else await receb.produto([file]);
+}
+function cargaLigaColar(node,receb){
   node.querySelectorAll('[data-colar="nota"],[data-colar="romaneio"]').forEach(function(b){
-    b.onclick=guarded(function(){ return colarEm(b.getAttribute("data-colar")); });
+    b.onclick=guarded(function(){ return cargaColarEm(receb,b.getAttribute("data-colar")); });
   });
   // no computador, Ctrl+V / Cmd+V com o formulário aberto também funciona:
   // pergunta onde colocar o arquivo
   function recebeColado(file){
     escolherDestinoColar(node,function(destino){
-      if(destino==="nota") return recebeNota(file);
-      if(destino==="romaneio") return recebeRomaneio(file);
-      return recebeProduto([file]);
+      if(destino==="nota") return receb.nota(file);
+      if(destino==="romaneio") return receb.romaneio(file);
+      return receb.produto([file]);
     });
   }
   ligaColarTeclado(node,recebeColado);
-  // caixa de colar: é nela que o "Colar" do próprio celular (toque e segure)
-  // entrega o arquivo — funciona com imagem e PDF copiados de qualquer app
+  cargaLigaZonaColar(node,recebeColado);
+}
+// caixa de colar: é nela que o "Colar" do próprio celular (toque e segure)
+// entrega o arquivo — funciona com imagem e PDF copiados de qualquer app
+function cargaLigaZonaColar(node,recebeColado){
   var zona=node.querySelector("#carga-colar-zona");
-  if(zona){
-    zona.addEventListener("paste",function(e){
-      e.preventDefault(); e.stopPropagation();
-      var r=coletaArquivosColados(e.clipboardData);
-      if(r.arquivos.length){ recebeColado(r.arquivos[0]); return; }
-      arquivoDoHtmlColado(r.html).then(function(f){ if(f) recebeColado(f); else toast(msgNadaColado(r),true); });
-    });
-    // nada digitado: a caixa só recebe arquivos
-    zona.addEventListener("beforeinput",function(e){ if(e.inputType!=="insertFromPaste") e.preventDefault(); });
-    zona.addEventListener("keydown",function(e){ if(!(e.ctrlKey||e.metaKey) && e.key.length===1) e.preventDefault(); });
-    zona.addEventListener("dragover",function(e){ e.preventDefault(); });
-    zona.addEventListener("drop",function(e){
-      e.preventDefault();
-      var f=Array.prototype.slice.call((e.dataTransfer&&e.dataTransfer.files)||[]).filter(eArquivoDeNota)[0];
-      if(f) recebeColado(f); else toast("Arraste uma foto ou um PDF da nota.",true);
-    });
-  }
-
-  document.getElementById("carga-save").onclick=guarded(async function(){
-    var editId0=node.getAttribute("data-carga-id")||"";
-    if(editId0 && !souAdmin()){ toast("Somente administradores podem editar cargas.",true); return; }
-    var restritoSave=!souAdmin();
-    var get=function(name){ var el=node.querySelector('[name="'+name+'"]'); return el?el.value:""; };
-    var tipo=get("tipo");
-    syncItensDoDom();
-    /* ---- tipos de mercadoria (cada um com as suas caixas e, para o
-       administrador, o seu preço) ---- */
-    var varios=modalItens.length>1;
-    var itensOk=[];
-    for(var ii=0;ii<modalItens.length;ii++){
-      var mi=modalItens[ii];
-      var ondeTxt=varios?" na linha "+(ii+1):"";
-      var q=parseFloat(mi.qtd);
-      if(!q||q<=0){toast("Informe a quantidade de caixas"+ondeTxt+".",true);return;}
-      var pr=null, prv=null;
-      if(!restritoSave){
-        pr=parseFloat(mi.preco);
-        if(!pr||pr<=0){toast((tipo==="casada"?"Informe o preço de compra por caixa":"Informe o preço por caixa")+ondeTxt+".",true);return;}
-        if(tipo==="casada"){
-          prv=parseFloat(mi.precoVenda);
-          if(!prv||prv<=0){toast("Informe o preço de venda por caixa"+ondeTxt+".",true);return;}
-        }
-      }
-      var me=mi.mercadoriaId?state.entidades.filter(function(e){return e.id===mi.mercadoriaId;})[0]:null;
-      itensOk.push({id:mi.id||uid(),mercadoriaId:me?me.id:null,mercadoriaNome:me?me.nome:null,quantidadeCaixas:q,preco:pr,precoVenda:prv});
-    }
-    if(!itensOk.length){toast("Informe pelo menos um tipo de mercadoria.",true);return;}
-    var qtd=itensOk.reduce(function(a,it){return a+it.quantidadeCaixas;},0);
-    var preco=null, precoVenda=null, precosItens=null;
-    if(!restritoSave){
-      // preço "médio" por caixa da carga inteira (o total continua exato:
-      // é sempre a soma de caixas x preço de cada tipo)
-      var totC=itensOk.reduce(function(a,it){return a+it.quantidadeCaixas*it.preco;},0);
-      preco=totC/qtd;
-      precosItens={};
-      itensOk.forEach(function(it){ precosItens[it.id]=tipo==="casada"?{preco:it.preco,precoVenda:it.precoVenda}:{preco:it.preco}; });
-      if(tipo==="casada"){
-        var totV=itensOk.reduce(function(a,it){return a+it.quantidadeCaixas*it.precoVenda;},0);
-        precoVenda=totV/qtd;
-      }
-    }
-
-    var entidadeId=get("entidadeId");
-    if(!entidadeId){toast(tipo==="venda"?"Selecione o cliente cadastrado.":"Selecione o fornecedor cadastrado.",true);return;}
-
-    var clienteEntidadeId="";
-    if(tipo==="casada"){
-      clienteEntidadeId=get("clienteEntidadeId");
-      if(!clienteEntidadeId){toast("Selecione o comprador cadastrado.",true);return;}
-    }
-
-    var ent=state.entidades.filter(function(e){return e.id===entidadeId;})[0];
-    if(!ent){toast("Cadastro selecionado não encontrado. Atualize a página e tente novamente.",true);return;}
-    var nome=ent.nome, entId=entidadeId;
-
-    var clienteNome=null, clienteEntId=null;
-    if(tipo==="casada"){
-      var clEnt=state.entidades.filter(function(e){return e.id===clienteEntidadeId;})[0];
-      if(!clEnt){toast("Cadastro do comprador não encontrado. Atualize a página e tente novamente.",true);return;}
-      clienteEntId=clienteEntidadeId; clienteNome=clEnt.nome;
-    }
-
-    var despesasExtras=(tipo==="casada"&&!restritoSave)?modalDespesasExtras.filter(function(d){return (d.nome&&d.nome.trim())||(d.valor&&d.valor>0);}).map(function(d){return {nome:(d.nome||"").trim(),valor:parseFloat(d.valor)||0};}):[];
-
-    var dataIso=get("data")||state.cargaData;
-    var diaAlvo = dataIso===state.cargaData ? state.cargaDia : await Store.getDia(dataIso);
-    diaAlvo=diaAlvo||{precos:[],cargas:[]};
-    diaAlvo.cargas=diaAlvo.cargas||[];
-
-    var editId=node.getAttribute("data-carga-id")||"";
-    var isEdit=!!editId;
-    var existing=isEdit?diaAlvo.cargas.filter(function(c){return c.id===editId;})[0]:null;
-
-    // numeração: recomeça em 1 todo dia e é uma só para compras, vendas e
-    // casadas. Carga editada mantém o número que já tinha.
-    var seq=existing?existing.numeroSequencial:await Store.proximoNumeroCarga(dataIso,(diaAlvo.cargas||[]).length);
-
-    var fotoId=existing&&!modalApagaNota?existing.fotoId:null;
-    var fotoRomaneioId=existing&&!modalApagaRomaneio?existing.fotoRomaneioId:null;
-    if(modalFotoNota){ fotoId=uid(); await Store.saveFoto(dataIso,fotoId,modalFotoNota,tipo==="compra"?"notaFiscalEntrada":(tipo==="venda"?"notaFiscalSaida":"notaFiscalCasada")); photoCache[dataIso+"/"+fotoId]=modalFotoNota; }
-    if(modalFotoRomaneio){ fotoRomaneioId=uid(); await Store.saveFoto(dataIso,fotoRomaneioId,modalFotoRomaneio,"notaRomaneio"); photoCache[dataIso+"/"+fotoRomaneioId]=modalFotoRomaneio; }
-    // fotos do produto: as que já existiam continuam com o mesmo id; as novas são gravadas agora
-    var fotosProdutoIds=[];
-    for(var fi=0;fi<modalFotosProduto.length;fi++){
-      var fp=modalFotosProduto[fi];
-      if(fp.fotoId){ fotosProdutoIds.push(fp.fotoId); continue; }
-      if(!fp.url) continue; // ainda processando ou falhou
-      var nid=uid();
-      await Store.saveFoto(dataIso,nid,fp.url,"qualidade");
-      photoCache[dataIso+"/"+nid]=fp.url;
-      fotosProdutoIds.push(nid);
-    }
-
-    var itensPub=itensOk.map(function(it){ return {id:it.id,mercadoriaId:it.mercadoriaId,mercadoriaNome:it.mercadoriaNome,quantidadeCaixas:it.quantidadeCaixas}; });
-    var carga={id:editId||uid(),tipo:tipo,entidadeId:entId,nome:nome,preco:preco,quantidadeCaixas:qtd,placa:get("placa"),status:get("status"),numeroSequencial:seq,
-      fotoId:fotoId,fotoQualidadeId:fotosProdutoIds[0]||null,fotosProdutoIds:fotosProdutoIds,fotoRomaneioId:fotoRomaneioId,
-      itens:itensPub,
-      // campos antigos (1 tipo só) continuam preenchidos com o 1º tipo, pra
-      // quem ainda estiver com o app antigo aberto não ver a carga vazia
-      mercadoriaId:itensPub[0].mercadoriaId,mercadoriaNome:itensPub.length>1?itensPub.map(function(i){return i.mercadoriaNome||"sem tipo";}).join(" + "):itensPub[0].mercadoriaNome,
-      criadoEm:existing?existing.criadoEm:new Date().toISOString(),criadoPor:existing?existing.criadoPor:meuUid()};
-    if(precosItens) carga.precosItens=precosItens;
-    if(tipo==="casada"){
-      carga.precoVenda=precoVenda;
-      carga.clienteEntidadeId=clienteEntId;
-      carga.clienteNome=clienteNome;
-      carga.despesasExtras=despesasExtras;
-    }
-
-    /* ---- lados financeiros ----
-       O formulário só define a CONDIÇÃO de pagamento (o prazo). Os pagamentos
-       já lançados nunca são tocados aqui — são a fonte do status, e perder um
-       deles faria uma operação quitada voltar a aparecer como em aberto. */
-    // acha o lado financeiro anterior, inclusive quando o tipo da operação
-    // mudou: o lado de compra continua sendo o lado de compra (uma compra que
-    // virou venda casada leva junto os pagamentos já feitos ao fornecedor)
-    function anteriorDe(alvoKey){
-      if(!existing) return finVazio();
-      var direto=existing[alvoKey];
-      if(direto&&typeof direto==="object") return direto;
-      var velho=existing.tipo;
-      if(alvoKey==="fin"){
-        if(tipo==="compra"&&velho==="casada") return finDoLado(existing,"finCompra");
-        if(tipo==="venda" &&velho==="casada") return finDoLado(existing,"finVenda");
-      }
-      if(alvoKey==="finCompra"&&velho==="compra") return finDoLado(existing,"fin");
-      if(alvoKey==="finVenda" &&velho==="venda")  return finDoLado(existing,"fin");
-      return finVazio();
-    }
-    function aplicaPrazo(alvoKey,prazoId){
-      var anterior=anteriorDe(alvoKey);
-      if(restritoSave) return anterior; // operacional não mexe em nada financeiro
-      // vencimento escolhido no calendário: não tem dias, tem um dia exato
-      if(prazoId===PRAZO_DATA){
-        var campo=alvoKey+"Prazo";
-        var dia=Object.prototype.hasOwnProperty.call(modalVencManual,campo)?modalVencManual[campo]:anterior.vencimentoManual;
-        if(dia){
-          return {prazoId:PRAZO_DATA,prazoNome:"Data escolhida",prazoDias:null,vencimentoManual:dia,pagamentos:anterior.pagamentos||[]};
-        }
-        prazoId=null; // escolheu "Selecionar data…" e cancelou o calendário
-      }
-      var p=prazoId?prazoPorId(prazoId):null;
-      // prazo apagado do cadastro depois de usado: mantém nome/dias gravados na carga
-      var manterAntigo=(prazoId && !p && anterior.prazoId===prazoId);
-      return {
-        prazoId:prazoId||null,
-        prazoNome:p?p.nome:(manterAntigo?anterior.prazoNome:null),
-        prazoDias:p?p.dias:(manterAntigo?anterior.prazoDias:null),
-        vencimentoManual:null,
-        pagamentos:anterior.pagamentos||[]
-      };
-    }
-    if(tipo==="casada"){
-      carga.finCompra=aplicaPrazo("finCompra",get("finCompraPrazo"));
-      carga.finVenda=aplicaPrazo("finVenda",get("finVendaPrazo"));
-      delete carga.fin;
-    } else {
-      carga.fin=aplicaPrazo("fin",get("finPrazo"));
-      delete carga.finCompra; delete carga.finVenda;
-    }
-
-    if(existing){
-      diaAlvo.cargas=diaAlvo.cargas.map(function(c){return c.id===editId?carga:c;});
-    } else {
-      diaAlvo.cargas.push(carga);
-    }
-    await Store.saveDia(dataIso,diaAlvo);
-    if(dataIso===state.cargaData) state.cargaDia=diaAlvo;
-    modalFotoNota=null; modalFotoQual=null; modalFotoRomaneio=null; modalApagaNota=false; modalApagaRomaneio=false; modalDespesasExtras=[]; modalVencManual={}; modalPrazoTocado={}; modalItens=[]; modalFotosProduto=[];
-    toast(isEdit?"Carga atualizada.":"Carga nº "+seq+" registrada.");
-    closeModal(document.querySelector(".modal-back"));
-    render();
+  if(!zona) return;
+  zona.addEventListener("paste",function(e){
+    e.preventDefault(); e.stopPropagation();
+    var r=coletaArquivosColados(e.clipboardData);
+    if(r.arquivos.length){ recebeColado(r.arquivos[0]); return; }
+    arquivoDoHtmlColado(r.html).then(function(f){ if(f) recebeColado(f); else toast(msgNadaColado(r),true); });
   });
+  // nada digitado: a caixa só recebe arquivos
+  zona.addEventListener("beforeinput",function(e){ if(e.inputType!=="insertFromPaste") e.preventDefault(); });
+  zona.addEventListener("keydown",function(e){ if(!(e.ctrlKey||e.metaKey) && e.key.length===1) e.preventDefault(); });
+  zona.addEventListener("dragover",function(e){ e.preventDefault(); });
+  zona.addEventListener("drop",function(e){
+    e.preventDefault();
+    var f=Array.prototype.slice.call((e.dataTransfer&&e.dataTransfer.files)||[]).filter(eArquivoDeNota)[0];
+    if(f) recebeColado(f); else toast("Arraste uma foto ou um PDF da nota.",true);
+  });
+}
+
+/* ---- salvar ---- */
+async function salvarCargaDoModal(node){
+  var editId=node.getAttribute("data-carga-id")||"";
+  if(editId && !souAdmin()){ toast("Somente administradores podem editar cargas.",true); return; }
+  var restrito=!souAdmin();
+  var get=function(name){ var el=node.querySelector('[name="'+name+'"]'); return el?el.value:""; };
+  var tipo=get("tipo");
+  cargaSyncItensDoDom();
+  var itens=cargaLeItens(tipo,restrito);
+  if(itens.erro){ toast(itens.erro,true); return; }
+  var pessoas=cargaLePessoas(tipo,get);
+  if(pessoas.erro){ toast(pessoas.erro,true); return; }
+  var despesasExtras=(tipo==="casada"&&!restrito)?modalDespesasExtras.filter(function(d){return (d.nome&&d.nome.trim())||(d.valor&&d.valor>0);}).map(function(d){return {nome:(d.nome||"").trim(),valor:parseFloat(d.valor)||0};}):[];
+
+  var dataIso=get("data")||state.cargaData;
+  var diaAlvo = dataIso===state.cargaData ? state.cargaDia : await Store.getDia(dataIso);
+  diaAlvo=diaAlvo||{precos:[],cargas:[]};
+  diaAlvo.cargas=diaAlvo.cargas||[];
+  var isEdit=!!editId;
+  var existing=isEdit?diaAlvo.cargas.filter(function(c){return c.id===editId;})[0]:null;
+
+  // numeração: recomeça em 1 todo dia e é uma só para compras, vendas e
+  // casadas. Carga editada mantém o número que já tinha.
+  var seq=existing?existing.numeroSequencial:await Store.proximoNumeroCarga(dataIso,(diaAlvo.cargas||[]).length);
+  var fotos=await cargaGravaFotos(dataIso,tipo,existing);
+  var carga=cargaMontaObjeto({id:editId||uid(),tipo:tipo,itens:itens,pessoas:pessoas,fotos:fotos,seq:seq,existing:existing,despesasExtras:despesasExtras,
+    placa:get("placa"),status:get("status")});
+  cargaAplicaFinanceiro(carga,existing,tipo,get,restrito);
+
+  if(existing) diaAlvo.cargas=diaAlvo.cargas.map(function(c){return c.id===editId?carga:c;});
+  else diaAlvo.cargas.push(carga);
+  await Store.saveDia(dataIso,diaAlvo);
+  if(dataIso===state.cargaData) state.cargaDia=diaAlvo;
+  modalFotoNota=null; modalFotoQual=null; modalFotoRomaneio=null; modalApagaNota=false; modalApagaRomaneio=false; modalDespesasExtras=[]; modalVencManual={}; modalPrazoTocado={}; modalItens=[]; modalFotosProduto=[];
+  toast(isEdit?"Carga atualizada.":"Carga nº "+seq+" registrada.");
+  closeModal(document.querySelector(".modal-back"));
+  render();
+}
+/* tipos de mercadoria (cada um com as suas caixas e, para o administrador,
+   o seu preço). Devolve {erro} ou os itens já conferidos com os totais. */
+function cargaLeItens(tipo,restrito){
+  var varios=modalItens.length>1;
+  var itensOk=[];
+  for(var ii=0;ii<modalItens.length;ii++){
+    var mi=modalItens[ii];
+    var ondeTxt=varios?" na linha "+(ii+1):"";
+    var q=parseFloat(mi.qtd);
+    if(!q||q<=0) return {erro:"Informe a quantidade de caixas"+ondeTxt+"."};
+    var pr=null, prv=null;
+    if(!restrito){
+      pr=parseFloat(mi.preco);
+      if(!pr||pr<=0) return {erro:(tipo==="casada"?"Informe o preço de compra por caixa":"Informe o preço por caixa")+ondeTxt+"."};
+      if(tipo==="casada"){
+        prv=parseFloat(mi.precoVenda);
+        if(!prv||prv<=0) return {erro:"Informe o preço de venda por caixa"+ondeTxt+"."};
+      }
+    }
+    var me=mi.mercadoriaId?state.entidades.filter(function(e){return e.id===mi.mercadoriaId;})[0]:null;
+    itensOk.push({id:mi.id||uid(),mercadoriaId:me?me.id:null,mercadoriaNome:me?me.nome:null,quantidadeCaixas:q,preco:pr,precoVenda:prv});
+  }
+  if(!itensOk.length) return {erro:"Informe pelo menos um tipo de mercadoria."};
+  var r={lista:itensOk,qtd:itensOk.reduce(function(a,it){return a+it.quantidadeCaixas;},0),preco:null,precoVenda:null,precosItens:null};
+  if(restrito) return r;
+  // preço "médio" por caixa da carga inteira (o total continua exato:
+  // é sempre a soma de caixas x preço de cada tipo)
+  r.preco=itensOk.reduce(function(a,it){return a+it.quantidadeCaixas*it.preco;},0)/r.qtd;
+  r.precosItens={};
+  itensOk.forEach(function(it){ r.precosItens[it.id]=tipo==="casada"?{preco:it.preco,precoVenda:it.precoVenda}:{preco:it.preco}; });
+  if(tipo==="casada") r.precoVenda=itensOk.reduce(function(a,it){return a+it.quantidadeCaixas*it.precoVenda;},0)/r.qtd;
+  return r;
+}
+// fornecedor/cliente (e o comprador, na casada). Devolve {erro} ou os cadastros.
+function cargaLePessoas(tipo,get){
+  var entidadeId=get("entidadeId");
+  if(!entidadeId) return {erro:tipo==="venda"?"Selecione o cliente cadastrado.":"Selecione o fornecedor cadastrado."};
+  var clienteEntidadeId="";
+  if(tipo==="casada"){
+    clienteEntidadeId=get("clienteEntidadeId");
+    if(!clienteEntidadeId) return {erro:"Selecione o comprador cadastrado."};
+  }
+  var ent=state.entidades.filter(function(e){return e.id===entidadeId;})[0];
+  if(!ent) return {erro:"Cadastro selecionado não encontrado. Atualize a página e tente novamente."};
+  var r={entId:entidadeId,nome:ent.nome,clienteEntId:null,clienteNome:null};
+  if(tipo==="casada"){
+    var clEnt=state.entidades.filter(function(e){return e.id===clienteEntidadeId;})[0];
+    if(!clEnt) return {erro:"Cadastro do comprador não encontrado. Atualize a página e tente novamente."};
+    r.clienteEntId=clienteEntidadeId; r.clienteNome=clEnt.nome;
+  }
+  return r;
+}
+// grava nota, romaneio e fotos novas; as que já existiam mantêm o mesmo id
+async function cargaGravaFotos(dataIso,tipo,existing){
+  var fotoId=existing&&!modalApagaNota?existing.fotoId:null;
+  var fotoRomaneioId=existing&&!modalApagaRomaneio?existing.fotoRomaneioId:null;
+  if(modalFotoNota){ fotoId=uid(); await Store.saveFoto(dataIso,fotoId,modalFotoNota,tipo==="compra"?"notaFiscalEntrada":(tipo==="venda"?"notaFiscalSaida":"notaFiscalCasada")); photoCache[dataIso+"/"+fotoId]=modalFotoNota; }
+  if(modalFotoRomaneio){ fotoRomaneioId=uid(); await Store.saveFoto(dataIso,fotoRomaneioId,modalFotoRomaneio,"notaRomaneio"); photoCache[dataIso+"/"+fotoRomaneioId]=modalFotoRomaneio; }
+  var fotosProdutoIds=[];
+  for(var fi=0;fi<modalFotosProduto.length;fi++){
+    var fp=modalFotosProduto[fi];
+    if(fp.fotoId){ fotosProdutoIds.push(fp.fotoId); continue; }
+    if(!fp.url) continue; // ainda processando ou falhou
+    var nid=uid();
+    await Store.saveFoto(dataIso,nid,fp.url,"qualidade");
+    photoCache[dataIso+"/"+nid]=fp.url;
+    fotosProdutoIds.push(nid);
+  }
+  return {fotoId:fotoId,fotoRomaneioId:fotoRomaneioId,fotosProdutoIds:fotosProdutoIds};
+}
+function cargaMontaObjeto(o){
+  var it=o.itens, ex=o.existing;
+  var itensPub=it.lista.map(function(x){ return {id:x.id,mercadoriaId:x.mercadoriaId,mercadoriaNome:x.mercadoriaNome,quantidadeCaixas:x.quantidadeCaixas}; });
+  var carga={id:o.id,tipo:o.tipo,entidadeId:o.pessoas.entId,nome:o.pessoas.nome,preco:it.preco,quantidadeCaixas:it.qtd,placa:o.placa,status:o.status,numeroSequencial:o.seq,
+    fotoId:o.fotos.fotoId,fotoQualidadeId:o.fotos.fotosProdutoIds[0]||null,fotosProdutoIds:o.fotos.fotosProdutoIds,fotoRomaneioId:o.fotos.fotoRomaneioId,
+    itens:itensPub,
+    // campos antigos (1 tipo só) continuam preenchidos com o 1º tipo, pra
+    // quem ainda estiver com o app antigo aberto não ver a carga vazia
+    mercadoriaId:itensPub[0].mercadoriaId,mercadoriaNome:itensPub.length>1?itensPub.map(function(i){return i.mercadoriaNome||"sem tipo";}).join(" + "):itensPub[0].mercadoriaNome,
+    criadoEm:ex?ex.criadoEm:new Date().toISOString(),criadoPor:ex?ex.criadoPor:meuUid()};
+  if(it.precosItens) carga.precosItens=it.precosItens;
+  if(o.tipo==="casada"){
+    carga.precoVenda=it.precoVenda;
+    carga.clienteEntidadeId=o.pessoas.clienteEntId;
+    carga.clienteNome=o.pessoas.clienteNome;
+    carga.despesasExtras=o.despesasExtras;
+  }
+  return carga;
+}
+/* ---- lados financeiros ----
+   O formulário só define a CONDIÇÃO de pagamento (o prazo). Os pagamentos
+   já lançados nunca são tocados aqui — são a fonte do status, e perder um
+   deles faria uma operação quitada voltar a aparecer como em aberto. */
+function cargaAplicaFinanceiro(carga,existing,tipo,get,restrito){
+  if(tipo==="casada"){
+    carga.finCompra=cargaAplicaPrazo(existing,tipo,"finCompra",get("finCompraPrazo"),restrito);
+    carga.finVenda=cargaAplicaPrazo(existing,tipo,"finVenda",get("finVendaPrazo"),restrito);
+    delete carga.fin;
+  } else {
+    carga.fin=cargaAplicaPrazo(existing,tipo,"fin",get("finPrazo"),restrito);
+    delete carga.finCompra; delete carga.finVenda;
+  }
+}
+// acha o lado financeiro anterior, inclusive quando o tipo da operação
+// mudou: o lado de compra continua sendo o lado de compra (uma compra que
+// virou venda casada leva junto os pagamentos já feitos ao fornecedor)
+function cargaFinAnterior(existing,tipo,alvoKey){
+  if(!existing) return finVazio();
+  var direto=existing[alvoKey];
+  if(direto&&typeof direto==="object") return direto;
+  var velho=existing.tipo;
+  if(alvoKey==="fin"){
+    if(tipo==="compra"&&velho==="casada") return finDoLado(existing,"finCompra");
+    if(tipo==="venda" &&velho==="casada") return finDoLado(existing,"finVenda");
+  }
+  if(alvoKey==="finCompra"&&velho==="compra") return finDoLado(existing,"fin");
+  if(alvoKey==="finVenda" &&velho==="venda")  return finDoLado(existing,"fin");
+  return finVazio();
+}
+function cargaAplicaPrazo(existing,tipo,alvoKey,prazoId,restrito){
+  var anterior=cargaFinAnterior(existing,tipo,alvoKey);
+  if(restrito) return anterior; // operacional não mexe em nada financeiro
+  // vencimento escolhido no calendário: não tem dias, tem um dia exato
+  if(prazoId===PRAZO_DATA){
+    var campo=alvoKey+"Prazo";
+    var dia=Object.prototype.hasOwnProperty.call(modalVencManual,campo)?modalVencManual[campo]:anterior.vencimentoManual;
+    if(dia){
+      return {prazoId:PRAZO_DATA,prazoNome:"Data escolhida",prazoDias:null,vencimentoManual:dia,pagamentos:anterior.pagamentos||[]};
+    }
+    prazoId=null; // escolheu "Selecionar data…" e cancelou o calendário
+  }
+  var p=prazoId?prazoPorId(prazoId):null;
+  // prazo apagado do cadastro depois de usado: mantém nome/dias gravados na carga
+  var manterAntigo=(prazoId && !p && anterior.prazoId===prazoId);
+  return {
+    prazoId:prazoId||null,
+    prazoNome:p?p.nome:(manterAntigo?anterior.prazoNome:null),
+    prazoDias:p?p.dias:(manterAntigo?anterior.prazoDias:null),
+    vencimentoManual:null,
+    pagamentos:anterior.pagamentos||[]
+  };
 }
 
 /* ============ handlers globais (sidebar / usuários) ============ */
@@ -6554,6 +6695,8 @@ document.addEventListener("click",function(e){
     var node=openModal(modalUsuarios());
     var sairBtn=node.querySelector('[data-action="logout"]');
     if(sairBtn) sairBtn.onclick=logout;
+    var bkBtn=node.querySelector("#bk-baixar");
+    if(bkBtn) bkBtn.onclick=guarded(function(){ var c=node.querySelector("#bk-fotos"); return baixarBackup(!!(c&&c.checked),bkBtn); });
 
     var editarEmpresaEl=node.querySelector('[data-action="editar-empresa"]');
     if(editarEmpresaEl) editarEmpresaEl.onclick=guarded(function(){
